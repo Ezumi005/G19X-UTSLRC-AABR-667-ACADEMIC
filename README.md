@@ -228,6 +228,17 @@ React consume únicamente la API del backend. Las claves de Azure y demás secre
 - No agregar tecnologías secundarias si el camino principal todavía no funciona.
 - No asumir datos reales de PluriOne; el proyecto trabaja con datos simulados.
 
+### Control de versiones con Git
+
+Todo el desarrollo debe registrarse progresivamente en Git para generar un historial completo del proyecto:
+
+- Git se inicializa desde el comienzo del desarrollo.
+- Se realizan commits después de avances significativos, con mensajes claros y descriptivos.
+- No se espera hasta el final para crear el historial.
+- No se elimina ni altera el historial de commits existente.
+- El repositorio debe quedar preparado para vincularse posteriormente con GitHub (remoto pendiente de configurar).
+- Cada avance importante queda reflejado tanto en Git como en `Bitacora.md`.
+
 ## 14. Qué debe demostrar el MVP
 
 El MVP debe probar de extremo a extremo que:

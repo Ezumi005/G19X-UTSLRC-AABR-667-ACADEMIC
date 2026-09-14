@@ -462,6 +462,36 @@ Implementar el `SimulatedCRMAdapter`: consumir la API simulada, transformar su f
 
 ---
 
+## 14/09/2026 — 12:08
+**Tipo:** Gestión / Documentación
+
+**Actividad realizada:**  
+Adopté formalmente las reglas de **control de versiones con Git** como parte de las reglas de trabajo del proyecto: registrar todo el desarrollo progresivamente en Git, realizar commits después de avances significativos con mensajes claros, no esperar al final para crear el historial, no eliminar ni alterar commits existentes, mantener el repositorio listo para vincularse a GitHub y reflejar cada avance importante tanto en Git como en `Bitacora.md`.
+
+Apliqué la regla de inmediato: verifiqué el estado del repositorio y la identidad de Git configurada, y creé el historial inicial con el trabajo acumulado hasta hoy.
+
+**Decisiones tomadas:**  
+- Las reglas de Git quedaron documentadas en la sección 13 del README ("Reglas que NO se deben romper") para que cualquier desarrollador o modelo de IA las respete.
+- Creé un primer commit consolidado con el estado actual del proyecto (commit `f019c32`: documentación, contrato interno V1, dataset y API CRM simulada) en lugar de intentos de dividir retroactivamente hitos ya pasados; a partir de ahora cada avance significativo tendrá su propio commit junto con su entrada en esta bitácora.
+- El remoto de GitHub queda pendiente hasta que se decida crear el repositorio remoto.
+
+**Resultado:**  
+- Historial Git iniciado en la rama `main` con 22 archivos versionados (los PDF oficiales incluidos; `.venv/` y `data/` quedan fuera por `.gitignore`).
+- Reglas de versionado vigentes y documentadas en el README.
+
+**Archivos o componentes afectados:**  
+- `README.md` (sección 13: nuevas reglas de control de versiones).
+- `Bitacora.md` (esta entrada).
+- Repositorio Git (commit inicial `f019c32` y commit de esta regla).
+
+**Problemas o bloqueos:**  
+- Ninguno. Git ya tenía identidad configurada (user: Ezumi005).
+
+**Siguiente paso:**  
+Implementar el `SimulatedCRMAdapter`: consumir la API simulada, transformar su formato externo al contrato interno V1 y reportar los registros inválidos.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
