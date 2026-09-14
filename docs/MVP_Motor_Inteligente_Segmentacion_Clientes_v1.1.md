@@ -2,6 +2,7 @@
 > Extraido automaticamente del PDF original con pypdf.
 > El PDF original en la raiz del proyecto sigue siendo la fuente de verdad oficial.
 > Este archivo existe solo para consulta rapida de desarrolladores y modelos de IA.
+> **Adenda (14/09/2026):** al final se agrego una seccion de trazabilidad y control de cambios (Git) que todavia NO forma parte del PDF v1.1.
 
 ## Pagina 1
 
@@ -468,3 +469,17 @@ mentación.
 • El objetivo del MVP es demostrar viabilidad técnica, arquitectura adaptable y valor
 funcional en aproximadamente tres semanas.
 12
+
+---
+
+# Adenda del 14/09/2026 — Control de versiones con Git
+
+> Sección añadida directamente en este Markdown; todavía no forma parte del PDF v1.1. Debe incorporarse al documento fuente (LaTeX/Word) cuando se genere la versión 1.2. No modifica ni sustituye ninguna sección existente.
+
+## 25. Control de versiones y trazabilidad del MVP
+
+- El desarrollo del MVP se registra **progresivamente en Git** (repositorio local en la raíz del proyecto, preparado para vincularse a GitHub).
+- Se realizan **commits después de avances significativos**, con mensajes claros y descriptivos; no se espera al final para generar el historial.
+- **No se eliminan ni alteran commits existentes.**
+- Cada avance técnico importante queda reflejado **tanto en Git como en `Bitacora.md`**, para asegurar trazabilidad y control de cambios.
+- Git es una herramienta de desarrollo: no añade funcionalidades al producto.

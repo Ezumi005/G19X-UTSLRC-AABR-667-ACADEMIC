@@ -492,6 +492,38 @@ Implementar el `SimulatedCRMAdapter`: consumir la API simulada, transformar su f
 
 ---
 
+## 14/09/2026 — 12:13
+**Tipo:** Documentación / Gestión
+
+**Actividad realizada:**  
+Incorporé formalmente el control de versiones con Git en la documentación del proyecto. Antes de modificar nada, revisé el contenido y la estructura del README, el PRD, el MVP y esta bitácora para conservar terminología y no alterar decisiones existentes.
+
+**Decisiones tomadas:**  
+- El README no requirió cambios: la sección 13 ya contiene las reglas de control de versiones (agregadas hoy a las 12:08) y cubre todos los puntos requeridos; decidí no duplicarla.
+- Como los PDF del PRD y del MVP no pueden editarse directamente desde el entorno, agregué una adenda al final de sus extractos Markdown en `docs/`, marcada explícitamente como fuera del PDF v1.1 y pendiente de incorporarse al documento fuente cuando se genere la versión 1.2.
+- En el PRD, Git quedó como consideración de gestión técnica (nueva sección 39), dejando claro que es herramienta de desarrollo y trazabilidad, no funcionalidad del producto; complementa la sección 27 existente.
+- En el MVP, Git quedó como requisito de desarrollo/versionado breve y enfocado en trazabilidad y control de cambios (nueva sección 25).
+- Por instrucción explícita de esta tarea, no realicé commits ni acciones de Git; los cambios quedan pendientes de confirmar en el repositorio.
+
+**Resultado:**  
+- PRD: adenda "Gestión técnica: control de versiones del desarrollo" (sección 39) + nota en el encabezado del extracto.
+- MVP: adenda "Control de versiones y trazabilidad del MVP" (sección 25) + nota en el encabezado del extracto.
+- README: verificado sin cambios necesarios.
+- Coherencia verificada entre los cuatro documentos: mismas reglas, mismo alcance, sin contradicciones con secciones previas (PRD §27 y MVP §19 ya mencionaban Git como tecnología).
+
+**Archivos o componentes afectados:**  
+- `docs/PRD_Motor_Inteligente_Segmentacion_Clientes_v1.1.md` (encabezado + adenda sección 39).
+- `docs/MVP_Motor_Inteligente_Segmentacion_Clientes_v1.1.md` (encabezado + adenda sección 25).
+- `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Los PDF oficiales del PRD y del MVP no pueden modificarse desde este entorno; la regla vive en Markdown hasta que se genere el PDF v1.2 con la adenda incorporada al fuente.
+
+**Siguiente paso:**  
+Confirmar en Git los cambios de documentación cuando se solicite, incorporar la adenda al fuente del PDF al generar la v1.2 y continuar con la implementación del `SimulatedCRMAdapter`.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

@@ -2,6 +2,7 @@
 > Extraido automaticamente del PDF original con pypdf.
 > El PDF original en la raiz del proyecto sigue siendo la fuente de verdad oficial.
 > Este archivo existe solo para consulta rapida de desarrolladores y modelos de IA.
+> **Adenda (14/09/2026):** al final se agrego una seccion de gestion tecnica (control de versiones con Git) que todavia NO forma parte del PDF v1.1.
 
 ## Pagina 1
 
@@ -669,3 +670,19 @@ clusters.
 • FastAPI será la tecnología principal del backend y de la API simulada, manteniendo
 ambos componentes separados por responsabilidad.
 18
+
+---
+
+# Adenda del 14/09/2026 — Control de versiones con Git
+
+> Sección añadida directamente en este Markdown; todavía no forma parte del PDF v1.1. Debe incorporarse al documento fuente (LaTeX/Word) cuando se genere la versión 1.2. No modifica ni sustituye ninguna sección existente; complementa la sección 27 ("Docker, Git y CI/CD").
+
+## 39. Gestión técnica: control de versiones del desarrollo
+
+- El proyecto utiliza **Git** como sistema de control de versiones durante todo el desarrollo.
+- El desarrollo se registra **progresivamente**: no se espera al final para generar el historial.
+- Se realizan **commits después de avances significativos**, con mensajes claros y descriptivos.
+- **No se eliminan ni alteran commits existentes**; el historial se conserva íntegro.
+- El repositorio se mantiene **preparado para vincularse posteriormente con GitHub**.
+- Los avances técnicos importantes quedan reflejados **tanto en Git como en `Bitacora.md`**.
+- Git es una **herramienta de desarrollo y trazabilidad**: no es una funcionalidad del producto y no altera los requerimientos funcionales (RF) ni no funcionales (RNF) del sistema.
