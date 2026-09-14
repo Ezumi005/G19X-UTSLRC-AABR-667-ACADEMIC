@@ -1,0 +1,23 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# Secretos y variables de entorno (nunca versionar)
+.env
+.env.*
+
+# Datos generados (se regeneran con scripts, no van al repositorio)
+data/
+
+# Node / React (frontend futuro)
+node_modules/
+dist/
+
+# Sistema operativo / editores
+Thumbs.db
+.DS_Store
+.vscode/
+.idea/
