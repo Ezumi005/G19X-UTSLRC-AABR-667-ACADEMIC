@@ -185,6 +185,8 @@ Entidades mínimas esperadas:
 
 No guardar el payload externo como si fuera el modelo interno definitivo. Primero debe pasar por su adaptador y validación.
 
+Implementación actual: `src/persistence/schema.sql` — tablas `customers`, `transactions`, `interactions`, `campaign_events` (espejo del contrato V1, con CHECKs de enums) más `ingestion_runs` e `ingestion_incidents` para trazabilidad de ingestiones. Las tablas de segmentación (`segmentation_runs`, `segments`, `customer_segments`, `recommendations`) se agregarán en su etapa. Sin claves foráneas por ahora: la integridad referencial corresponde al procesamiento (contrato, sección 2).
+
 ## 11. Frontend
 
 Tecnología: **React** (preferentemente TypeScript/TSX).
@@ -280,9 +282,15 @@ MSIA/                          # raíz del proyecto (repositorio Git)
 │   └── MVP_Motor_..._v1.1.md                         # texto extraído del MVP (referencia)
 ├── src/                       # núcleo de la aplicación
 │   ├── contracts/             # contrato interno codificado (Pydantic)
-│   └── adapters/              # adaptadores: fuente externa → contrato interno
-│       ├── base.py            # BaseAdapter (ABC) + AdapterResult/AdapterReport
-│       └── simulated_crm_adapter.py   # SimulatedCRMAdapter (API en puerto 8001)
+│   ├── adapters/              # adaptadores: fuente externa → contrato interno
+│   │   ├── base.py            # BaseAdapter (ABC) + AdapterResult/AdapterReport
+│   │   └── simulated_crm_adapter.py   # SimulatedCRMAdapter (API en puerto 8001)
+│   └── persistence/           # PostgreSQL: esquema, repositorio e ingesta
+│       ├── schema.sql         # esquema interno (espejo del contrato V1)
+│       ├── db.py              # conexión vía DATABASE_URL (.env)
+│       ├── repository.py      # upserts idempotentes
+│       ├── init_db.py         # crea la base y aplica el esquema
+│       └── ingest.py          # sincronización: simulador → adaptador → PostgreSQL
 ├── tests/                     # pruebas (contrato y adaptador)
 ├── crm_simulator/             # API CRM simulada: fuente externa independiente
 │   ├── generate_data.py       # generador del dataset (semilla fija → reproducible)
@@ -316,3 +324,10 @@ python -m venv .venv
 ```
 
 El backend principal usará después el puerto 8000. Las credenciales de PostgreSQL y de Azure vivirán en un `.env` local, nunca en el repositorio.
+
+**PostgreSQL** (requiere `.env` con `DATABASE_URL`; ver `.env.example`):
+
+```powershell
+.venv\Scripts\python.exe -m src.persistence.init_db    # crea la base motor_segmentacion y aplica el esquema (idempotente)
+.venv\Scripts\python.exe -m src.persistence.ingest     # ingesta completa: simulador → adaptador → PostgreSQL (requiere simulador en 8001)
+```

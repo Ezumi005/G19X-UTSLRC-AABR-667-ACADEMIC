@@ -554,6 +554,38 @@ Diseñar el esquema de PostgreSQL y la persistencia de los datos normalizados (e
 
 ---
 
+## 22/09/2026 — 16:12
+**Tipo:** Técnico
+
+**Actividad realizada:**  
+Implementé la persistencia en PostgreSQL del contrato interno (etapa 5 del orden de desarrollo). Diseñé el esquema, construí la capa `src/persistence/` (conexión, inicializador de base, repositorio con upserts y proceso de ingesta) y verifiqué todo en vivo: creación de la base `motor_segmentacion`, aplicación del esquema, dos ingestas completas contra el simulador encendido y consulta de los resultados directamente en la base.
+
+**Decisiones tomadas:**  
+- Driver `psycopg` 3 (SQL directo) en lugar de SQLAlchemy ORM: el contrato ya vive en Pydantic y no conviene una capa paralela de modelos.
+- Esquema versionado en un `schema.sql` idempotente con un inicializador propio (`init_db.py`), en lugar de Alembic, que se evaluará si el esquema evoluciona mucho.
+- Tablas creadas ahora: las 4 del contrato más `ingestion_runs` e `ingestion_incidents` para trazabilidad (RF-25, RNF-MVP-08). Las tablas de segmentación se dejarán para su etapa.
+- Upserts idempotentes (`ON CONFLICT DO UPDATE` / `DO NOTHING`) para poder re-sincronizar sin duplicar (RF-MVP-18).
+- Sin claves foráneas por ahora: la integridad referencial es responsabilidad del procesamiento según el contrato (sección 2), y sin esa capa los registros huérfanos de clientes rechazados romperían la ingesta. Documentado en el propio esquema.
+- Credenciales en `.env` local (excluido de Git, verificado con `git check-ignore`); agregué `python-dotenv` y `psycopg[binary]` a requirements.
+
+**Resultado:**  
+- Base `motor_segmentacion` creada y esquema aplicado (6 tablas con CHECKs de enums del contrato).
+- Ingesta end-to-end verificada dos veces: 498 clientes, 6,509 transacciones, 18,004 interacciones y 9,131 eventos persistidos; conteos idénticos tras la segunda ingesta (idempotencia comprobada).
+- `ingestion_runs` registra ambas ejecuciones con estado `ok` y conteos leídos/guardados; `ingestion_incidents` conserva las 5 incidencias por ejecución.
+- Categorías en base: los 8 valores canónicos, incluido `otros` (128 registros de BOOKS/GARDEN_TOOLS traducidos por el adaptador).
+
+**Archivos o componentes afectados:**  
+- Nuevos: `.env.example`, `src/persistence/{__init__.py, db.py, schema.sql, repository.py, init_db.py, ingest.py}`, `.env` (local, no versionado).
+- Modificados: `requirements.txt` (+psycopg[binary], +python-dotenv), `README.md` (secciones 10, 16 y 17), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno técnico. Nota: la contraseña de PostgreSQL quedó en el `.env` local tras indicarla el usuario en el chat; para un entorno real convendría rotarla, pero para el MVP local con datos simulados se mantiene.
+
+**Siguiente paso:**  
+Construir el pipeline de preparación de datos y features RFM sobre los datos ya persistidos (etapa 6 del orden de desarrollo).
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
