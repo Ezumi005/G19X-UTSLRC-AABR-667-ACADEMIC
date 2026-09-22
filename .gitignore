@@ -5,9 +5,10 @@ __pycache__/
 .pytest_cache/
 *.egg-info/
 
-# Secretos y variables de entorno (nunca versionar)
+# Secretos y variables de entorno (nunca versionar; la plantilla .env.example sí se versiona)
 .env
 .env.*
+!.env.example
 
 # Datos generados (se regeneran con scripts, no van al repositorio)
 data/
