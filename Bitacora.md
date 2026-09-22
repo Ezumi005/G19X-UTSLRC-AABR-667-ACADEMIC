@@ -705,6 +705,38 @@ Construir el backend principal con FastAPI (etapa 9): endpoints de ingestión, c
 
 ---
 
+## 22/09/2026 — 16:53
+**Tipo:** Técnico
+
+**Actividad realizada:**  
+Construí el backend principal con FastAPI (etapa 9, inicio de la semana 2). Creé `src/api/` con `create_app()` y routers por dominio (ingestion, customers, segments, dashboard), centralicé las lecturas en `src/persistence/queries.py` y expuse los endpoints definidos en el README §9. Verifiqué los 8 endpoints en vivo con simulador y backend encendidos, incluyendo los casos de error (404 cliente inexistente, 502 si el simulador no está disponible, 501 del endpoint de recomendaciones reservado para Azure OpenAI).
+
+**Decisiones tomadas:**  
+- Estructura con routers por dominio y consultas de lectura en la capa de persistencia: la API no contiene SQL disperso ni lógica de ML; solo orquesta procesos existentes (ingesta y segmentación).
+- `GET /segments` devuelve el último run exitoso; cada run conserva su historial completo en las tablas de segmentación.
+- `POST /segments/{id}/recommendation` reservado con 501: el contrato de la API queda definido desde ahora, pero la implementación pertenece a la etapa de Azure OpenAI.
+- CORS habilitado únicamente para los orígenes de desarrollo de React (localhost:5173/3000).
+- Respuestas como diccionarios consistentes (snake_case); los response models tipados se evaluarán al integrar el frontend.
+- Las pruebas automatizadas de API (TestClient/httpx) quedan para la etapa de pruebas (14); hoy se verificó en vivo.
+- Corrección de determinismo detectada durante la verificación: agregué `ORDER BY` a la carga de tablas en `load_from_postgres` porque el orden de filas variaba entre ejecuciones y con él las métricas del modelo (0.4136 vs 0.4139). Tras el cambio, dos ejecuciones consecutivas producen métricas idénticas (Silhouette 0.4144, Inertia 784.1).
+
+**Resultado:**  
+- API operativa en puerto 8000 con documentación interactiva en `/docs`.
+- Verificación en vivo: health, customers (498, con etiqueta de segmento), detalle de cliente con estadísticas, segments (6 con etiquetas y perfil JSONB), detalle de segmento, dashboard (totales, gasto, distribución, última ingesta/segmentación), POST /ingestion/sync (run #3) y POST /segmentation/run (run #2) ejecutados desde la propia API.
+- Determinismo del pipeline confirmado con dos runs consecutivos idénticos; además, el reordenamiento de cluster IDs entre ejecuciones demostró que las etiquetas por reglas siguen a los perfiles y no al número de cluster.
+
+**Archivos o componentes afectados:**  
+- Nuevos: `src/api/{__init__.py, app.py}`, `src/api/routes/{__init__.py, ingestion.py, customers.py, segments.py, dashboard.py}`, `src/persistence/queries.py`.
+- Modificados: `src/features/rfm.py` (ORDER BY para determinismo), `.env.example` (SIMULATOR_URL opcional), `README.md` (secciones 9, 16 y 17), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno. El único hallazgo (no determinismo por orden de filas) fue corregido y verificado en el momento.
+
+**Siguiente paso:**  
+Registrar y desplegar el modelo en Azure Machine Learning (etapa 10): instalar Azure CLI y SDK, registrar el artefacto kmeans_local, definir el ambiente y exponer el endpoint de inferencia; después conectar el backend con ese endpoint.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

@@ -56,7 +56,7 @@ def load_from_postgres() -> dict[str, pd.DataFrame]:
     with connect() as conn:
         with conn.cursor() as cur:
             for table, columns in TABLE_COLUMNS.items():
-                cur.execute(f"SELECT {', '.join(columns)} FROM {table}")
+                cur.execute(f"SELECT {', '.join(columns)} FROM {table} ORDER BY 1")
                 frames[table] = pd.DataFrame(cur.fetchall(), columns=columns)
     return frames
 

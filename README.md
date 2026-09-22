@@ -174,6 +174,8 @@ Endpoints iniciales de la aplicación:
 
 Los nombres pueden cambiar, pero las responsabilidades deben mantenerse separadas.
 
+Implementación actual: `src/api/` (puerto 8000: `.venv\Scripts\python.exe -m uvicorn src.api.app:app --port 8000`). Routers por dominio (`ingestion`, `customers`, `segments`, `dashboard`) más `/health`. `GET /segments` devuelve el último run exitoso; `POST /segments/{id}/recommendation` está reservado (501) hasta la etapa de Azure OpenAI. Lecturas centralizadas en `src/persistence/queries.py`. CORS habilitado solo para desarrollo React (localhost:5173/3000). Verificado en vivo: los 8 endpoints responden, incluidos 404 y 501.
+
 ## 10. PostgreSQL
 
 PostgreSQL almacena la representación interna del sistema y sus resultados.
@@ -291,17 +293,21 @@ MSIA/                          # raíz del proyecto (repositorio Git)
 │   ├── adapters/              # adaptadores: fuente externa → contrato interno
 │   │   ├── base.py            # BaseAdapter (ABC) + AdapterResult/AdapterReport
 │   │   └── simulated_crm_adapter.py   # SimulatedCRMAdapter (API en puerto 8001)
-│   ├── persistence/           # PostgreSQL: esquema, repositorio e ingesta
-│   │   ├── schema.sql         # esquema interno (espejo del contrato V1)
+│   ├── persistence/           # PostgreSQL: esquema, repositorio, ingesta y consultas
+│   │   ├── schema.sql         # esquema interno (espejo del contrato V1 + segmentación)
 │   │   ├── db.py              # conexión vía DATABASE_URL (.env)
 │   │   ├── repository.py      # upserts idempotentes
+│   │   ├── queries.py         # consultas de lectura para la API
 │   │   ├── init_db.py         # crea la base y aplica el esquema
 │   │   └── ingest.py          # sincronización: simulador → adaptador → PostgreSQL
-│   └── features/              # ingeniería de características
-│       └── rfm.py             # tabla RFM + engagement por cliente (desde PostgreSQL)
-├── src/ml/                    # motor de segmentación
-│   ├── clustering.py          # preparación, evaluación de k, entrenamiento y validación
-│   └── segmentation.py        # etiquetas comerciales + persistencia de ejecuciones
+│   ├── features/              # ingeniería de características
+│   │   └── rfm.py             # tabla RFM + engagement por cliente (desde PostgreSQL)
+│   ├── ml/                    # motor de segmentación
+│   │   ├── clustering.py      # preparación, evaluación de k, entrenamiento y validación
+│   │   └── segmentation.py    # etiquetas comerciales + persistencia de ejecuciones
+│   └── api/                   # API principal FastAPI (puerto 8000)
+│       ├── app.py             # create_app + /health + CORS de desarrollo
+│       └── routes/            # routers: ingestion, customers, segments, dashboard
 ├── tests/                     # pruebas (contrato y adaptador)
 ├── crm_simulator/             # API CRM simulada: fuente externa independiente
 │   ├── generate_data.py       # generador del dataset (semilla fija → reproducible)
@@ -332,9 +338,12 @@ python -m venv .venv
 .venv\Scripts\python.exe -m crm_simulator.generate_data          # genera data/*.json (semilla fija, reproducible)
 .venv\Scripts\python.exe -m uvicorn crm_simulator.app:app --port 8001
 # Documentación interactiva: http://127.0.0.1:8001/docs
+# Backend principal (puerto 8000)
+.venv\Scripts\python.exe -m uvicorn src.api.app:app --port 8000
+# Docs interactivas: http://127.0.0.1:8000/docs  (POST /ingestion/sync requiere el simulador en 8001)
 ```
 
-El backend principal usará después el puerto 8000. Las credenciales de PostgreSQL y de Azure vivirán en un `.env` local, nunca en el repositorio.
+El backend principal usa el puerto 8000. Las credenciales de PostgreSQL y de Azure viven en un `.env` local, nunca en el repositorio.
 
 **PostgreSQL** (requiere `.env` con `DATABASE_URL`; ver `.env.example`):
 
