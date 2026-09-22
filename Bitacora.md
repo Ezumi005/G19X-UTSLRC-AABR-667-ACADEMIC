@@ -648,6 +648,34 @@ Interpretar los clusters y decidir k (4 vs 6) combinando métricas e interpretac
 
 ---
 
+## 22/09/2026 — 16:44
+**Tipo:** Gestión / Técnico
+
+**Actividad realizada:**  
+Decidí el k definitivo del MVP: **k=6**, combinando métricas e interpretación comercial como permite la sección 30 del PRD. Actualicé `FINAL_K=6` en `src/ml/clustering.py` (la regla estadística se sigue calculando e imprimiendo para trazabilidad), reentrené el modelo y regeneré el artefacto `models/kmeans_local.pkl`.
+
+**Decisiones tomadas:**  
+- Adopté k=6 frente al k=4 de la regla puramente estadística porque: eleva el ARI contra perfiles reales de 0.659 a 0.794, aísla el segmento de riesgo con pureza 100% (objetivo accionable de retención, caso de uso central del producto) y su Silhouette (0.4136) es casi idéntico al mejor (0.4297, k=4).
+- Esta entrada **cambia** la decisión provisional de la entrada de las 16:42 sin modificarla: aquella dejó la elección explícitamente pendiente de esta etapa.
+- La estructura de la comparación k=4 vs k=6 quedó documentada en la bitácora y en el README (sección 6).
+
+**Resultado:**  
+- Modelo definitivo k=6: estabilidad entre semillas 0.993, ARI 0.794.
+- Clusters resultantes (medias originales): activos de alto consumo (150), ocasionales (122), en riesgo (75, recency 231.8), nuevos (66, tenure 48), navegadores con compra esporádica (66) y navegadores sin compra (19).
+- Frecuentes y VIP permanecen fusionados en un solo cluster (correlación 0.92 de sus features): limitación conocida, documentada, a revisar si el negocio exige separarlos.
+
+**Archivos o componentes afectados:**  
+- `src/ml/clustering.py` (constante FINAL_K=6 con justificación), `models/kmeans_local.pkl` (regenerado, no versionado).
+- `README.md` (sección 6: estado del modelo), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno.
+
+**Siguiente paso:**  
+Interpretar los 6 clusters, asignar etiquetas comerciales justificadas y persistir la segmentación en PostgreSQL (segmentation_runs, segments, customer_segments).
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

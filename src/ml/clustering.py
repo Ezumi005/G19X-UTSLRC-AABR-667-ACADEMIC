@@ -40,6 +40,12 @@ DATA_DIR = ROOT / "data"
 SEED = 42
 K_RANGE = range(2, 11)
 
+# k final del MVP decidido combinando metricas e interpretacion comercial (PRD seccion 30):
+# k=6 (Silhouette 0.4136, casi igual al mejor 0.4297 de k=4) aisla el segmento de riesgo
+# con pureza 100% y eleva el ARI contra perfiles reales de 0.659 a 0.794.
+# Decision registrada en Bitacora.md (22/09/2026).
+FINAL_K = 6
+
 FEATURE_COLUMNS = [
     "recency_days",
     "frequency",
@@ -173,9 +179,11 @@ def main() -> None:
     print("\n--- Metricas por k ---")
     print(metrics.to_string(index=False))
 
-    k = choose_k(metrics)
+    k_estadistico = choose_k(metrics)
+    k = FINAL_K
+    print(f"\nk estadistico (regla Silhouette, empate -> menor k): {k_estadistico}")
+    print(f"k final del MVP: {k} (decision de negocio documentada; ver Bitacora.md)")
     ari_stability = stability(xs, k)
-    print(f"\nk elegido (mejor Silhouette, empate -> menor k): {k}")
     print(f"estabilidad (ARI promedio entre semillas): {ari_stability:.3f}")
 
     model = train_kmeans(xs, k)
