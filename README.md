@@ -97,6 +97,8 @@ Features adicionales permitidas:
 
 **RFM es la base mínima.** No agregar features sin justificar su utilidad y calidad.
 
+Implementación actual: `src/features/rfm.py` — construye desde PostgreSQL la tabla por cliente (498 filas): RFM con fecha de referencia determinista (`max(purchased_at)` del dataset) más features justificadas: `avg_ticket`, `tenure_days`, `web_visits`, `product_views`, `abandoned_carts`, `emails_opened`, `campaign_click_rate` y `favorite_category` (metadato, no entra directo al clustering). `recency_days` es nulo para clientes sin compras; la imputación se decidirá en la etapa de ML. Las features no se persisten: se computan a demanda (CSV de inspección en `data/features_rfm.csv`).
+
 ## 6. Machine Learning
 
 - Lenguaje: Python.
@@ -285,12 +287,14 @@ MSIA/                          # raíz del proyecto (repositorio Git)
 │   ├── adapters/              # adaptadores: fuente externa → contrato interno
 │   │   ├── base.py            # BaseAdapter (ABC) + AdapterResult/AdapterReport
 │   │   └── simulated_crm_adapter.py   # SimulatedCRMAdapter (API en puerto 8001)
-│   └── persistence/           # PostgreSQL: esquema, repositorio e ingesta
-│       ├── schema.sql         # esquema interno (espejo del contrato V1)
-│       ├── db.py              # conexión vía DATABASE_URL (.env)
-│       ├── repository.py      # upserts idempotentes
-│       ├── init_db.py         # crea la base y aplica el esquema
-│       └── ingest.py          # sincronización: simulador → adaptador → PostgreSQL
+│   ├── persistence/           # PostgreSQL: esquema, repositorio e ingesta
+│   │   ├── schema.sql         # esquema interno (espejo del contrato V1)
+│   │   ├── db.py              # conexión vía DATABASE_URL (.env)
+│   │   ├── repository.py      # upserts idempotentes
+│   │   ├── init_db.py         # crea la base y aplica el esquema
+│   │   └── ingest.py          # sincronización: simulador → adaptador → PostgreSQL
+│   └── features/              # ingeniería de características
+│       └── rfm.py             # tabla RFM + engagement por cliente (desde PostgreSQL)
 ├── tests/                     # pruebas (contrato y adaptador)
 ├── crm_simulator/             # API CRM simulada: fuente externa independiente
 │   ├── generate_data.py       # generador del dataset (semilla fija → reproducible)
@@ -330,4 +334,5 @@ El backend principal usará después el puerto 8000. Las credenciales de Postgre
 ```powershell
 .venv\Scripts\python.exe -m src.persistence.init_db    # crea la base motor_segmentacion y aplica el esquema (idempotente)
 .venv\Scripts\python.exe -m src.persistence.ingest     # ingesta completa: simulador → adaptador → PostgreSQL (requiere simulador en 8001)
+.venv\Scripts\python.exe -m src.features.rfm          # features RFM desde PostgreSQL (escribe data/features_rfm.csv)
 ```

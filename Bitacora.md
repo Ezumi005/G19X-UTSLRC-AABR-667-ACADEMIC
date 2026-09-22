@@ -586,6 +586,36 @@ Construir el pipeline de preparación de datos y features RFM sobre los datos ya
 
 ---
 
+## 22/09/2026 — 16:29
+**Tipo:** Técnico
+
+**Actividad realizada:**  
+Implementé el pipeline de features (etapa 6 del orden de desarrollo). Creé `src/features/rfm.py`, que carga las tablas del contrato desde PostgreSQL, ejecuta chequeos de calidad y construye la tabla de features por cliente. Escribí pruebas unitarias con frames sintéticos (`tests/test_features.py`) y ejecuté el pipeline completo sobre la base real, incluyendo una validación de las features contra los perfiles reales del simulador (ground truth de `data/meta.json`, usado únicamente para validar, nunca para calcular).
+
+**Decisiones tomadas:**  
+- Fecha de referencia de recency = `max(purchased_at)` del dataset (determinista, alineada al ancla fija del simulador); se descartó `now()` porque degradaría el RFM con el paso del tiempo.
+- Features v1: RFM base (`recency_days`, `frequency`, `monetary`) + features justificadas: `avg_ticket`, `tenure_days`, `web_visits`, `product_views`, `abandoned_carts`, `emails_opened`, `campaign_click_rate` y `favorite_category` (metadato). La justificación clave: sin features de engagement, el perfil "navegador sin compra" sería indistinguible de un cliente inactivo.
+- `recency_days` queda nulo para clientes sin compras (19 casos); la imputación se decidirá y documentará en la etapa de ML.
+- Núcleo puro en pandas (`build_features` recibe DataFrames) separado de la carga desde PostgreSQL: permite pruebas unitarias sin base de datos.
+- Los registros huérfanos (clientes rechazados por inválidos) se excluyen del cálculo y se reportan en el chequeo de calidad; las features no se persisten (se computan a demanda, CSV de inspección en `data/`).
+
+**Resultado:**  
+- Pruebas unitarias en verde (RFM, clientes sin compras, huérfanos, frames vacíos, fecha por defecto, calidad).
+- Pipeline ejecutado sobre la base: 498 clientes × 12 columnas; 0 IDs duplicados; 275 registros huérfanos excluidos (1 transacción, 227 interacciones, 47 eventos); 0 montos negativos.
+- Validación contra perfiles reales: las medias por perfil confirman separación clara (VIP: recency 6.4 / monetary 148k / click_rate 0.50; riesgo: recency 231.8 / sin engagement; navegador: 58 visitas / 43 carritos abandonados / frequency 1.0; nuevo: tenure 36.6 días).
+
+**Archivos o componentes afectados:**  
+- Nuevos: `src/features/__init__.py`, `src/features/rfm.py`, `tests/test_features.py`, `data/features_rfm.csv` (generado, no versionado).
+- Modificados: `README.md` (secciones 5, 16 y 17), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno. Durante las pruebas corregí dos expectativas mal calculadas a mano (recency con hora del ancla y click_rate de un caso) y un matiz de pandas (`None` se convierte en `NaN`); el código final quedó con `NaN` consistente.
+
+**Siguiente paso:**  
+Implementar y validar el clustering K-Means local sobre estas features (etapa 7): selección e imputación de variables, escalado, búsqueda de k (Silhouette, Inertia, Davies-Bouldin) e interpretación inicial de clusters.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
