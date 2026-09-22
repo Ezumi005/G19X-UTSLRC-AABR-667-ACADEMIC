@@ -524,6 +524,36 @@ Confirmar en Git los cambios de documentación cuando se solicite, incorporar la
 
 ---
 
+## 22/09/2026 — 15:42
+**Tipo:** Técnico
+
+**Actividad realizada:**  
+Implementé el `SimulatedCRMAdapter`, la capa que traduce el formato externo del CRM simulado al Contrato Interno de Datos V1. Antes de codificar presenté el diseño (componentes a reutilizar, responsabilidad exacta, tablas de mapeo y ubicación) y esperé confirmación. Creé el paquete `src/adapters/` con la interfaz común `BaseAdapter`, las estructuras de reporte (`AdapterResult`, `AdapterReport`, `Incident`) y el adaptador concreto. Escribí pruebas unitarias y realicé una verificación end-to-end con la API CRM simulada encendida.
+
+**Decisiones tomadas:**  
+- Ubicación: `src/adapters/`, al nivel de `src/contracts/`; el resto del sistema solo conocerá `BaseAdapter` y el contrato interno.
+- `BaseAdapter` como ABC mínimo con un único método `fetch_normalized()` para formalizar el punto de extensión de futuros adaptadores (HubSpot, CSV, etc.).
+- Funciones de transformación puras, separadas del cliente HTTP: permiten probar el mapeo sin levantar la API.
+- Reglas aplicadas según el contrato: categorías externas sin equivalente (`BOOKS`, `GARDEN_TOOLS`) → `otros`; tipos de interacción/evento desconocidos → descarte con reporte; registros que no validan → excluidos e incluidos en el reporte de incidencias con entidad, ID externo, campo y error.
+- Los errores de red/HTTP de la fuente interrumpen la ejecución (fallan de forma audible); los errores de registro individual no detienen la sincronización (cumple RF-05 del PRD).
+
+**Resultado:**  
+- Pruebas unitarias en verde (`tests/test_adapter.py`): mapeos, conversión de tipos, enums, escape a `otros` y reporte de inválidos.
+- Verificación end-to-end exitosa contra el simulador: 500 clientes leídos → 498 aceptados; 6,512 transacciones → 6,509 aceptadas; 18,004 interacciones y 9,131 eventos aceptados completos; exactamente los 5 registros corruptos inyectados quedaron en el reporte de incidencias y fuera del dataset.
+- La salida del adaptador es un `NormalizedDataset` válido según el contrato (verificado con entidades reales del simulador).
+
+**Archivos o componentes afectados:**  
+- Nuevos: `src/adapters/__init__.py`, `src/adapters/base.py`, `src/adapters/simulated_crm_adapter.py`, `tests/test_adapter.py`.
+- Modificados: `README.md` (árbol de estructura de la sección 16 y comando de prueba en la sección 17), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno relevante. Nota menor: al ejecutar scripts desde una carpeta externa hay que exportar `PYTHONPATH` hacia la raíz del proyecto para poder importar `src`.
+
+**Siguiente paso:**  
+Diseñar el esquema de PostgreSQL y la persistencia de los datos normalizados (etapa 5 del orden de desarrollo).
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

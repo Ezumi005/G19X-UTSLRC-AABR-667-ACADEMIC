@@ -279,8 +279,11 @@ MSIA/                          # raíz del proyecto (repositorio Git)
 │   ├── PRD_Motor_..._v1.1.md                         # texto extraído del PRD (referencia)
 │   └── MVP_Motor_..._v1.1.md                         # texto extraído del MVP (referencia)
 ├── src/                       # núcleo de la aplicación
-│   └── contracts/             # contrato interno codificado (Pydantic)
-├── tests/                     # pruebas (test_contrato.py)
+│   ├── contracts/             # contrato interno codificado (Pydantic)
+│   └── adapters/              # adaptadores: fuente externa → contrato interno
+│       ├── base.py            # BaseAdapter (ABC) + AdapterResult/AdapterReport
+│       └── simulated_crm_adapter.py   # SimulatedCRMAdapter (API en puerto 8001)
+├── tests/                     # pruebas (contrato y adaptador)
 ├── crm_simulator/             # API CRM simulada: fuente externa independiente
 │   ├── generate_data.py       # generador del dataset (semilla fija → reproducible)
 │   └── app.py                 # API FastAPI con formato externo propio (puerto 8001)
@@ -301,6 +304,7 @@ Verificado (10/09/2026): Git 2.55, Python 3.14.2, Node.js 24 + npm 11, PostgreSQ
 python -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements.txt
 .venv\Scripts\python.exe -m tests.test_contrato     # prueba del contrato interno
+.venv\Scripts\python.exe -m tests.test_adapter      # prueba del adaptador (unitaria, sin API encendida)
 ```
 
 **API CRM simulada** (fuente externa, puerto 8001):
