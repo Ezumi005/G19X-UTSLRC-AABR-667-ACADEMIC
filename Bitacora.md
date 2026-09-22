@@ -616,6 +616,38 @@ Implementar y validar el clustering K-Means local sobre estas features (etapa 7)
 
 ---
 
+## 22/09/2026 — 16:42
+**Tipo:** Técnico / Pruebas
+
+**Actividad realizada:**  
+Implementé el modelo de clustering K-Means local (etapa 7). Creé `src/ml/clustering.py` con: preparación de la matriz, evaluación de k=2..10, entrenamiento, verificación de estabilidad, perfilado de clusters en unidades originales y validación contra los perfiles reales del simulador. Escribí pruebas unitarias (`tests/test_clustering.py`) con datos sintéticos y ejecuté el pipeline completo sobre los 498 clientes reales. Además, comparé explícitamente k=4 contra k=6 para informar la decisión de negocio con datos.
+
+**Decisiones tomadas:**  
+- Imputación de `recency_days` nulo (19 clientes) con tope al máximo observado (316.55 días): quienes nunca compraron son al menos tan inactivos como el registro más inactivo; excluirlos habría eliminado un segmento real (navegadores sin compra).
+- Features del modelo (7): RFM + `web_visits`, `abandoned_carts`, `campaign_click_rate`, `tenure_days`. Se excluyeron `avg_ticket` (redundante por construcción: M/F), `product_views` y `emails_opened` (correlación ≥ 0.63 con las incluidas). La matriz de correlación se imprime en la ejecución como justificación.
+- Transformación `log1p` en variables de conteo/gasto sesgadas + `StandardScaler`.
+- Regla pre-declarada de selección de k: mejor Silhouette con empate (≤0.01) resuelto al menor k. Métricas de soporte: Inertia (codo) y Davies-Bouldin. Estabilidad medida con ARI promedio entre 5 semillas.
+- Artefacto guardado en `models/kmeans_local.pkl` (joblib: modelo + scaler + configuración y métricas); carpeta `models/` excluida de Git (regenerable con semilla fija).
+
+**Resultado:**  
+- Pruebas unitarias en verde (preparación, imputación, elección de k, estabilidad y perfiles).
+- Métricas: k=4 elegido por la regla pre-declarada (Silhouette 0.4297; DB 0.9079; estabilidad ARI 1.000). k=8 obtuvo 0.4320 (diferencia 0.0023 → empate → menor k).
+- k=4 produce 4 grupos coherentes: activos de alto consumo (150: frecuentes+VIP), ocasionales/inactivos (192), navegadores (73, pureza 100%) y nuevos (83, tenure 66 días). ARI contra perfiles reales: 0.659.
+- k=6 evaluado como alternativa: ARI 0.794; separa limpiamente riesgo (75/75), ocasionales (122/122) y divide navegadores entre quienes alguna vez compraron y quienes no; frecuentes y VIP siguen fusionados por la fuerte correlación de sus features. Silhouette 0.4136 (coste mínimo frente a 0.4297).
+- **Decisión pendiente (próxima etapa, interpretación):** mantener k=4 (regla pre-declarada) o adoptar k=6 justificado por interpretación comercial (el PRD §30 permite combinar métricas con interpretación). El artefacto actual guarda k=4.
+
+**Archivos o componentes afectados:**  
+- Nuevos: `src/ml/__init__.py`, `src/ml/clustering.py`, `tests/test_clustering.py`, `models/kmeans_local.pkl` (generado, no versionado).
+- Modificados: `.gitignore` (+`models/`), `README.md` (secciones 6, 16 y 17), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno relevante. Durante la sesión corregí: un desliz de diseño (el scaler debía devolverse desde `prepare_matrix`) y la falta del guard `__main__` que hacía correr el módulo sin salida.
+
+**Siguiente paso:**  
+Interpretar los clusters y decidir k (4 vs 6) combinando métricas e interpretación comercial; después asignar etiquetas comerciales a los clusters elegidos y persistir la segmentación (segments, customer_segments).
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

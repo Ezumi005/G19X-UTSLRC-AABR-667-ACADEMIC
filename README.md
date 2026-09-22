@@ -115,6 +115,8 @@ Ejemplo correcto:
 
 No asignar etiquetas comerciales antes de conocer los resultados del modelo.
 
+Implementación actual: `src/ml/clustering.py` — prepara la matriz (imputación de `recency_days` nulo al máximo observado, `log1p` en variables sesgadas, StandardScaler), evalúa k=2..10 con Silhouette/Inertia/Davies-Bouldin bajo una regla pre-declarada (mejor Silhouette, empate ≤0.01 → menor k), entrena K-Means (semilla 42, n_init=10), verifica estabilidad (ARI entre semillas), perfila clusters en unidades originales y valida contra los perfiles reales (`data/meta.json`, solo validación). Features del modelo: `recency_days, frequency, monetary, web_visits, abandoned_carts, campaign_click_rate, tenure_days` (se excluyen `avg_ticket`, `product_views` y `emails_opened` por correlación alta). Artefacto: `models/kmeans_local.pkl` (no versionado). Estado: k=4 según la regla pre-declarada (Silhouette 0.430, estabilidad 1.000, ARI vs perfiles 0.659); k=6 evaluado como alternativa con mejor recuperación de negocio (ARI 0.794) — decisión de k pendiente de la etapa de interpretación.
+
 ## 7. Azure Machine Learning
 
 Azure Machine Learning se usa DESPUÉS de validar el modelo localmente.
@@ -295,12 +297,14 @@ MSIA/                          # raíz del proyecto (repositorio Git)
 │   │   └── ingest.py          # sincronización: simulador → adaptador → PostgreSQL
 │   └── features/              # ingeniería de características
 │       └── rfm.py             # tabla RFM + engagement por cliente (desde PostgreSQL)
+├── src/ml/                    # motor de segmentación
+│   └── clustering.py          # preparación, evaluación de k, entrenamiento y validación
 ├── tests/                     # pruebas (contrato y adaptador)
 ├── crm_simulator/             # API CRM simulada: fuente externa independiente
 │   ├── generate_data.py       # generador del dataset (semilla fija → reproducible)
 │   └── app.py                 # API FastAPI con formato externo propio (puerto 8001)
 ├── data/                      # dataset generado *.json + meta.json/ground truth (no versionado)
-├── ml/                        # features RFM y modelo de clustering (por construir)
+├── models/                    # artefactos de modelos, p.ej. kmeans_local.pkl (no versionado)
 ├── frontend/                  # React + TypeScript (por construir)
 └── .venv/                     # entorno virtual local (no versionado)
 ```
@@ -335,4 +339,5 @@ El backend principal usará después el puerto 8000. Las credenciales de Postgre
 .venv\Scripts\python.exe -m src.persistence.init_db    # crea la base motor_segmentacion y aplica el esquema (idempotente)
 .venv\Scripts\python.exe -m src.persistence.ingest     # ingesta completa: simulador → adaptador → PostgreSQL (requiere simulador en 8001)
 .venv\Scripts\python.exe -m src.features.rfm          # features RFM desde PostgreSQL (escribe data/features_rfm.csv)
+.venv\Scripts\python.exe -m src.ml.clustering         # evaluación de k + entrenamiento + validación (escribe models/kmeans_local.pkl)
 ```
