@@ -87,3 +87,39 @@ CREATE TABLE IF NOT EXISTS ingestion_incidents (
     error       TEXT NOT NULL,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Segmentacion (etapa 8): cada ejecucion conserva sus segmentos y asignaciones
+CREATE TABLE IF NOT EXISTS segmentation_runs (
+    run_id      BIGSERIAL PRIMARY KEY,
+    model_name  TEXT NOT NULL,
+    k           INT NOT NULL,
+    seed        INT NOT NULL,
+    params      JSONB,
+    metrics     JSONB,
+    started_at  TIMESTAMPTZ NOT NULL,
+    finished_at TIMESTAMPTZ,
+    status      TEXT NOT NULL DEFAULT 'running' CHECK (status IN ('running','ok','error')),
+    error       TEXT,
+    n_customers INT
+);
+
+CREATE TABLE IF NOT EXISTS segments (
+    segment_id  BIGSERIAL PRIMARY KEY,
+    run_id      BIGINT NOT NULL REFERENCES segmentation_runs (run_id) ON DELETE CASCADE,
+    cluster_id  INT NOT NULL,
+    label       TEXT NOT NULL,
+    description TEXT,
+    n_customers INT NOT NULL,
+    profile     JSONB NOT NULL,
+    CONSTRAINT uq_segment_run_cluster UNIQUE (run_id, cluster_id)
+);
+
+CREATE TABLE IF NOT EXISTS customer_segments (
+    run_id      BIGINT NOT NULL REFERENCES segmentation_runs (run_id) ON DELETE CASCADE,
+    customer_id TEXT NOT NULL REFERENCES customers (customer_id) ON DELETE CASCADE,
+    cluster_id  INT NOT NULL,
+    segment_id  BIGINT NOT NULL REFERENCES segments (segment_id) ON DELETE CASCADE,
+    assigned_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (run_id, customer_id)
+);
+CREATE INDEX IF NOT EXISTS idx_customer_segments_customer ON customer_segments (customer_id);

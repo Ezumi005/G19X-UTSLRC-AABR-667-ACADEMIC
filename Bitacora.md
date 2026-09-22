@@ -676,6 +676,35 @@ Interpretar los 6 clusters, asignar etiquetas comerciales justificadas y persist
 
 ---
 
+## 22/09/2026 — 16:48
+**Tipo:** Técnico
+
+**Actividad realizada:**  
+Completé la etapa 8: interpreté los clusters y persistí la segmentación. Definí etiquetas comerciales para los 6 clusters con base en sus perfiles reales (medias en unidades originales), amplié el esquema de PostgreSQL con las tablas `segmentation_runs`, `segments` y `customer_segments`, implementé `src/ml/segmentation.py` (ejecución completa: features → modelo → etiquetas → persistencia trazable) y verifiqué todo en vivo contra la base. Reejecuté las 5 suites de pruebas del proyecto: todas en verde.
+
+**Decisiones tomadas:**  
+- Etiquetas asignadas por **reglas sobre el perfil del cluster** (prioridad: alto valor → sin compra → nuevo → navegador con compra → riesgo → ocasional), no por número de cluster: un reordenamiento del modelo no rompe la interpretación. Si dos clusters recibieran la misma etiqueta, el proceso falla y exige revisión humana.
+- Etiquetas vigentes y su evidencia: Clientes frecuentes de alto valor (freq 31.5, monetary 68.5k), Navegadores sin compra (0 compras, 61 visitas, 41 carritos), Compradores ocasionales (freq 5.9, sin engagement), Clientes nuevos (tenure 48 días), Navegadores con compra esporádica (50 visitas, 37 carritos, freq 1.6), Clientes en riesgo de inactividad (recency 232 días, engagement 0).
+- Cada ejecución conserva sus propios segmentos y asignaciones (historial completo); `segments` guarda etiqueta, descripción comercial, tamaño y perfil JSONB; `customer_segments` lleva FK a customers y a su segment/run.
+- La ejecución reentrena el modelo con semilla fija en lugar de cargar el artefacto: cada run queda autónomo y reproducible.
+
+**Resultado:**  
+- Segmentación #1 persistida: estado ok, k=6, 498 clientes asignados, métricas en JSONB (Silhouette 0.4136, Inertia 783.0, DB 0.8533).
+- 6 segmentos en base con etiquetas y tamaños: 150 / 19 / 122 / 66 / 66 / 75 — coherentes con el crosstab contra perfiles reales de la etapa anterior.
+- Pruebas en verde: contrato, adaptador, features, clustering e interpretación.
+
+**Archivos o componentes afectados:**  
+- Nuevos: `src/ml/segmentation.py`, `tests/test_segmentation.py`.
+- Modificados: `src/persistence/schema.sql` (+3 tablas de segmentación), `README.md` (secciones 6, 10, 16 y 17), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno relevante. Corregí un borde de serialización detectado por las pruebas (floats en Series de dtype objeto no se redondeaban) y dos escenarios de prueba mal planteados por mí; el guard de etiquetas duplicadas demostró funcionar correctamente.
+
+**Siguiente paso:**  
+Construir el backend principal con FastAPI (etapa 9): endpoints de ingestión, clientes, segmentos y ejecución de segmentación sobre lo ya persistido.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

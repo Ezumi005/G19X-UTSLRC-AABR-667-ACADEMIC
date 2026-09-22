@@ -117,6 +117,8 @@ No asignar etiquetas comerciales antes de conocer los resultados del modelo.
 
 Implementación actual: `src/ml/clustering.py` — prepara la matriz (imputación de `recency_days` nulo al máximo observado, `log1p` en variables sesgadas, StandardScaler), evalúa k=2..10 con Silhouette/Inertia/Davies-Bouldin bajo una regla pre-declarada (mejor Silhouette, empate ≤0.01 → menor k), entrena K-Means (semilla 42, n_init=10), verifica estabilidad (ARI entre semillas), perfila clusters en unidades originales y valida contra los perfiles reales (`data/meta.json`, solo validación). Features del modelo: `recency_days, frequency, monetary, web_visits, abandoned_carts, campaign_click_rate, tenure_days` (se excluyen `avg_ticket`, `product_views` y `emails_opened` por correlación alta). Artefacto: `models/kmeans_local.pkl` (no versionado). Estado: **k=6, decisión de negocio** (Bitacora.md, 22/09/2026, amparada en PRD §30): Silhouette 0.414 casi idéntico al mejor estadístico 0.430 (k=4), estabilidad 0.993, ARI vs perfiles reales 0.794 (vs 0.659 de k=4); aísla el segmento de riesgo con pureza 100%. La regla estadística se sigue calculando e imprimiendo en cada ejecución para trazabilidad.
 
+Interpretación y persistencia: `src/ml/segmentation.py` asigna **etiquetas comerciales** mediante reglas sobre el perfil de cada cluster (independientes del número de cluster; falla si dos clusters reciben la misma etiqueta) y guarda cada ejecución en `segmentation_runs`, `segments` (con perfil JSONB) y `customer_segments`. Etiquetas vigentes: Clientes frecuentes de alto valor · Navegadores sin compra · Compradores ocasionales · Clientes nuevos · Navegadores con compra esporádica · Clientes en riesgo de inactividad.
+
 ## 7. Azure Machine Learning
 
 Azure Machine Learning se usa DESPUÉS de validar el modelo localmente.
@@ -189,7 +191,7 @@ Entidades mínimas esperadas:
 
 No guardar el payload externo como si fuera el modelo interno definitivo. Primero debe pasar por su adaptador y validación.
 
-Implementación actual: `src/persistence/schema.sql` — tablas `customers`, `transactions`, `interactions`, `campaign_events` (espejo del contrato V1, con CHECKs de enums) más `ingestion_runs` e `ingestion_incidents` para trazabilidad de ingestiones. Las tablas de segmentación (`segmentation_runs`, `segments`, `customer_segments`, `recommendations`) se agregarán en su etapa. Sin claves foráneas por ahora: la integridad referencial corresponde al procesamiento (contrato, sección 2).
+Implementación actual: `src/persistence/schema.sql` — tablas `customers`, `transactions`, `interactions`, `campaign_events` (espejo del contrato V1, con CHECKs de enums), `ingestion_runs`/`ingestion_incidents` (trazabilidad de ingestiones) y `segmentation_runs`/`segments`/`customer_segments` (trazabilidad de segmentaciones: cada ejecución conserva sus segmentos con perfil JSONB y sus asignaciones). Sin FKs en las tablas de datos: la integridad referencial corresponde al procesamiento (contrato, sección 2); las tablas de segmentación sí llevan FKs estructurales. Falta `recommendations` (llegará con Azure OpenAI).
 
 ## 11. Frontend
 
@@ -298,7 +300,8 @@ MSIA/                          # raíz del proyecto (repositorio Git)
 │   └── features/              # ingeniería de características
 │       └── rfm.py             # tabla RFM + engagement por cliente (desde PostgreSQL)
 ├── src/ml/                    # motor de segmentación
-│   └── clustering.py          # preparación, evaluación de k, entrenamiento y validación
+│   ├── clustering.py          # preparación, evaluación de k, entrenamiento y validación
+│   └── segmentation.py        # etiquetas comerciales + persistencia de ejecuciones
 ├── tests/                     # pruebas (contrato y adaptador)
 ├── crm_simulator/             # API CRM simulada: fuente externa independiente
 │   ├── generate_data.py       # generador del dataset (semilla fija → reproducible)
@@ -340,4 +343,5 @@ El backend principal usará después el puerto 8000. Las credenciales de Postgre
 .venv\Scripts\python.exe -m src.persistence.ingest     # ingesta completa: simulador → adaptador → PostgreSQL (requiere simulador en 8001)
 .venv\Scripts\python.exe -m src.features.rfm          # features RFM desde PostgreSQL (escribe data/features_rfm.csv)
 .venv\Scripts\python.exe -m src.ml.clustering         # evaluación de k + entrenamiento + validación (escribe models/kmeans_local.pkl)
+.venv\Scripts\python.exe -m src.ml.segmentation       # ejecuta y persiste la segmentación (k=6, con etiquetas comerciales)
 ```
