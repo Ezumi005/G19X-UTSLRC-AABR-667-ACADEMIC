@@ -209,6 +209,8 @@ Vistas mínimas:
 
 React consume únicamente la API del backend. Las claves de Azure y demás secretos nunca deben estar en el frontend.
 
+Implementación actual: `frontend/` — Vite + React 19 + TypeScript + react-router. Vistas: Dashboard (indicadores y distribución de segmentos), Clientes (tabla paginada con expansión de detalle y segmento asignado), Segmentos (tarjetas) y Detalle de segmento (perfil medio, métricas del run y botón de recomendación que informa del estado pendiente de Azure OpenAI). Cliente HTTP centralizado en `src/api.ts` (URL base configurable con `VITE_API_BASE`); sin credenciales ni llamadas a servicios externos.
+
 ## 12. Orden de desarrollo
 
 1. Definir contrato interno de datos.
@@ -226,6 +228,8 @@ React consume únicamente la API del backend. Las claves de Azure y demás secre
 13. Crear React y consumir la API del backend.
 14. Agregar seguridad, manejo de errores y pruebas.
 15. Documentar y preparar demostración.
+
+Nota: las etapas 10-12 (Azure ML / Azure OpenAI) requieren suscripción de Azure; la etapa 13 (React) se adelantó mientras se obtiene la suscripción (registro en `Bitacora.md`, 22/09/2026).
 
 ## 13. Reglas que NO se deben romper
 
@@ -314,7 +318,11 @@ MSIA/                          # raíz del proyecto (repositorio Git)
 │   └── app.py                 # API FastAPI con formato externo propio (puerto 8001)
 ├── data/                      # dataset generado *.json + meta.json/ground truth (no versionado)
 ├── models/                    # artefactos de modelos, p.ej. kmeans_local.pkl (no versionado)
-├── frontend/                  # React + TypeScript (por construir)
+├── frontend/                  # React 19 + TypeScript + Vite (puerto 5173)
+│   └── src/
+│       ├── api.ts             # cliente HTTP de la API del backend
+│       ├── types.ts           # tipos de las respuestas
+│       └── pages/             # Dashboard, Customers, Segments, SegmentDetail
 └── .venv/                     # entorno virtual local (no versionado)
 ```
 
@@ -344,6 +352,14 @@ python -m venv .venv
 ```
 
 El backend principal usa el puerto 8000. Las credenciales de PostgreSQL y de Azure viven en un `.env` local, nunca en el repositorio.
+
+**Frontend React** (puerto 5173; requiere el backend en 8000):
+
+```powershell
+cd frontend
+npm install        # solo la primera vez
+npm run dev        # abre http://localhost:5173
+```
 
 **PostgreSQL** (requiere `.env` con `DATABASE_URL`; ver `.env.example`):
 

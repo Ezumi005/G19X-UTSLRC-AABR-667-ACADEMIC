@@ -737,6 +737,36 @@ Registrar y desplegar el modelo en Azure Machine Learning (etapa 10): instalar A
 
 ---
 
+## 22/09/2026 — 19:42
+**Tipo:** Técnico / Gestión
+
+**Actividad realizada:**  
+Adelanté la etapa 13 (frontend React) porque las etapas 10-12 (Azure ML y Azure OpenAI) quedaron bloqueadas a la espera de la suscripción de Azure; le indiqué al usuario dónde crearla (azure.microsoft.com/free con crédito de $200 USD, o el plan para estudiantes) y qué recursos necesitaremos. Construí la aplicación frontend completa: scaffolding con Vite, React 19 + TypeScript, react-router-dom y las cuatro vistas mínimas del MVP. Verifiqué la compilación (tsc + build), el arranque del dev server y la integración con el backend encendido.
+
+**Decisiones tomadas:**  
+- Reorden del plan registrado: React (etapa 13) antes de Azure ML/OpenAI (etapas 10-12) por dependencia externa; el propio MVP (sección 23) permite ajustar el orden por prioridades y las reglas de trabajo exigen documentar el cambio.
+- Vite + React + TypeScript con react-router-dom; sin librerías de UI ni estado global: el MVP se cubre con fetch, hooks y CSS propio.
+- Cliente HTTP centralizado (`src/api.ts`) con URL base configurable (`VITE_API_BASE`), por defecto `http://127.0.0.1:8000`; el frontend no contiene credenciales ni consume ningún servicio externo distinto del backend.
+- La vista de detalle de segmento incluye el botón de recomendación que consume `POST /segments/{id}/recommendation` y muestra el estado 501 ("pendiente de Azure OpenAI") de forma informativa, dejando la vista lista para cuando exista la integración.
+- Durante el scaffolding, el generador de Vite produjo una plantilla vanilla-ts en lugar de react-ts (el flag no atravesó PowerShell); en lugar de regenerar, instalé React/react-dom manualmente, ajusté tsconfig (jsx react-jsx, strict) y escribí la estructura a mano.
+
+**Resultado:**  
+- Frontend operativo: Dashboard (tarjetas de indicadores, distribución de segmentos con barras, últimas ejecuciones), Clientes (tabla paginada de 50, expansión de detalle con estadísticas, etiqueta de segmento), Segmentos (tarjetas con descripción y enlace) y Detalle de segmento (métricas del run, perfil medio, vista previa de clientes, panel de recomendación).
+- `npm run build` en verde (tipos y bundle); dev server verificado en `http://localhost:5173` (nota: Vite escucha en IPv6/localhost) junto al backend en 8000.
+
+**Archivos o componentes afectados:**  
+- Nuevos: `frontend/` completo (index.html, tsconfig, package.json, `src/{main.tsx, App.tsx, api.ts, types.ts, styles.css}`, `src/pages/{Dashboard, Customers, Segments, SegmentDetail}.tsx`).
+- Modificados: `README.md` (secciones 11, 12-nota, 16 y 17), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Etapas 10-12 bloqueadas hasta obtener la suscripción de Azure (acción del usuario en curso).
+- Menores y corregidos en el momento: plantilla equivocada del scaffolding, una línea CSS corrupta y el diagnóstico del puerto IPv6 de Vite.
+
+**Siguiente paso:**  
+Etapa 14 disponible sin nube: suite de pruebas de API (httpx/TestClient), manejo de errores y ajustes de seguridad; en paralelo, al conseguir la suscripción de Azure, retomar las etapas 10-12 (registro y despliegue en Azure ML, luego Azure OpenAI).
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
