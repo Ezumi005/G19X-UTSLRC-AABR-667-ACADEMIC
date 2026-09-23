@@ -767,6 +767,37 @@ Etapa 14 disponible sin nube: suite de pruebas de API (httpx/TestClient), manejo
 
 ---
 
+## 23/09/2026 — 13:34
+**Tipo:** Técnico / Gestión
+
+**Actividad realizada:**  
+Comencé la etapa 10 (registrar y desplegar el modelo en Azure ML) con la suscripción que obtuvo el usuario. Instalé los SDK (`azure-ai-ml`, `azure-identity`, `openai`) en el venv, verifiqué el Azure CLI (ya lo tenía el usuario con la extensión ml), preparé los artefactos de despliegue en `azure/` (score.py que replica exactamente la preparación del modelo, entorno conda con las mismas versiones de sklearn/numpy, yamls de endpoint y deployment, y script de despliegue por SDK), creé el resource group `rg-motor-segmentacion` (eastus) y el workspace `ml-motor-segmentacion`, registré el modelo `kmeans-local:1` (artefacto regenerado y alineado con los runs deterministas) y el entorno `motor-segmentacion-env:1`. La creación del endpoint online falló de forma repetida; diagnostiqué la causa hasta la raíz.
+
+**Decisiones tomadas:**  
+- Regeneré el artefacto `kmeans_local.pkl` antes de registrarlo para que quedara alineado con la carga determinista (ORDER BY) y coincidiera con los cluster IDs de los runs persistidos.
+- score.py recibe las 7 features en unidades originales por cliente y replica imputación de recency, log1p y escalado usando la configuración guardada en el propio artefacto (sin duplicar lógica).
+- Entorno conda con versiones idénticas a las de entrenamiento (scikit-learn 1.9.1, numpy 2.5.3) para garantizar compatibilidad del pickle.
+- Ante el fallo persistente del CLI (`az ml`), migre el despliegue a un script por SDK (`azure/deploy_endpoint.py`), idempotente y parametrizable.
+- Diagnóstico progresivo del error `SubscriptionNotRegistered [N/A]`: registre manualmente Microsoft.Network, Microsoft.Compute y Microsoft.InferenceService (no estaban), probé nombres nuevos y una segunda región (workspace `ml-motor-seg-eus2` en eastus2); el fallo persistió porque la causa real es la **oferta FreeTrial con límite de gasto activado**, que no permite endpoints online.
+
+**Resultado:**  
+- Resource group, 2 workspaces, modelo y entorno registrados y listos en Azure.
+- Endpoint bloqueado por el límite de gasto de la suscripción (pendiente de acción del usuario: quitar el spending limit en el portal manteniendo el crédito).
+- Causa raíz documentada con evidencia (quotaId FreeTrial_2014-09-01, spendingLimit On).
+
+**Archivos o componentes afectados:**  
+- Nuevos: `azure/{score.py, conda_env.yml, environment.yml, endpoint.yml, deployment.yml, deploy_endpoint.py}`.
+- `models/kmeans_local.pkl` regenerado; SDKs instalados en `.venv`.
+- `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Bloqueo externo: la suscripción FreeTrial con spending limit no permite crear endpoints online de Azure ML. Acción requerida del usuario: quitar el límite de gasto en el portal (requiere método de pago; el crédito de $200 se conserva). Como limpieza pendiente: eliminar el workspace duplicado (eastus o eastus2) cuando el endpoint funcione.
+
+**Siguiente paso:**  
+Cuando el usuario quite el límite de gasto: ejecutar `azure/deploy_endpoint.py` (todo queda ya preparado), probar el endpoint con clientes reales, guardar URL y llave en `.env` y continuar con la etapa 11 (backend consume el endpoint).
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

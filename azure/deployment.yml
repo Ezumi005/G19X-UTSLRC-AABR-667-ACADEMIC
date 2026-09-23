@@ -1,0 +1,10 @@
+$schema: https://azuremlschemas.azureedge.net/latest/managedOnlineDeployment.schema.json
+name: blue
+endpoint_name: motor-seg-ep2
+model: azureml:kmeans-local:1
+code_configuration:
+  code: .
+  scoring_script: score.py
+environment: azureml:motor-segmentacion-env:1
+instance_type: Standard_DS2_v2
+instance_count: 1
