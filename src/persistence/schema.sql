@@ -123,3 +123,14 @@ CREATE TABLE IF NOT EXISTS customer_segments (
     PRIMARY KEY (run_id, customer_id)
 );
 CREATE INDEX IF NOT EXISTS idx_customer_segments_customer ON customer_segments (customer_id);
+
+-- Recomendaciones comerciales por segmento (Azure OpenAI; etapa 12)
+CREATE TABLE IF NOT EXISTS recommendations (
+    recommendation_id BIGSERIAL PRIMARY KEY,
+    segment_id   BIGINT NOT NULL REFERENCES segments (segment_id) ON DELETE CASCADE,
+    model        TEXT NOT NULL,
+    descripcion  TEXT,
+    recomendaciones JSONB NOT NULL,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_recommendations_segment ON recommendations (segment_id);

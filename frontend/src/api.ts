@@ -25,8 +25,10 @@ export const fetchCustomer = (id: string) =>
 export const fetchSegments = () => getJson<import("./types.ts").SegmentsPage>("/segments");
 export const fetchSegment = (id: number) =>
   getJson<import("./types.ts").SegmentDetail>(`/segments/${id}`);
+export const fetchRecommendation = (id: number) =>
+  getJson<{ recommendation: import("./types.ts").Recommendation | null }>(`/segments/${id}/recommendation`);
 export const requestRecommendation = (id: number) =>
-  postJson<unknown>(`/segments/${id}/recommendation`);
+  postJson<import("./types.ts").Recommendation>(`/segments/${id}/recommendation`);
 
 export const fmtNumber = (n: number | null | undefined, digits = 0): string =>
   n === null || n === undefined ? "—" : new Intl.NumberFormat("es-MX", { maximumFractionDigits: digits }).format(n);

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import psycopg
 from psycopg.rows import dict_row
+from psycopg.types.json import Jsonb
 
 from src.persistence.db import connect
 
@@ -141,6 +142,28 @@ def segmentation_run_summary(run_id: int) -> dict:
         )
         out["segments"] = [dict(r) for r in cur.fetchall()]
     return out
+
+
+def save_recommendation(segment_id: int, model: str, resultado: dict) -> int:
+    with connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO recommendations (segment_id, model, descripcion, recomendaciones) "
+                "VALUES (%s, %s, %s, %s) RETURNING recommendation_id",
+                (segment_id, model, resultado["descripcion"], Jsonb(resultado["recomendaciones"])),
+            )
+            return cur.fetchone()[0]
+
+
+def latest_recommendation(segment_id: int) -> dict | None:
+    with connect() as conn, conn.cursor(row_factory=dict_row) as cur:
+        cur.execute(
+            "SELECT recommendation_id, segment_id, model, descripcion, recomendaciones, created_at "
+            "FROM recommendations WHERE segment_id = %s ORDER BY recommendation_id DESC LIMIT 1",
+            (segment_id,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
 
 
 def dashboard_summary() -> dict:

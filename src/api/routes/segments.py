@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import os
+
 from fastapi import APIRouter, HTTPException
 
 from src.ml.segmentation import run_segmentation
 from src.persistence import queries
+from src.services import recommendations as reco_service
 
 router = APIRouter(tags=["segmentation"])
 
@@ -33,14 +36,44 @@ def get_segment(segment_id: int) -> dict:
     return segment
 
 
+@router.get("/segments/{segment_id}/recommendation")
+def get_recommendation(segment_id: int) -> dict:
+    """Ultima recomendacion generada para el segmento (o null si nunca se genero)."""
+    if queries.get_segment(segment_id) is None:
+        raise HTTPException(status_code=404, detail=f"Segmento no encontrado: {segment_id}")
+    return {"recommendation": queries.latest_recommendation(segment_id)}
+
+
 @router.post("/segments/{segment_id}/recommendation")
 def create_recommendation(segment_id: int) -> dict:
-    """Generara la recomendacion comercial del segmento mediante Azure OpenAI.
+    """Genera (con Azure OpenAI) y persiste la recomendacion comercial del segmento.
 
-    Endpoint reservado: se implementara en la etapa de integracion de Azure OpenAI
-    (el motor de segmentacion NO depende de el).
+    Recibe unicamente agregados del segmento: Azure OpenAI no decide clusters
+    ni ve clientes individuales (PRD seccion 17).
     """
-    raise HTTPException(
-        status_code=501,
-        detail="Recomendaciones con Azure OpenAI: pendiente de la etapa correspondiente del plan.",
-    )
+    segment = queries.get_segment(segment_id)
+    if segment is None:
+        raise HTTPException(status_code=404, detail=f"Segmento no encontrado: {segment_id}")
+    if not reco_service.azure_openai_available():
+        raise HTTPException(
+            status_code=501,
+            detail="Azure OpenAI no configurado: faltan AZURE_OPENAI_* en el .env del backend.",
+        )
+    model = os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-5-4-mini")
+    try:
+        resultado = reco_service.generate_recommendation(
+            label=segment["label"],
+            description=segment.get("description"),
+            n_customers=segment["n_customers"],
+            profile=segment.get("profile") or {},
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Azure OpenAI no disponible: {exc}") from exc
+    recommendation_id = queries.save_recommendation(segment_id, model, resultado)
+    return {
+        "recommendation_id": recommendation_id,
+        "segment_id": segment_id,
+        "model": model,
+        "descripcion": resultado["descripcion"],
+        "recomendaciones": resultado["recomendaciones"],
+    }

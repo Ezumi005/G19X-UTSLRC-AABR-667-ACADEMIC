@@ -51,6 +51,15 @@ export interface SegmentDetail extends Segment {
   customers_preview: { customer_id: string; city: string | null; registered_at: string }[];
 }
 
+export interface Recommendation {
+  recommendation_id: number;
+  segment_id: number;
+  model: string;
+  descripcion: string;
+  recomendaciones: string[];
+  created_at: string;
+}
+
 export interface Dashboard {
   total_customers: number;
   total_transactions: number;

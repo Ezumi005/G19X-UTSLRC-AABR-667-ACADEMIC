@@ -827,6 +827,38 @@ Cuando haya cuota aprobada: desplegar `gpt-5-4-mini`, probar una llamada real y 
 
 ---
 
+## 23/09/2026 — 20:38
+**Tipo:** Técnico
+
+**Actividad realizada:**  
+Implementé la etapa 12 (recomendaciones comerciales con Azure OpenAI) en su totalidad de código, lista para activarse en cuanto la cuota se apruebe. Creé el servicio `src/services/recommendations.py` (construcción del prompt con agregados del segmento, llamada al deployment de Azure OpenAI y parseo tolerante de la respuesta JSON), la tabla `recommendations` en el esquema, los endpoints reales `POST /segments/{id}/recommendation` (genera y persiste) y `GET /segments/{id}/recommendation` (devuelve la última generada), y actualicé el frontend para mostrar y regenerar la recomendación en el detalle de segmento. Verifiqué todo con pruebas unitarias, build del frontend y prueba en vivo del flujo degradado.
+
+**Decisiones tomadas:**  
+- El prompt recibe únicamente agregados por segmento (medias, tamaño, etiqueta): Azure OpenAI no decide clusters ni ve clientes individuales, como exige el PRD (sección 17).
+- Respuesta en JSON estricto (descripcion + recomendaciones) con parseo tolerante por si el modelo agrega texto alrededor.
+- Degrada de forma controlada: sin credenciales → 501 informativo; con credenciales pero servicio caído → 502. El frontend distingue ambos estados.
+- Las recomendaciones se persisten por segmento con historial (append); el GET devuelve siempre la última.
+- `openai>=1.50` agregado a requirements.txt (ya estaba instalado en el venv).
+
+**Resultado:**  
+- 7 suites de pruebas en verde (contrato, adaptador, features, clustering, interpretación y recomendaciones).
+- Esquema aplicado con la tabla `recommendations`; build del frontend en verde.
+- Verificación en vivo: GET devuelve `null` (sin recomendaciones aún) y POST responde 501 con mensaje claro mientras llega la cuota.
+- Se detectaron y cerraron procesos viejos del backend/frontend que ocupaban los puertos desde el 22/09.
+- Reintentos del endpoint de Azure ML (nombres nuevos y workspace post-upgrade): sigue bloqueado por propagación de elegibilidad; se reintentará más adelante.
+
+**Archivos o componentes afectados:**  
+- Nuevos: `src/services/{__init__.py, recommendations.py}`, `tests/test_recommendations.py`.
+- Modificados: `src/persistence/schema.sql` (+tabla recommendations), `src/persistence/queries.py` (+save/latest recommendation), `src/api/routes/segments.py` (endpoints reales de recomendación), `requirements.txt` (+openai), `frontend/src/{types.ts, api.ts, pages/SegmentDetail.tsx, styles.css}`, `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Externos, sin cambio: cuota de gpt-5.4-mini pendiente de aprobación (formulario enviado; 1-2 días hábiles) y propagación de endpoints online de Azure ML pendiente.
+
+**Siguiente paso:**  
+Cuando se apruebe la cuota: desplelar `gpt-5-4-mini`, guardar credenciales en `.env`, generar la primera recomendación real de extremo a extremo y registrar el resultado. En paralelo reintentar el endpoint de Azure ML para cerrar las etapas 10 y 11.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

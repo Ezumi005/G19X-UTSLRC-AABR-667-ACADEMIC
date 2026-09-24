@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { fetchSegment, fmtNumber, fmtDate, requestRecommendation } from "../api.ts";
-import type { SegmentDetail } from "../types.ts";
+import { fetchSegment, fmtNumber, fmtDate, requestRecommendation, fetchRecommendation } from "../api.ts";
+import type { Recommendation, SegmentDetail } from "../types.ts";
 
 const PROFILE_LABELS: Record<string, string> = {
   recency_days: "Recencia (días)",
@@ -20,20 +20,26 @@ export default function SegmentDetail() {
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<SegmentDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [reco, setReco] = useState<Recommendation | null>(null);
   const [recoState, setRecoState] = useState<"idle" | "loading" | "pending" | "error">("idle");
   const [recoMsg, setRecoMsg] = useState("");
 
   useEffect(() => {
     fetchSegment(Number(id)).then(setData).catch((e: unknown) => setError(String(e)));
+    fetchRecommendation(Number(id))
+      .then((r) => setReco(r.recommendation))
+      .catch(() => {});
   }, [id]);
 
   const pedirRecomendacion = async () => {
     setRecoState("loading");
     try {
-      await requestRecommendation(Number(id));
+      const nueva = await requestRecommendation(Number(id));
+      setReco(nueva);
+      setRecoState("idle");
     } catch (e) {
       const msg = String(e);
-      if (msg.includes("Azure OpenAI")) {
+      if (msg.includes("no configurado")) {
         setRecoState("pending");
         setRecoMsg(msg);
       } else {
@@ -96,7 +102,18 @@ export default function SegmentDetail() {
       </ul>
 
       <h2>Recomendación comercial (Azure OpenAI)</h2>
-      {recoState === "idle" && (
+      {reco && (
+        <div className="reco-card">
+          <p><b>{reco.descripcion}</b></p>
+          <ul className="reco-list">
+            {reco.recomendaciones.map((item, index) => (
+              <li key={index}>{item}</li>
+            ))}
+          </ul>
+          <p className="muted">Generado por {reco.model} · {fmtDate(reco.created_at)}</p>
+        </div>
+      )}
+      {recoState === "idle" && !reco && (
         <div>
           <p className="muted">
             Generará interpretación y recomendaciones del segmento mediante Azure OpenAI
@@ -104,6 +121,9 @@ export default function SegmentDetail() {
           </p>
           <button onClick={() => void pedirRecomendacion()}>Generar recomendación</button>
         </div>
+      )}
+      {recoState === "idle" && reco && (
+        <button onClick={() => void pedirRecomendacion()}>Regenerar recomendación</button>
       )}
       {recoState === "loading" && <p className="muted">Solicitando…</p>}
       {recoState === "pending" && <p className="notice">{recoMsg}</p>}
