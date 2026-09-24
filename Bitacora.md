@@ -859,6 +859,36 @@ Cuando se apruebe la cuota: desplelar `gpt-5-4-mini`, guardar credenciales en `.
 
 ---
 
+## 23/09/2026 — 20:48
+**Tipo:** Técnico
+
+**Actividad realizada:**  
+Activé la etapa 12 de forma real: las recomendaciones comerciales con Azure OpenAI ya funcionan de extremo a extremo. La solicitud de cuota para gpt-5.4-mini en East US fue denegada por saturación regional (no por la cuenta), así que probé programáticamente 5 regiones adicionales y dos vías sin formulario: el model-router y el SKU **DataZoneStandard**. El despliegue con DataZoneStandard en el recurso East US funcionó de inmediato (pool de cuota con disponibilidad). Generé la primera recomendación real desde el servicio, verifiqué el flujo completo por la API (POST genera y persiste; GET consulta) y eliminé los 5 recursos de prueba de otras regiones.
+
+**Decisiones tomadas:**  
+- Deployment definitivo: **gpt-5-4-mini con SKU DataZoneStandard** (nombre `gpt-5-4-mini-dz`) en el recurso `openai-motor-seg` de East US; el SKU Global Standard quedó descartado por cuota 0 y denegación regional.
+- Corrección de compatibilidad con la familia GPT-5: `max_tokens` → `max_completion_tokens` en el servicio de recomendaciones.
+- Credenciales reales escritas en `.env` (endpoint con subdominio del recurso, llave y nombre del deployment); nunca versionadas.
+- Los recursos OpenAI de prueba en otras regiones se eliminaron para dejar la suscripción limpia.
+
+**Resultado:**  
+- Primera recomendación real generada (segmento "Navegadores sin compra"): descripción precisa del perfil y 3 acciones concretas (campaña de primera compra, recuperación de carrito multicanal, nurturing).
+- Flujo API verificado en vivo: POST `/segments/24/recommendation` generó y persistió (recommendation_id=1, modelo gpt-5-4-mini-dz) y GET devolvió la recomendación almacenada.
+- Etapa 12 completada; el frontend ya muestra/regenera recomendaciones en el detalle de segmento.
+
+**Archivos o componentes afectados:**  
+- `src/services/recommendations.py` (fix max_completion_tokens), `.env` local (credenciales reales de Azure OpenAI).
+- Azure: deployment `gpt-5-4-mini-dz` creado; 5 recursos de prueba eliminados.
+- `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Resuelto el bloqueo de cuota vía DataZoneStandard. Único bloqueo restante del proyecto: la propagación de elegibilidad del endpoint online de Azure ML (etapas 10-11), que se reintenta más adelante.
+
+**Siguiente paso:**  
+Reintentar el despliegue del endpoint de Azure ML (workspace ml-motor-seg-v2) y, al funcionar, conectar el backend (etapa 11). Después: etapa 14 (pruebas y seguridad) y 15 (documentación final y demo).
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

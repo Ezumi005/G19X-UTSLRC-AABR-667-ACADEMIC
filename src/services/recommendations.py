@@ -90,7 +90,7 @@ def generate_recommendation(
         model=os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-5-4-mini"),
         messages=build_messages(label, description, n_customers, profile),
         temperature=0.4,
-        max_tokens=700,
+        max_completion_tokens=700,
     )
     contenido = response.choices[0].message.content or ""
     resultado = parse_json_loose(contenido)
