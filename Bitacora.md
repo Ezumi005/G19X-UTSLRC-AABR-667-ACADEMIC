@@ -798,6 +798,35 @@ Cuando el usuario quite el límite de gasto: ejecutar `azure/deploy_endpoint.py`
 
 ---
 
+## 23/09/2026 — 19:22
+**Tipo:** Técnico / Gestión
+
+**Actividad realizada:**  
+Continué la etapa 10 y adelanté parte de la 12 en Azure. El usuario quitó el límite de gasto de la suscripción ( pasó de FreeTrial a PayAsYouGo, conservando el crédito) y lo verifiqué por API. Reintenté el despliegue del endpoint online con nombres nuevos, un workspace nuevo creado ya con la suscripción sana y también la región eastus2: el error evolucionó de `SubscriptionNotRegistered` a `InferencingClientCallFailed`, consistente con el retraso de propagación de elegibilidad documentado para cuentas recién actualizadas (puede tardar horas). En paralelo registré el proveedor `Microsoft.CognitiveServices`, creé el recurso de Azure OpenAI `openai-motor-seg` (S0, eastus), consulté su catálogo de modelos (solo familia GPT-5.x disponible) e intenté desplegar `gpt-5.4-mini` con SKU GlobalStandard.
+
+**Decisiones tomadas:**  
+- Workspace definitivo previsto: `ml-motor-seg-v2` (creado post-upgrade); los dos anteriores (`ml-motor-segmentacion` y `ml-motor-seg-eus2`) quedan como candidatas a limpieza.
+- Modelo de recomendaciones elegido: `gpt-5.4-mini` con SKU `GlobalStandard` (las versiones/SKU antiguas ya no existen en el catálogo 2026; el SKU `Standard` fue rechazado).
+- Se definieron las variables de entorno de Azure (`AZURE_OPENAI_*`, `AZURE_ML_*`) en `.env.example` para documentar el contrato de configuración del backend.
+
+**Resultado:**  
+- Suscripción verificada como PayAsYouGo con spendingLimit Off.
+- Recurso Azure OpenAI creado (`openai-motor-seg`); endpoint y llave ya guardados en `.env` local tras el flujo de despliegue (pendiente de confirmar funcionamiento).
+- **Bloqueos externos activos:** (1) el endpoint online de Azure ML sigue rechazándose por propagación de elegibilidad; (2) el despliegue del modelo OpenAI falla con `InsufficientQuota` porque la cuenta nueva tiene cuota 0 para toda la familia GPT-5 — se requiere solicitud de cuota en el portal.
+
+**Archivos o componentes afectados:**  
+- Azure: resource `openai-motor-seg` creado; workspace `ml-motor-seg-v2` creado; intentos de endpoint documentados.
+- Locales: `.env` (credenciales OpenAI, no versionado), `.env.example` (nuevas variables documentadas), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Pendiente del usuario: solicitar cuota para `gpt-5.4-mini` (GlobalStandard, East US) en el portal (recurso openai-motor-seg → Cuotas → Solicitar cuota; sugerido 50K TPM).
+- Pendiente de Azure: propagación de la elegibilidad de endpoints online (reintentar en próximas horas).
+
+**Siguiente paso:**  
+Cuando haya cuota aprobada: desplegar `gpt-5-4-mini`, probar una llamada real y continuar la etapa 12 (servicio de recomendaciones + tabla recommendations + endpoint del backend). En paralelo reintentar el endpoint de Azure ML y, al funcionar, cerrar la etapa 10 y la 11 (consumo desde el backend).
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
