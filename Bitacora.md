@@ -889,6 +889,36 @@ Reintentar el despliegue del endpoint de Azure ML (workspace ml-motor-seg-v2) y,
 
 ---
 
+## 23/09/2026 — 20:50
+**Tipo:** Gestión
+
+**Actividad realizada:**  
+Cerré la sesión de trabajo del día. Resumí y dejé anotado todo lo pendiente del proyecto para retomarlo mañana con claridad.
+
+**Decisiones tomadas:**  
+Registrar de forma explícita el backlog restante en la bitácora, ordenado por etapa, para que cualquier sesión futura (yo u otro asistente) pueda continuar sin perder contexto.
+
+**Resultado:**  
+Estado del MVP al cierre del día: 12 de 15 etapas del orden de desarrollo completadas y verificadas (de contrato interno a recomendaciones con Azure OpenAI). Pendientes anotados:
+
+1. **Etapa 10 — Endpoint de Azure ML:** reintentar el despliegue con `azure/deploy_endpoint.py` en el workspace `ml-motor-seg-v2` (bloqueado por propagación de elegibilidad de la suscripción tras el upgrade; todo lo demás ya está registrado y preparado).
+2. **Etapa 11 — Backend ↔ Azure ML:** al funcionar el endpoint, guardar `AZURE_ML_ENDPOINT_URL` y `AZURE_ML_ENDPOINT_KEY` en `.env`, implementar el cliente en el backend y un endpoint de predicción por cliente.
+3. **Etapa 14 — Pruebas y seguridad:** suite automatizada de la API (TestClient/httpx), endurecimiento de manejo de errores y validaciones.
+4. **Etapa 15 — Documentación final y demo:** README de demostración, generación de recomendaciones para los 6 segmentos y preparación de la demostración final.
+5. **Limpieza de Azure (al terminar la demo):** eliminar los workspaces duplicados (`ml-motor-segmentacion`, `ml-motor-seg-eus2`), borrar o detener el endpoint online para evitar consumo y, si procede, conservar solo el recurso Azure OpenAI necesario.
+6. **GitHub:** el repositorio local está listo para vincularse a un remoto cuando se decida (regla de control de versiones, README sección 13).
+
+**Archivos o componentes afectados:**  
+- `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Solo el ya documentado: propagación de elegibilidad de endpoints online de Azure ML (externo, con tiempo).
+
+**Siguiente paso:**  
+Retomar mañana con el reintento del endpoint de Azure ML (etapa 10) y encadenar la 11.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
