@@ -1,0 +1,90 @@
+"""Pruebas de integracion de la API principal (requieren PostgreSQL con datos y .env).
+
+Cubren los 8 endpoints del MVP, incluidos los casos de error (404, 501 y 502
+cuando el simulador no esta disponible).
+"""
+
+from fastapi.testclient import TestClient
+
+from src.api.app import create_app
+
+client = TestClient(create_app())
+
+ETIQUETAS_ESPERADAS = {
+    "Clientes frecuentes de alto valor",
+    "Navegadores sin compra",
+    "Compradores ocasionales",
+    "Clientes nuevos",
+    "Navegadores con compra esporádica",
+    "Clientes en riesgo de inactividad",
+}
+
+
+def prueba_health_y_raiz():
+    assert client.get("/health").status_code == 200
+    assert client.get("/health").json()["status"] == "ok"
+    raiz = client.get("/").json()
+    assert "endpoints" in raiz
+
+
+def prueba_clientes():
+    r = client.get("/customers", params={"limit": 5})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["count"] == 5 and body["total"] >= 498
+    fila = body["data"][0]
+    assert {"customer_id", "age", "city", "registered_at", "segment_label"} <= set(fila)
+
+
+def prueba_detalle_cliente():
+    r = client.get("/customers/CLI-0001")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["stats"]["frequency"] > 0
+    assert body["segment"] is not None and "label" in body["segment"]
+    assert client.get("/customers/NO-EXISTE").status_code == 404
+
+
+def prueba_segmentos():
+    r = client.get("/segments")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["count"] == 6 and body["run_id"] is not None
+    assert {s["label"] for s in body["data"]} == ETIQUETAS_ESPERADAS
+    detalle = client.get("/segments/1").json()
+    assert "profile" in detalle and "customers_preview" in detalle
+    assert client.get("/segments/9999").status_code == 404
+
+
+def prueba_recomendaciones():
+    r = client.get("/segments/1/recommendation")
+    assert r.status_code == 200
+    assert "recommendation" in r.json()
+    assert client.get("/segments/9999/recommendation").status_code == 404
+    assert client.post("/segments/9999/recommendation").status_code == 404
+
+
+def prueba_ingestion_sin_simulador():
+    """Sin simulador en 8001, la ingesta debe responder 502 (error controlado)."""
+    r = client.post("/ingestion/sync")
+    assert r.status_code == 502
+    assert "no disponible" in r.json()["detail"].lower()
+
+
+def prueba_dashboard():
+    body = client.get("/dashboard").json()
+    assert body["total_customers"] >= 498
+    assert body["total_transactions"] > 0
+    assert len(body["segments_distribution"]) == 6
+    assert body["last_segmentation"] is not None
+
+
+if __name__ == "__main__":
+    prueba_health_y_raiz()
+    prueba_clientes()
+    prueba_detalle_cliente()
+    prueba_segmentos()
+    prueba_recomendaciones()
+    prueba_ingestion_sin_simulador()
+    prueba_dashboard()
+    print("OK: API verificada (health, clientes, segmentos, recomendaciones, 404/502, dashboard)")

@@ -35,6 +35,13 @@ AZURE_DIR = Path(__file__).resolve().parent
 ROOT = AZURE_DIR.parent
 
 ml_client = MLClient(AzureCliCredential(), SUBSCRIPTION, RESOURCE_GROUP, WORKSPACE)
+
+
+def _set_traffic_via_arm(ml_client: MLClient, endpoint_name: str) -> None:
+    """Asigna trafico consultando primero el endpoint real (conserva su identidad)."""
+    ep = ml_client.online_endpoints.get(endpoint_name)
+    ep.traffic = {"blue": 100}
+    ml_client.online_endpoints.begin_create_or_update(ep).result()
 print(f"workspace: {WORKSPACE} [{RESOURCE_GROUP}] | endpoint: {ENDPOINT_NAME}")
 
 try:
@@ -60,13 +67,17 @@ except ResourceNotFoundError:
     )
     print("entorno motor-segmentacion-env:1 registrado")
 
-endpoint = ManagedOnlineEndpoint(
-    name=ENDPOINT_NAME,
-    auth_mode="key",
-    description="Motor de segmentacion de clientes: K-Means k=6 (MVP)",
-)
-result = ml_client.online_endpoints.begin_create_or_update(endpoint).result()
-print(f"endpoint: {result.name} [{result.provisioning_state}]")
+if not os.environ.get("AZ_SKIP_ENDPOINT"):
+    endpoint = ManagedOnlineEndpoint(
+        name=ENDPOINT_NAME,
+        auth_mode="key",
+        description="Motor de segmentacion de clientes: K-Means k=6 (MVP)",
+        identity={"type": "SystemAssigned"},
+    )
+    result = ml_client.online_endpoints.begin_create_or_update(endpoint).result()
+    print(f"endpoint: {result.name} [{result.provisioning_state}]")
+else:
+    print("endpoint: se asume ya creado (AZ_SKIP_ENDPOINT=1)")
 
 deployment = ManagedOnlineDeployment(
     name="blue",
@@ -81,5 +92,7 @@ result = ml_client.online_deployments.begin_create_or_update(deployment).result(
 print(f"deployment: {result.name} [{result.provisioning_state}]")
 
 endpoint.traffic = {"blue": 100}
-ml_client.online_endpoints.begin_create_or_update(endpoint).result()
+ml_client.online_endpoints.begin_create_or_update(endpoint).result() if not os.environ.get(
+    "AZ_SKIP_ENDPOINT"
+) else _set_traffic_via_arm(ml_client, ENDPOINT_NAME)
 print("trafico asignado: blue 100%")

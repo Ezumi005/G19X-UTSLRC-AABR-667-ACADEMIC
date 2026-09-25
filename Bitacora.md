@@ -919,6 +919,34 @@ Retomar mañana con el reintento del endpoint de Azure ML (etapa 10) y encadenar
 
 ---
 
+## 25/09/2026 — 01:53
+**Tipo:** Técnico / Investigación
+
+**Actividad realizada:**  
+Reintenté la etapa 10 (endpoint de Azure ML) con diagnóstico profundo, y avancé la etapa 14 con la suite de pruebas de la API. En Azure: probé nombre nuevo por SDK, llamada cruda directa a ARM (PUT del endpoint) y análisis del código fuente del SDK. El ARM reveló primero que el endpoint exige campo `identity` (con identidad SystemAssigned el registro del endpoint SÍ se crea y pasa la validación inicial), pero la operación interna de provisionamiento (`mfeOperationsStatus`) confirmó que el rechazo final sigue siendo `SubscriptionNotRegistered [N/A]` a nivel del servicio de inferencia: la propagación de elegibilidad de la suscripción (upgraded hace ~30 horas) aún no completa. Documenté la causa y dejé el flujo preparado. En local: implementé `tests/test_api.py`, la primera suite de integración de la API (TestClient + PostgreSQL real).
+
+**Decisiones tomadas:**  
+- Diagnóstico cerrado por capas: (1) no son los resource providers (todos registrados), (2) no es la región ni el workspace, (3) no es la identidad del endpoint (resuelta vía ARM), (4) es la propagación del plano de inferencia tras el upgrade de la suscripción — reintentar con calma en la ventana de 24-48h.
+- `deploy_endpoint.py` mejorado: identidad explícita, modo `AZ_SKIP_ENDPOINT` (endpoint ya creado por ARM) y asignación de tráfico consultando el endpoint real para conservar su identidad.
+- Suite de API con TestClient sobre la base real (integración), cubriendo los 8 endpoints y los casos 404/502; `httpx` agregado a requirements.
+
+**Resultado:**  
+- El registro del endpoint se crea correctamente vía ARM con identidad (avance real frente a intentos anteriores), pero el provisionamiento sigue bloqueado por Azure (externo, con tiempo).
+- 8 suites de pruebas del proyecto en verde (contrato, adaptador, features, clustering, interpretación, recomendaciones y API).
+- Endpoint fallido de prueba eliminado para dejar Azure limpio.
+
+**Archivos o componentes afectados:**  
+- Modificados: `azure/deploy_endpoint.py` (identidad + modo skip-endpoint + tráfico), `requirements.txt` (+httpx), `Bitacora.md` (esta entrada).
+- Nuevos: `tests/test_api.py`.
+
+**Problemas o bloqueos:**  
+- Persiste el único bloqueo externo: propagación de elegibilidad de endpoints online (etapas 10-11). Todo lo demás del MVP funciona.
+
+**Siguiente paso:**  
+Reintentar el endpoint (crear por ARM con identidad + deployment por SDK con `AZ_SKIP_ENDPOINT=1`); al funcionar, guardar credenciales en `.env` e implementar el cliente del backend (etapa 11). Seguir etapa 14 (seguridad/manejo de errores) y 15 (documentación y demo).
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
