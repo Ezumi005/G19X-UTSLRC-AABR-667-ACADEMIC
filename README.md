@@ -229,6 +229,8 @@ Implementación actual: `frontend/` — Vite + React 19 + TypeScript + react-rou
 
 Nota: las etapas 10-12 (Azure ML / Azure OpenAI) requieren suscripción de Azure; la etapa 13 (React) se adelantó mientras se obtiene la suscripción (registro en `Bitacora.md`, 22/09/2026).
 
+Estado al 28/09/2026: **etapas 1-14 completadas**. Etapas 10-11 con desviación aprobada (§7). Etapa 15: esta documentación y la guía de demostración (§18).
+
 ## 13. Reglas que NO se deben romper
 
 - No acoplar el modelo de ML al formato del CRM simulado.
@@ -264,6 +266,8 @@ El MVP debe probar de extremo a extremo que:
 7. Azure OpenAI puede generar recomendaciones por segmento;
 8. FastAPI puede exponer el resultado;
 9. React puede visualizarlo.
+
+Estado del MVP (28/09/2026): los 9 puntos se cumplen de extremo a extremo sobre datos simulados y verificados en vivo. El punto 6 se cumple con la desviación documentada en §7 (inferencia servida en Azure App Service con el mismo artefacto; modelo registrado y versionado en Azure ML). Las recomendaciones del punto 7 están generadas para los 6 segmentos y visibles en el frontend.
 
 ## 15. Adaptación futura a un CRM real
 
@@ -367,12 +371,38 @@ npm install        # solo la primera vez
 npm run dev        # abre http://localhost:5173
 ```
 
-**PostgreSQL** (requiere `.env` con `DATABASE_URL`; ver `.env.example`):
+**PostgreSQL y pipeline analítico** (requiere `.env` con `DATABASE_URL`; ver `.env.example`):
 
 ```powershell
 .venv\Scripts\python.exe -m src.persistence.init_db    # crea la base motor_segmentacion y aplica el esquema (idempotente)
-.venv\Scripts\python.exe -m src.persistence.ingest     # ingesta completa: simulador → adaptador → PostgreSQL (requiere simulador en 8001)
-.venv\Scripts\python.exe -m src.features.rfm          # features RFM desde PostgreSQL (escribe data/features_rfm.csv)
-.venv\Scripts\python.exe -m src.ml.clustering         # evaluación de k + entrenamiento + validación (escribe models/kmeans_local.pkl)
-.venv\Scripts\python.exe -m src.ml.segmentation       # ejecuta y persiste la segmentación (k=6, con etiquetas comerciales)
+.venv\Scripts\python.exe -m src.persistence.ingest     # ingesta: simulador → adaptador → PostgreSQL (requiere simulador en 8001)
+.venv\Scripts\python.exe -m src.features.rfm           # features RFM (escribe data/features_rfm.csv)
+.venv\Scripts\python.exe -m src.ml.clustering          # evaluación de k + entrenamiento (escribe models/kmeans_local.pkl)
+.venv\Scripts\python.exe -m src.ml.segmentation        # segmentación persistida (k=6, etiquetas comerciales)
 ```
+
+**Pruebas (9 suites):** ejecutar cada módulo `tests/test_*.py`, p. ej. `.venv\Scripts\python.exe -m tests.test_api`.
+
+## 18. Guía de demostración (MVP completo)
+
+**Primera vez (desde cero):**
+
+```powershell
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+# copiar .env.example como .env y completar credenciales (PostgreSQL, Azure OpenAI, scoring)
+.venv\Scripts\python.exe -m crm_simulator.generate_data       # dataset simulado (semilla fija)
+.venv\Scripts\python.exe -m src.persistence.init_db           # base + esquema (idempotente)
+.venv\Scripts\python.exe -m uvicorn crm_simulator.app:app --port 8001   # simulador (terminal 1)
+.venv\Scripts\python.exe -m src.persistence.ingest            # ingesta completa (terminal 2)
+.venv\Scripts\python.exe -m src.ml.segmentation               # segmentación con etiquetas
+.venv\Scripts\python.exe -m uvicorn src.api.app:app --port 8000        # backend (terminal 2)
+cd frontend; npm install; npm run dev                         # frontend (terminal 3)
+```
+
+**Demo diaria (todo inicializado):** levantar simulador + backend + frontend, y recorrer:
+1. **Dashboard**: indicadores y distribución de segmentos.
+2. **Clientes**: paginación, detalle expandible; predicción de segmento en la nube: `POST /customers/{id}/predict` (p. ej. `CLI-0001`).
+3. **Segmentos**: 6 grupos con etiquetas comerciales; en el detalle, perfil medio y botón **"Generar recomendación"** (Azure OpenAI; ya hay una por segmento).
+
+**Recursos Azure activos:** `openai-motor-seg` (Azure OpenAI, gpt-5.4-mini DataZone), `ml-motor-seg-v2` (registro/versionado del modelo) y `motor-seg-scoring` + plan F1 (servicio de scoring).

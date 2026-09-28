@@ -978,6 +978,36 @@ Etapa 14 (resto: manejo de errores y ajustes de seguridad), etapa 15 (documentac
 
 ---
 
+## 28/09/2026 — 14:09
+**Tipo:** Técnico / Documentación
+
+**Actividad realizada:**  
+Cerré las etapas 14 y 15 del proyecto. Ejecuté primero las 9 suites de pruebas (todas en verde, como condición previa). Implementé el pulido de manejo de errores y seguridad: handler global de excepciones en la API (log completo en servidor, respuesta 500 controlada sin filtrar detalles) y timeout explícito de 60s en las llamadas a Azure OpenAI, con nueva prueba del 500 controlado. Generé las recomendaciones comerciales reales para los 6 segmentos (datos de demo, vía Azure OpenAI, persistidas). Completé la documentación final del README (estado de etapas, criterios del MVP cumplidos y nueva sección 18: guía de demostración) y ejecuté la limpieza de Azure: eliminé los 2 workspaces duplicados, conservando los recursos que el MVP utiliza.
+
+**Decisiones tomadas:**  
+- El handler global devuelve un mensaje genérico al cliente y registra el detalle solo en el log del servidor (no filtrar stack traces).
+- La autenticación de la API propia queda documentada como decisión post-MVP (el PRD la condiciona a "cuando el entorno lo requiera"); el frontend de demo opera en localhost.
+- En Azure se conservan únicamente: `openai-motor-seg` (Azure OpenAI), `ml-motor-seg-v2` (registro del modelo) y `motor-seg-scoring` + plan F1 (scoring). Se eliminan `ml-motor-segmentacion` y `ml-motor-seg-eus2` (duplicados de los intentos de diagnóstico).
+
+**Resultado:**  
+- 9 suites en verde; prueba nueva de error interno controlado pasando.
+- Recomendaciones persistidas para los 6 segmentos (ids 2-7 en la tabla recommendations): cada una con descripción y 3 acciones coherentes con su perfil (VIP→programa de fidelización; riesgo→reactivación; navegadores→recuperación de carrito/primera compra; nuevos→onboarding; ocasionales→reactivación escalonada).
+- README con §12 (estado), §14 (criterios cumplidos), §17 reordenada y §18 (guía de demo) — verificado que la estructura quedó coherente tras detectar y corregir una inserción desordenada.
+- Scoring en Azure verificado tras la limpieza; workspaces duplicados en eliminación.
+
+**Archivos o componentes afectados:**  
+- `src/api/app.py` (handler global), `src/services/recommendations.py` (timeout), `tests/test_api.py` (+500 controlado).
+- `README.md` (§12, §14, §17, §18), `Bitacora.md` (esta entrada).
+- Azure: workspaces duplicados eliminados; base de datos con 6 recomendaciones.
+
+**Problemas o bloqueos:**  
+- Ninguno. Único pendiente opcional: vincular el repositorio a GitHub (requiere cuenta y decisión del usuario).
+
+**Siguiente paso:**  
+Vincular GitHub si se decide (instrucciones listas) y realizar la demostración final del MVP. Con esto, el proyecto queda completo según el alcance definido.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
