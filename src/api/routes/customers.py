@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Query
 
 from src.persistence import queries
+from src.services import scoring as scoring_service
 
 router = APIRouter(tags=["customers"])
 
@@ -23,3 +24,32 @@ def get_customer(customer_id: str) -> dict:
     if customer is None:
         raise HTTPException(status_code=404, detail=f"Cliente no encontrado: {customer_id}")
     return customer
+
+
+@router.post("/customers/{customer_id}/predict")
+def predict_customer(customer_id: str) -> dict:
+    """Predice el cluster de un cliente con el modelo servido en Azure.
+
+    Flujo (etapa 11): features desde PostgreSQL -> endpoint de scoring en
+    Azure App Service (artefacto registrado en Azure ML) -> cluster + etiqueta
+    del ultimo run exitoso.
+    """
+    if queries.get_customer(customer_id) is None:
+        raise HTTPException(status_code=404, detail=f"Cliente no encontrado: {customer_id}")
+    if not scoring_service.scoring_available():
+        raise HTTPException(
+            status_code=501,
+            detail="Servicio de scoring en Azure no configurado: faltan AZURE_SCORING_* en el .env.",
+        )
+    features = queries.customer_features(customer_id)
+    try:
+        clusters = scoring_service.predict_clusters([features])
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Servicio de scoring no disponible: {exc}") from exc
+    cluster = int(clusters[0])
+    _, segments = queries.latest_segments()
+    segment = next(
+        ({"segment_id": s["segment_id"], "label": s["label"]} for s in segments if s["cluster_id"] == cluster),
+        None,
+    )
+    return {"customer_id": customer_id, "features": features, "cluster": cluster, "segment": segment}

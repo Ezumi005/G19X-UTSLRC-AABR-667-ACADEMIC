@@ -947,6 +947,37 @@ Reintentar el endpoint (crear por ARM con identidad + deployment por SDK con `AZ
 
 ---
 
+## 28/09/2026 — 13:31
+**Tipo:** Técnico / Arquitectura
+
+**Actividad realizada:**  
+Completé las etapas 10 y 11 del orden de desarrollo mediante una desviación aprobada por el usuario. Reintenté el endpoint online de Azure ML tras 5 días (names nuevos, ARM directo con identidad, eastus2 post-propagación, verificación del método de pago por el usuario en el portal): el rechazo `SubscriptionNotRegistered [N/A]` del plano de inferencia persiste en todas las combinaciones; es una limitación del tipo de suscripción, documentada con evidencia completa. Ante eso, el usuario aprobó mi plan recomendado: mantener el modelo **registrado y versionado en Azure ML** (kmeans-local:1 + entorno) y servir la inferencia en **Azure App Service** con el mismo artefacto. Desplegué el servicio de scoring (plan F1 gratuito en centralus, tras descubrir que la cuota F1 de eastus también estaba en 0), lo verifiqué contra los perfiles de control e integré el backend para consumirlo (etapa 11).
+
+**Decisiones tomadas:**  
+- Desviación documentada del criterio 8-9 del MVP: inferencia en App Service en lugar de endpoint online de Azure ML, por bloqueo externo del tipo de suscripción (evidencia en bitácora y README §7). El contrato de scoring es idéntico al de `azure/score.py` para migrar sin cambios si la suscripción lo permite algún día.
+- Servicio de scoring (`azure/scoring_app/`): FastAPI mínimo con el MISMO artefacto y lógica de preparación, autenticación `X-API-Key`, health check; desplegado con Oryx build (aprendizajes: requería `SCM_DO_BUILD_DURING_DEPLOYMENT=true` y la app debe configurarse antes del primer arranque para no dejar el SCM wedged).
+- Etapa 11: `src/services/scoring.py` (cliente con degradación 501/502), `queries.customer_features` (las 7 features por cliente desde PostgreSQL, misma convención de recency que features/rfm) y endpoint `POST /customers/{id}/predict` que devuelve cluster + etiqueta del último run.
+- Credenciales `AZURE_SCORING_URL/KEY` en `.env` local (llave generada con `secrets`); documentadas en `.env.example`.
+
+**Resultado:**  
+- Scoring en la nube verificado: perfiles VIP/riesgo/navegador → clusters 2/5/0, idénticos al modelo local; 401 sin llave.
+- Cadena completa en vivo: `POST /customers/CLI-0001/predict` → features desde PostgreSQL → scoring en Azure → cluster 2 "Clientes frecuentes de alto valor".
+- 9 suites de pruebas en verde (nueva: tests/test_scoring.py con mock del servicio).
+- Limpieza: PDF v1.0 eliminados por el usuario (commit ed5abae) y endpoints fallidos de prueba borrados.
+
+**Archivos o componentes afectados:**  
+- Nuevos: `azure/scoring_app/{main.py, requirements.txt}`, `src/services/scoring.py`, `tests/test_scoring.py`.
+- Modificados: `src/persistence/queries.py` (+customer_features), `src/api/routes/customers.py` (+predict), `.env.example`, `.gitignore` (+artefacto copiado en scoring_app), `README.md` (§7, §9, §16), `Bitacora.md` (esta entrada).
+- Azure: webapp `motor-seg-scoring` + plan `plan-sc-centralus` (F1) desplegados.
+
+**Problemas o bloqueos:**  
+- Resueltos hoy: bloqueo de inferencia (vía App Service) y cuota F1 0 en eastus (vía centralus). Sin bloqueos activos por primera vez desde el inicio de Azure.
+
+**Siguiente paso:**  
+Etapa 14 (resto: manejo de errores y ajustes de seguridad), etapa 15 (documentación final, recomendaciones para los 6 segmentos, demo), limpieza de Azure y vinculación a GitHub.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

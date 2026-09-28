@@ -16,6 +16,9 @@ data/
 # Artefactos de modelos (regenerables con semilla fija)
 models/
 
+# Artefacto copiado al desplegar el scoring (App Service)
+azure/scoring_app/kmeans_local.pkl
+
 # Node / React (frontend futuro)
 node_modules/
 dist/

@@ -123,16 +123,12 @@ Interpretación y persistencia: `src/ml/segmentation.py` asigna **etiquetas come
 
 Azure Machine Learning se usa DESPUÉS de validar el modelo localmente.
 
-Responsabilidades:
+Responsabilidades cumplidas:
+- registrar el modelo: **hecho** (`kmeans-local:1` en el workspace `ml-motor-seg-v2`);
+- versionarlo y definir su ambiente: **hecho** (`motor-segmentacion-env:1`, mismas versiones del entrenamiento);
+- desplegarlo y exponer un endpoint de inferencia: **los endpoints online de Azure ML no están disponibles para este tipo de suscripción** (bloqueo documentado con evidencia en `Bitacora.md`, 23-28/09/2026: 4 regiones, 4 workspaces, proveedores completos, ARM directo con identidad — el plano de inferencia rechaza la suscripción).
 
-- registrar el modelo;
-- versionarlo;
-- definir ambiente y dependencias;
-- desplegarlo;
-- exponer un endpoint de inferencia;
-- permitir su administración posterior.
-
-El backend consume el endpoint de Azure ML. React no debe consumirlo directamente.
+**Desviación aprobada (documentada):** la inferencia se sirve en **Azure App Service** (`motor-seg-scoring`, plan F1 gratuito en centralus) con el MISMO artefacto y lógica (`azure/scoring_app/`, autenticación `X-API-Key`). El backend lo consume mediante `src/services/scoring.py` (`POST /customers/{id}/predict`); React nunca lo toca. El contrato de scoring es idéntico al de `azure/score.py` (Azure ML) para poder migrar a un endpoint online si la suscripción lo permite en el futuro.
 
 ## 8. Azure OpenAI
 
@@ -167,9 +163,11 @@ Endpoints iniciales de la aplicación:
 - `POST /ingestion/sync`
 - `GET /customers`
 - `GET /customers/{id}`
+- `POST /customers/{id}/predict` (inferencia en Azure)
 - `POST /segmentation/run`
 - `GET /segments`
 - `GET /segments/{id}`
+- `GET /segments/{id}/recommendation`
 - `POST /segments/{id}/recommendation`
 
 Los nombres pueden cambiar, pero las responsabilidades deben mantenerse separadas.
@@ -309,6 +307,9 @@ MSIA/                          # raíz del proyecto (repositorio Git)
 │   ├── ml/                    # motor de segmentación
 │   │   ├── clustering.py      # preparación, evaluación de k, entrenamiento y validación
 │   │   └── segmentation.py    # etiquetas comerciales + persistencia de ejecuciones
+│   ├── services/              # servicios que consumen plataformas Azure
+│   │   ├── recommendations.py # Azure OpenAI (gpt-5.4-mini DataZone)
+│   │   └── scoring.py         # cliente del scoring en Azure App Service
 │   └── api/                   # API principal FastAPI (puerto 8000)
 │       ├── app.py             # create_app + /health + CORS de desarrollo
 │       └── routes/            # routers: ingestion, customers, segments, dashboard
@@ -316,6 +317,11 @@ MSIA/                          # raíz del proyecto (repositorio Git)
 ├── crm_simulator/             # API CRM simulada: fuente externa independiente
 │   ├── generate_data.py       # generador del dataset (semilla fija → reproducible)
 │   └── app.py                 # API FastAPI con formato externo propio (puerto 8001)
+├── azure/                     # despliegue en Azure
+│   ├── scoring_app/           # servicio de inferencia (App Service, F1, centralus)
+│   ├── score.py               # scoring equivalente para endpoint online de Azure ML
+│   ├── conda_env.yml / environment.yml  # entorno registrado en Azure ML
+│   └── deploy_endpoint.py     # despliegue por SDK (endpoint online)
 ├── data/                      # dataset generado *.json + meta.json/ground truth (no versionado)
 ├── models/                    # artefactos de modelos, p.ej. kmeans_local.pkl (no versionado)
 ├── frontend/                  # React 19 + TypeScript + Vite (puerto 5173)

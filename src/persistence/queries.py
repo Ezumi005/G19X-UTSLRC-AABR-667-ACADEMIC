@@ -155,6 +155,57 @@ def save_recommendation(segment_id: int, model: str, resultado: dict) -> int:
             return cur.fetchone()[0]
 
 
+def customer_features(customer_id: str) -> dict | None:
+    """Las 7 features del contrato de scoring para un cliente (unidades originales).
+
+    Recency usa como referencia max(purchased_at) global (misma convencion que
+    src/features/rfm.py); sin compras -> recency_days None (el scoring la imputa).
+    """
+    with connect() as conn, conn.cursor(row_factory=dict_row) as cur:
+        cur.execute("SELECT registered_at FROM customers WHERE customer_id = %s", (customer_id,))
+        cliente = cur.fetchone()
+        if cliente is None:
+            return None
+        cur.execute("SELECT max(purchased_at) AS ref FROM transactions")
+        ref = cur.fetchone()["ref"]
+        cur.execute(
+            """SELECT count(*) AS frequency, coalesce(sum(amount), 0)::float AS monetary,
+                      max(purchased_at) AS last_purchase
+               FROM transactions WHERE customer_id = %s""",
+            (customer_id,),
+        )
+        tx = cur.fetchone()
+        cur.execute(
+            """SELECT count(*) FILTER (WHERE interaction_type = 'web_visit') AS web_visits,
+                      count(*) FILTER (WHERE interaction_type = 'abandoned_cart') AS abandoned_carts
+               FROM interactions WHERE customer_id = %s""",
+            (customer_id,),
+        )
+        inter = cur.fetchone()
+        cur.execute(
+            """SELECT count(*) FILTER (WHERE event_type = 'sent') AS sent,
+                      count(*) FILTER (WHERE event_type = 'clicked') AS clicked
+               FROM campaign_events WHERE customer_id = %s""",
+            (customer_id,),
+        )
+        ce = cur.fetchone()
+
+    recency = None
+    if tx["last_purchase"] is not None and ref is not None:
+        recency = round((ref - tx["last_purchase"]).total_seconds() / 86400.0, 2)
+    tenure = round((ref - cliente["registered_at"]).total_seconds() / 86400.0) if ref else 0
+    click_rate = (ce["clicked"] / ce["sent"]) if ce["sent"] else 0.0
+    return {
+        "recency_days": recency,
+        "frequency": tx["frequency"],
+        "monetary": round(tx["monetary"], 2),
+        "web_visits": inter["web_visits"],
+        "abandoned_carts": inter["abandoned_carts"],
+        "campaign_click_rate": round(click_rate, 4),
+        "tenure_days": tenure,
+    }
+
+
 def latest_recommendation(segment_id: int) -> dict | None:
     with connect() as conn, conn.cursor(row_factory=dict_row) as cur:
         cur.execute(
