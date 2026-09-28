@@ -11,10 +11,15 @@ contiene lógica de ML.
 
 from __future__ import annotations
 
-from fastapi import FastAPI
+import logging
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from src.api.routes import customers, dashboard, ingestion, segments
+
+logger = logging.getLogger("motor-segmentacion")
 
 DEV_ORIGINS = [
     "http://localhost:5173",
@@ -41,6 +46,12 @@ def create_app() -> FastAPI:
     app.include_router(customers.router)
     app.include_router(segments.router)
     app.include_router(dashboard.router)
+
+    @app.exception_handler(Exception)
+    async def error_no_controlado(request: Request, exc: Exception) -> JSONResponse:
+        """Errores inesperados: respuesta controlada sin filtrar detalles internos."""
+        logger.exception("Error no controlado en %s", request.url.path)
+        return JSONResponse(status_code=500, content={"detail": "Error interno del servidor"})
 
     @app.get("/health", tags=["infra"])
     def health() -> dict:

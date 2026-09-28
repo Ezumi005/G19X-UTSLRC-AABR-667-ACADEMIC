@@ -91,6 +91,7 @@ def generate_recommendation(
         messages=build_messages(label, description, n_customers, profile),
         temperature=0.4,
         max_completion_tokens=700,
+        timeout=60,
     )
     contenido = response.choices[0].message.content or ""
     resultado = parse_json_loose(contenido)

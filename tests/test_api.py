@@ -79,6 +79,20 @@ def prueba_dashboard():
     assert body["last_segmentation"] is not None
 
 
+def prueba_error_interno_controlado():
+    """Un fallo inesperado debe responder 500 controlado, sin filtrar stack traces."""
+    from unittest.mock import patch
+
+    import src.api.routes.customers as customers_route
+    from src.api.app import create_app
+
+    cliente_500 = TestClient(create_app(), raise_server_exceptions=False)
+    with patch.object(customers_route.queries, "list_customers", side_effect=RuntimeError("boom interno")):
+        r = cliente_500.get("/customers")
+    assert r.status_code == 500
+    assert r.json() == {"detail": "Error interno del servidor"}
+
+
 if __name__ == "__main__":
     prueba_health_y_raiz()
     prueba_clientes()
@@ -87,4 +101,5 @@ if __name__ == "__main__":
     prueba_recomendaciones()
     prueba_ingestion_sin_simulador()
     prueba_dashboard()
-    print("OK: API verificada (health, clientes, segmentos, recomendaciones, 404/502, dashboard)")
+    prueba_error_interno_controlado()
+    print("OK: API verificada (health, clientes, segmentos, recomendaciones, 404/502, dashboard, 500 controlado)")
