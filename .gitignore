@@ -28,3 +28,6 @@ Thumbs.db
 .DS_Store
 .vscode/
 .idea/
+
+# Documentos PDF oficiales del proyecto: solo locales, nunca en el repositorio
+*.pdf

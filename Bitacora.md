@@ -1034,6 +1034,30 @@ Ninguno pendiente. Posibles continuaciones futuras: mejoras post-MVP (autenticac
 
 ---
 
+## 06/10/2026 — 14:43
+**Tipo:** Gestión
+
+**Actividad realizada:**  
+Retiré los PDF del PRD y del MVP del repositorio de Git a solicitud del usuario: se eliminaron del índice (quedan intactos solo en la carpeta local) y se agregó `*.pdf` al `.gitignore` para que nunca vuelvan a versionarse.
+
+**Decisiones tomadas:**  
+- Los documentos oficiales (PRD/MVP) dejan de vivir en el repositorio; el código y la bitácora siguen siendo la fuente del desarrollo.
+- Nota transparente: los PDF permanecen en los commits antiguos del historial (el repo es privado). Si el usuario quisiera purgarlos del historial completo, requeriría reescribirlo (filter-repo + force push), lo cual contradice la regla de no alterar el historial; queda como decisión pendiente solo si él la pide.
+
+**Resultado:**  
+- PDF del PRD y del MVP fuera del repositorio y del remoto de GitHub; archivos locales intactos; `.gitignore` actualizado.
+
+**Archivos o componentes afectados:**  
+- `.gitignore`, índice de Git (remoción de 2 PDF), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno.
+
+**Siguiente paso:**  
+Confirmar si se retiran también los otros PDF locales ("Información General - Empresarial", "Mini diccionario") y/o los extractos Markdown de `docs/` del repositorio.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
