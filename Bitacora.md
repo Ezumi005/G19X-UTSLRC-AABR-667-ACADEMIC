@@ -1008,6 +1008,32 @@ Vincular GitHub si se decide (instrucciones listas) y realizar la demostración 
 
 ---
 
+## 06/10/2026 — 14:35
+**Tipo:** Gestión
+
+**Actividad realizada:**  
+Vinculé el repositorio con GitHub, el último pendiente opcional del proyecto. Instalé GitHub CLI, autenticé la sesión (flujo de código de dispositivo, credenciales del usuario) y creé el repositorio remoto con el nombre solicitado.
+
+**Decisiones tomadas:**  
+- Repositorio **privado** (contiene documentación académica y del proyecto).
+- Nombre asignado por el usuario: `G19X-UTSLRC-AABR-667-ACADEMIC`.
+- Rama `main` enlazada a `origin/main`; los `.env` y secretos siguen excluidos por `.gitignore` (verificado durante todo el desarrollo).
+
+**Resultado:**  
+- Repositorio publicado: https://github.com/Ezumi005/G19X-UTSLRC-AABR-667-ACADEMIC con los 23 commits del historial completo.
+- Con esto, el proyecto queda cerrado: 15/15 etapas del orden de desarrollo, demo documentada (README §18) y respaldo remoto.
+
+**Archivos o componentes afectados:**  
+- Git: remoto `origin` añadido; `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno. (Nota: el login inicial de gh requirió dos intentos; se resolvió lanzando el flujo de dispositivo en segundo plano y compartiendo el código de un solo uso).
+
+**Siguiente paso:**  
+Ninguno pendiente. Posibles continuaciones futuras: mejoras post-MVP (autenticación de la API, audiencias dinámicas, adaptadores para CRM reales, migración del scoring a endpoint online de Azure ML si la suscripción lo habilita).
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
