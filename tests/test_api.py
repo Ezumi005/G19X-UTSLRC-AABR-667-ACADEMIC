@@ -36,6 +36,30 @@ def prueba_clientes():
     assert {"customer_id", "age", "city", "registered_at", "segment_label"} <= set(fila)
 
 
+def prueba_filtros_clientes():
+    r = client.get("/customers", params={"segment": "Clientes nuevos", "limit": 100})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["count"] > 0
+    assert all(f["segment_label"] == "Clientes nuevos" for f in body["data"])
+    r2 = client.get("/customers", params={"q": "CLI-01", "limit": 500})
+    assert r2.status_code == 200
+    assert all(f["customer_id"].startswith("CLI-01") for f in r2.json()["data"])
+    r3 = client.get("/customers", params={"city": "Monterrey", "limit": 100})
+    assert r3.status_code == 200
+    assert all(f["city"] == "Monterrey" for f in r3.json()["data"])
+
+
+def prueba_runs_segmentacion():
+    r = client.get("/segmentation/runs")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["count"] >= 1
+    run = body["data"][0]
+    assert {"run_id", "k", "status", "n_customers", "metrics", "started_at"} <= set(run)
+    assert run["metrics"]["silhouette"] > 0
+
+
 def prueba_detalle_cliente():
     r = client.get("/customers/CLI-0001")
     assert r.status_code == 200
@@ -77,6 +101,9 @@ def prueba_dashboard():
     assert body["total_transactions"] > 0
     assert len(body["segments_distribution"]) == 6
     assert body["last_segmentation"] is not None
+    assert len(body["segments_profile"]) == 6
+    assert "monetary" in body["segments_profile"][0]
+    assert len(body["top_categories"]) > 0
 
 
 def prueba_error_interno_controlado():
@@ -96,10 +123,12 @@ def prueba_error_interno_controlado():
 if __name__ == "__main__":
     prueba_health_y_raiz()
     prueba_clientes()
+    prueba_filtros_clientes()
+    prueba_runs_segmentacion()
     prueba_detalle_cliente()
     prueba_segmentos()
     prueba_recomendaciones()
     prueba_ingestion_sin_simulador()
     prueba_dashboard()
     prueba_error_interno_controlado()
-    print("OK: API verificada (health, clientes, segmentos, recomendaciones, 404/502, dashboard, 500 controlado)")
+    print("OK: API verificada (health, clientes, filtros, runs, segmentos, recomendaciones, 404/502, dashboard, 500)")

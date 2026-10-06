@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 from src.ml.segmentation import run_segmentation
 from src.persistence import queries
@@ -18,6 +18,13 @@ def run_segmentation_endpoint() -> dict:
     """Ejecuta una segmentacion completa (features -> K-Means k=6 -> etiquetas -> PostgreSQL)."""
     run_id = run_segmentation()
     return queries.segmentation_run_summary(run_id)
+
+
+@router.get("/segmentation/runs")
+def list_runs(limit: int = Query(default=20, ge=1, le=100)) -> dict:
+    """Historial de ejecuciones de segmentacion con sus metricas (PRD seccion 19)."""
+    runs = queries.list_segmentation_runs(limit)
+    return {"count": len(runs), "data": runs}
 
 
 @router.get("/segments")

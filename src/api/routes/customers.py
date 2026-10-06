@@ -11,9 +11,16 @@ router = APIRouter(tags=["customers"])
 
 
 @router.get("/customers")
-def list_customers(limit: int = Query(default=50, ge=1, le=500), offset: int = Query(default=0, ge=0)) -> dict:
-    """Clientes con paginacion y etiqueta de segmento del ultimo run exitoso."""
-    items, total = queries.list_customers(limit, offset)
+def list_customers(
+    limit: int = Query(default=50, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+    segment: str | None = Query(default=None, max_length=80),
+    city: str | None = Query(default=None, max_length=80),
+    q: str | None = Query(default=None, max_length=50),
+) -> dict:
+    """Clientes con paginacion, filtros opcionales (segmento, ciudad, texto) y
+    etiqueta de segmento del ultimo run exitoso."""
+    items, total = queries.list_customers(limit, offset, segment=segment, city=city, q=q)
     return {"total": total, "count": len(items), "data": items}
 
 

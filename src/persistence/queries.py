@@ -16,23 +16,52 @@ def latest_ok_run_id(conn: psycopg.Connection) -> int | None:
         return row[0] if row else None
 
 
-def list_customers(limit: int, offset: int) -> tuple[list[dict], int]:
+def list_customers(
+    limit: int,
+    offset: int,
+    segment: str | None = None,
+    city: str | None = None,
+    q: str | None = None,
+) -> tuple[list[dict], int]:
+    """Clientes con paginacion, filtros opcionales (segmento/ciudad/texto) y
+    etiqueta de segmento del ultimo run exitoso."""
+    conditions = ["1 = 1"]
+    params: dict = {"limit": limit, "offset": offset}
+    if segment:
+        conditions.append("s.label = %(segment)s")
+        params["segment"] = segment
+    if city:
+        conditions.append("c.city ILIKE %(city)s")
+        params["city"] = f"%{city}%"
+    if q:
+        conditions.append("c.customer_id ILIKE %(q)s")
+        params["q"] = f"%{q}%"
+    where = " AND ".join(conditions)
     with connect() as conn, conn.cursor(row_factory=dict_row) as cur:
         run_id = latest_ok_run_id(conn)
         cur.execute(
-            """
+            f"""
             SELECT c.customer_id, c.age, c.city, c.registered_at,
                    cs.cluster_id, s.label AS segment_label
             FROM customers c
             LEFT JOIN customer_segments cs ON cs.customer_id = c.customer_id AND cs.run_id = %(run)s
             LEFT JOIN segments s ON s.segment_id = cs.segment_id
+            WHERE {where}
             ORDER BY c.customer_id
             LIMIT %(limit)s OFFSET %(offset)s
             """,
-            {"run": run_id, "limit": limit, "offset": offset},
+            {**params, "run": run_id},
         )
         items = [dict(r) for r in cur.fetchall()]
-        cur.execute("SELECT count(*) AS n FROM customers")
+        cur.execute(
+            f"""
+            SELECT count(*) AS n FROM customers c
+            LEFT JOIN customer_segments cs ON cs.customer_id = c.customer_id AND cs.run_id = %(run)s
+            LEFT JOIN segments s ON s.segment_id = cs.segment_id
+            WHERE {where}
+            """,
+            {**params, "run": run_id},
+        )
         total = cur.fetchone()["n"]
     return items, total
 
@@ -206,6 +235,17 @@ def customer_features(customer_id: str) -> dict | None:
     }
 
 
+def list_segmentation_runs(limit: int = 20) -> list[dict]:
+    """Historial de ejecuciones de segmentacion (trazabilidad, PRD seccion 19)."""
+    with connect() as conn, conn.cursor(row_factory=dict_row) as cur:
+        cur.execute(
+            "SELECT run_id, model_name, k, status, n_customers, metrics, started_at, finished_at "
+            "FROM segmentation_runs ORDER BY run_id DESC LIMIT %s",
+            (limit,),
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
 def latest_recommendation(segment_id: int) -> dict | None:
     with connect() as conn, conn.cursor(row_factory=dict_row) as cur:
         cur.execute(
@@ -232,6 +272,7 @@ def dashboard_summary() -> dict:
         run_id = latest_ok_run_id(conn)
         distribution: list[dict] = []
         last_seg: dict | None = None
+        segments_profile: list[dict] = []
         if run_id is not None:
             cur.execute(
                 "SELECT run_id, k, n_customers, started_at FROM segmentation_runs WHERE run_id = %s",
@@ -243,6 +284,20 @@ def dashboard_summary() -> dict:
                 (run_id,),
             )
             distribution = [dict(r) for r in cur.fetchall()]
+            cur.execute(
+                """SELECT label,
+                          (profile->>'recency_days')::float AS recency_days,
+                          (profile->>'frequency')::float AS frequency,
+                          (profile->>'monetary')::float AS monetary,
+                          (profile->>'avg_ticket')::float AS avg_ticket
+                   FROM segments WHERE run_id = %s ORDER BY cluster_id""",
+                (run_id,),
+            )
+            segments_profile = [dict(r) for r in cur.fetchall()]
+        cur.execute(
+            "SELECT category, count(*) AS n FROM transactions GROUP BY category ORDER BY n DESC LIMIT 8"
+        )
+        top_categories = [dict(r) for r in cur.fetchall()]
     return {
         "total_customers": total_customers,
         "total_transactions": tx["n"],
@@ -251,4 +306,6 @@ def dashboard_summary() -> dict:
         "last_ingestion": dict(last_ingestion) if last_ingestion else None,
         "last_segmentation": last_seg,
         "segments_distribution": distribution,
+        "segments_profile": segments_profile,
+        "top_categories": top_categories,
     }
