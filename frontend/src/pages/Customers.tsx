@@ -1,6 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
-import { fetchCustomer, fetchCustomers, fmtNumber, fmtDate } from "../api.ts";
-import type { CustomerDetail, CustomersPage, CustomerRow } from "../types.ts";
+import {
+  fetchCustomer,
+  fetchCustomers,
+  fetchSegments,
+  fmtNumber,
+  fmtDate,
+  predictCustomer,
+} from "../api.ts";
+import type {
+  CustomerDetail,
+  CustomersPage,
+  CustomerRow,
+  Prediction,
+  SegmentsPage,
+} from "../types.ts";
 
 const PAGE_SIZE = 50;
 
@@ -10,13 +23,25 @@ export default function Customers() {
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [detail, setDetail] = useState<Record<string, CustomerDetail>>({});
+  const [predicciones, setPredicciones] = useState<Record<string, Prediction>>({});
+  const [prediciendo, setPrediciendo] = useState<string | null>(null);
+  const [segments, setSegments] = useState<SegmentsPage | null>(null);
+
+  const [filtroSegmento, setFiltroSegmento] = useState("");
+  const [filtroCiudad, setFiltroCiudad] = useState("");
+  const [busqueda, setBusqueda] = useState("");
+  const [filtrosActivos, setFiltrosActivos] = useState<{ segment?: string; city?: string; q?: string }>({});
+
+  useEffect(() => {
+    fetchSegments().then(setSegments).catch(() => {});
+  }, []);
 
   useEffect(() => {
     setPage(null);
-    fetchCustomers(PAGE_SIZE, offset)
+    fetchCustomers(PAGE_SIZE, offset, filtrosActivos)
       .then(setPage)
       .catch((e: unknown) => setError(String(e)));
-  }, [offset]);
+  }, [offset, filtrosActivos]);
 
   const toggle = useCallback(async (row: CustomerRow) => {
     if (expanded === row.customer_id) {
@@ -30,12 +55,69 @@ export default function Customers() {
     }
   }, [expanded, detail]);
 
+  const predecir = async (customer_id: string) => {
+    setPrediciendo(customer_id);
+    try {
+      const p = await predictCustomer(customer_id);
+      setPredicciones((prev) => ({ ...prev, [customer_id]: p }));
+    } catch (e) {
+      window.alert(`No se pudo predecir: ${String(e)}`);
+    } finally {
+      setPrediciendo(null);
+    }
+  };
+
+  const aplicarFiltros = () => {
+    setOffset(0);
+    setFiltrosActivos({
+      segment: filtroSegmento || undefined,
+      city: filtroCiudad.trim() || undefined,
+      q: busqueda.trim() || undefined,
+    });
+  };
+
+  const limpiarFiltros = () => {
+    setFiltroSegmento("");
+    setFiltroCiudad("");
+    setBusqueda("");
+    setOffset(0);
+    setFiltrosActivos({});
+  };
+
   if (error) return <p className="error">No se pudo conectar con el backend: {error}</p>;
 
   return (
     <section>
       <h1>Clientes</h1>
-      <p className="muted">{page ? `${fmtNumber(page.total)} clientes · segmento del último run` : "Cargando…"}</p>
+      <p className="muted">
+        {page ? `${fmtNumber(page.total)} clientes · segmento del último run` : "Cargando…"}
+      </p>
+
+      <div className="filter-bar">
+        <select
+          value={filtroSegmento}
+          onChange={(e) => setFiltroSegmento(e.target.value)}
+          aria-label="Filtrar por segmento"
+        >
+          <option value="">Todos los segmentos</option>
+          {segments?.data.map((s) => (
+            <option key={s.segment_id} value={s.label}>{s.label}</option>
+          ))}
+        </select>
+        <input
+          placeholder="Ciudad contiene…"
+          value={filtroCiudad}
+          onChange={(e) => setFiltroCiudad(e.target.value)}
+        />
+        <input
+          placeholder="Buscar ID (p. ej. CLI-01)…"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+        />
+        <button className="btn-secondary" onClick={aplicarFiltros}>Filtrar</button>
+        <button className="btn-secondary" onClick={limpiarFiltros}>Limpiar</button>
+      </div>
+
       <table className="table">
         <thead>
           <tr>
@@ -75,6 +157,23 @@ export default function Customers() {
                     ) : (
                       <span className="muted">Cargando detalle…</span>
                     )}
+                    <div className="predict-box">
+                      {predicciones[row.customer_id] ? (
+                        <span>
+                          Predicción (Azure):{" "}
+                          <b className="badge">
+                            Cluster {predicciones[row.customer_id].cluster} · {predicciones[row.customer_id].segment?.label ?? "sin etiqueta"}
+                          </b>
+                        </span>
+                      ) : (
+                        <button
+                          disabled={prediciendo === row.customer_id}
+                          onClick={() => void predecir(row.customer_id)}
+                        >
+                          {prediciendo === row.customer_id ? "Consultando Azure…" : "Predecir segmento (Azure)"}
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               )}

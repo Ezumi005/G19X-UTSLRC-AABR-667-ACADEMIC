@@ -161,10 +161,11 @@ Responsabilidades:
 Endpoints iniciales de la aplicación:
 
 - `POST /ingestion/sync`
-- `GET /customers`
+- `GET /customers` (con filtros `segment`, `city`, `q`)
 - `GET /customers/{id}`
 - `POST /customers/{id}/predict` (inferencia en Azure)
 - `POST /segmentation/run`
+- `GET /segmentation/runs` (historial con métricas)
 - `GET /segments`
 - `GET /segments/{id}`
 - `GET /segments/{id}/recommendation`
@@ -207,7 +208,7 @@ Vistas mínimas:
 
 React consume únicamente la API del backend. Las claves de Azure y demás secretos nunca deben estar en el frontend.
 
-Implementación actual: `frontend/` — Vite + React 19 + TypeScript + react-router. Vistas: Dashboard (indicadores y distribución de segmentos), Clientes (tabla paginada con expansión de detalle y segmento asignado), Segmentos (tarjetas) y Detalle de segmento (perfil medio, métricas del run y botón de recomendación que informa del estado pendiente de Azure OpenAI). Cliente HTTP centralizado en `src/api.ts` (URL base configurable con `VITE_API_BASE`); sin credenciales ni llamadas a servicios externos.
+Implementación actual: `frontend/` — Vite + React 19 + TypeScript + react-router + recharts (gráficas). Vistas: Dashboard (indicadores, 4 gráficas: distribución, gasto, recencia y categorías), Clientes (tabla paginada con filtros por segmento/ciudad/ID, detalle expandible y **botón "Predecir segmento (Azure)"**), Segmentos (tarjetas), Detalle de segmento (perfil, métricas, recomendación) y Ejecuciones (historial de runs con métricas). Cliente HTTP centralizado en `src/api.ts` (URL base configurable con `VITE_API_BASE`); sin credenciales ni llamadas a servicios externos.
 
 ## 12. Orden de desarrollo
 
@@ -332,7 +333,7 @@ MSIA/                          # raíz del proyecto (repositorio Git)
 │   └── src/
 │       ├── api.ts             # cliente HTTP de la API del backend
 │       ├── types.ts           # tipos de las respuestas
-│       └── pages/             # Dashboard, Customers, Segments, SegmentDetail
+│       └── pages/             # Dashboard, Customers, Segments, SegmentDetail, Runs
 └── .venv/                     # entorno virtual local (no versionado)
 ```
 
@@ -401,8 +402,9 @@ cd frontend; npm install; npm run dev                         # frontend (termin
 ```
 
 **Demo diaria (todo inicializado):** levantar simulador + backend + frontend, y recorrer:
-1. **Dashboard**: indicadores y distribución de segmentos.
-2. **Clientes**: paginación, detalle expandible; predicción de segmento en la nube: `POST /customers/{id}/predict` (p. ej. `CLI-0001`).
-3. **Segmentos**: 6 grupos con etiquetas comerciales; en el detalle, perfil medio y botón **"Generar recomendación"** (Azure OpenAI; ya hay una por segmento).
+1. **Dashboard**: indicadores y gráficas (distribución, gasto por segmento, recencia, categorías).
+2. **Clientes**: filtros por segmento/ciudad/ID; en el detalle expandible, botón **"Predecir segmento (Azure)"** (p. ej. `CLI-0001`).
+3. **Segmentos**: 6 grupos con etiquetas comerciales; en el detalle, perfil medio y recomendación (Azure OpenAI; ya hay una por segmento).
+4. **Ejecuciones**: historial de runs con sus métricas (trazabilidad).
 
 **Recursos Azure activos:** `openai-motor-seg` (Azure OpenAI, gpt-5.4-mini DataZone), `ml-motor-seg-v2` (registro/versionado del modelo) y `motor-seg-scoring` + plan F1 (servicio de scoring).

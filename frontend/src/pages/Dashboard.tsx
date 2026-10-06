@@ -1,6 +1,26 @@
 import { useEffect, useState } from "react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { fetchDashboard, fmtNumber, fmtDate } from "../api.ts";
 import type { Dashboard as DashboardData } from "../types.ts";
+
+const corto = (texto: string, max = 22) => (texto.length > max ? `${texto.slice(0, max)}…` : texto);
+
+function ChartCard({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  return (
+    <div className="chart-card">
+      <h3>{titulo}</h3>
+      <div className="chart-body">{children}</div>
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
@@ -13,7 +33,22 @@ export default function Dashboard() {
   if (error) return <p className="error">No se pudo conectar con el backend: {error}</p>;
   if (!data) return <p className="muted">Cargando…</p>;
 
-  const maxN = Math.max(...data.segments_distribution.map((s) => s.n_customers), 1);
+  const distribucion = data.segments_distribution.map((s) => ({
+    nombre: corto(s.label),
+    clientes: s.n_customers,
+  }));
+  const gasto = data.segments_profile.map((s) => ({
+    nombre: corto(s.label),
+    gasto: Math.round((s.monetary ?? 0) / 1000),
+  }));
+  const recencia = data.segments_profile.map((s) => ({
+    nombre: corto(s.label),
+    dias: s.recency_days === null ? null : Math.round(s.recency_days),
+  }));
+  const categorias = data.top_categories.map((c) => ({
+    categoria: corto(c.category, 14),
+    compras: c.n,
+  }));
 
   return (
     <section>
@@ -37,20 +72,54 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <h2>Distribución de segmentos</h2>
-      {data.segments_distribution.length === 0 && (
-        <p className="muted">Sin segmentaciones todavía. Ejecuta el backend y corre una segmentación.</p>
-      )}
-      <div className="distribution">
-        {data.segments_distribution.map((s) => (
-          <div key={s.segment_id} className="dist-row">
-            <span className="dist-label" title={s.label}>{s.label}</span>
-            <div className="dist-bar-track">
-              <div className="dist-bar" style={{ width: `${(s.n_customers / maxN) * 100}%` }} />
-            </div>
-            <span className="dist-n">{fmtNumber(s.n_customers)}</span>
-          </div>
-        ))}
+      <div className="chart-grid">
+        <ChartCard titulo="Clientes por segmento">
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={distribucion} layout="vertical" margin={{ left: 8, right: 16 }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+              <XAxis type="number" />
+              <YAxis type="category" dataKey="nombre" width={150} tick={{ fontSize: 12 }} />
+              <Tooltip />
+              <Bar dataKey="clientes" fill="#4f8cff" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard titulo="Gasto acumulado promedio por segmento (miles)">
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={gasto} layout="vertical" margin={{ left: 8, right: 16 }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+              <XAxis type="number" />
+              <YAxis type="category" dataKey="nombre" width={150} tick={{ fontSize: 12 }} />
+              <Tooltip />
+              <Bar dataKey="gasto" fill="#7a6bff" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard titulo="Días desde la última compra (promedio)">
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={recencia} layout="vertical" margin={{ left: 8, right: 16 }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+              <XAxis type="number" />
+              <YAxis type="category" dataKey="nombre" width={150} tick={{ fontSize: 12 }} />
+              <Tooltip />
+              <Bar dataKey="dias" fill="#2bb673" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard titulo="Compras por categoría (top 8)">
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={categorias} margin={{ left: 0, right: 8, bottom: 24 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="categoria" tick={{ fontSize: 11 }} angle={-30} textAnchor="end" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="compras" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
       </div>
 
       <h2>Últimas ejecuciones</h2>

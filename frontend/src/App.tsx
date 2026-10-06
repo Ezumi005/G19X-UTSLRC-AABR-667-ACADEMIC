@@ -3,6 +3,7 @@ import Dashboard from "./pages/Dashboard.tsx";
 import Customers from "./pages/Customers.tsx";
 import Segments from "./pages/Segments.tsx";
 import SegmentDetail from "./pages/SegmentDetail.tsx";
+import Runs from "./pages/Runs.tsx";
 
 function Nav() {
   const { pathname } = useLocation();
@@ -10,6 +11,7 @@ function Nav() {
     { to: "/", label: "Dashboard" },
     { to: "/customers", label: "Clientes" },
     { to: "/segments", label: "Segmentos" },
+    { to: "/runs", label: "Ejecuciones" },
   ];
   return (
     <header className="topbar">
@@ -38,6 +40,7 @@ export default function App() {
           <Route path="/customers" element={<Customers />} />
           <Route path="/segments" element={<Segments />} />
           <Route path="/segments/:id" element={<SegmentDetail />} />
+          <Route path="/runs" element={<Runs />} />
         </Routes>
       </main>
       <footer className="footer">

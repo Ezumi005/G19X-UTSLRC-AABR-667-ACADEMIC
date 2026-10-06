@@ -60,6 +60,37 @@ export interface Recommendation {
   created_at: string;
 }
 
+export interface Prediction {
+  customer_id: string;
+  features: Record<string, number | null>;
+  cluster: number;
+  segment: { segment_id: number; label: string } | null;
+}
+
+export interface SegmentationRun {
+  run_id: number;
+  model_name: string;
+  k: number;
+  status: string;
+  n_customers: number;
+  metrics: Record<string, number>;
+  started_at: string;
+  finished_at: string | null;
+}
+
+export interface SegmentProfileRow {
+  label: string;
+  recency_days: number | null;
+  frequency: number | null;
+  monetary: number | null;
+  avg_ticket: number | null;
+}
+
+export interface TopCategory {
+  category: string;
+  n: number;
+}
+
 export interface Dashboard {
   total_customers: number;
   total_transactions: number;
@@ -68,4 +99,6 @@ export interface Dashboard {
   last_ingestion: { run_id: number; status: string; finished_at: string } | null;
   last_segmentation: { run_id: number; k: number; n_customers: number; started_at: string } | null;
   segments_distribution: { segment_id: number; label: string; n_customers: number }[];
+  segments_profile: SegmentProfileRow[];
+  top_categories: TopCategory[];
 }

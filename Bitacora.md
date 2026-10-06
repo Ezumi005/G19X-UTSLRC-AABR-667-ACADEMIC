@@ -1058,6 +1058,36 @@ Confirmar si se retiran también los otros PDF locales ("Información General - 
 
 ---
 
+## 06/10/2026 — 15:13
+**Tipo:** Técnico
+
+**Actividad realizada:**  
+Completé el Nivel 1 del plan de mejora de la web (derivado del análisis PRD/MVP vs implementación). Implementé: botón "Predecir segmento (Azure)" en el detalle expandible de cada cliente (expone en la interfaz la inferencia en la nube que ya funcionaba solo por API), gráficas en el Dashboard con recharts (clientes por segmento, gasto acumulado promedio, recencia promedio y top categorías), filtros de clientes (segmento, ciudad, búsqueda por ID, resueltos en SQL) y la vista Ejecuciones con el historial de runs y sus métricas. Verifiqué todo en vivo y con las pruebas de API ampliadas.
+
+**Decisiones tomadas:**  
+- `recharts` como librería de gráficas (estándar en React, ligera).
+- Filtros resueltos en SQL (no en el cliente) para que la paginación siga siendo correcta con resultados filtrados.
+- Nuevo endpoint `GET /segmentation/runs` (PRD §19: consultar ejecuciones) y `GET /dashboard` enriquecido con perfil promedio por segmento (desde el JSONB de `segments`) y top de categorías.
+- La predicción se cachea por cliente en la interfaz tras la primera consulta.
+
+**Resultado:**  
+- Backend: filtros + runs + dashboard enriquecido, con pruebas ampliadas en verde (commit c6a84d8).
+- Frontend: 4 gráficas nuevas, barra de filtros, botón de predicción con resultado (cluster + etiqueta) y página Ejecuciones; `npm run build` en verde.
+- Verificación en vivo: runs (#4, silhouette 0.4144), filtro "Clientes nuevos" (3 de 70), dashboard (6 perfiles, 8 categorías) y predicción real `CLI-0003 → cluster 2 "Clientes frecuentes de alto valor"`.
+
+**Archivos o componentes afectados:**  
+- Backend: `src/persistence/queries.py`, `src/api/routes/{customers,segments}.py`, `tests/test_api.py`.
+- Frontend: `package.json` (+recharts), `src/{api.ts, types.ts, App.tsx, styles.css}`, `src/pages/{Dashboard, Customers, Runs}.tsx`.
+- Docs: `README.md` (§9, §11, §16, §18), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno (un import faltante de `Query` detectado por las pruebas y corregido al instante).
+
+**Siguiente paso:**  
+Nivel 2 del plan de mejora: audiencias dinámicas (PRD §16), vista de cliente propia, seguridad básica de la API y panel de observabilidad; o lo que el usuario priorice.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

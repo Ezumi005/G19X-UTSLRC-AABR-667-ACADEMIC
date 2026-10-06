@@ -80,3 +80,20 @@ button:hover:enabled { background: #1f3aa8; }
 .reco-card { background: #f2fbf6; border: 1px solid #bfe6cf; border-radius: 10px; padding: 16px 18px; margin-bottom: 12px; }
 .reco-list { margin: 10px 0 6px; padding-left: 20px; }
 .reco-list li { margin: 4px 0; font-size: 14.5px; }
+
+.filter-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; align-items: center; }
+.filter-bar select, .filter-bar input {
+  padding: 8px 10px; border-radius: 6px; border: 1px solid #c9d2e8; background: #fff; font-size: 14px;
+}
+.filter-bar input { min-width: 200px; }
+.btn-secondary { padding: 8px 14px; border-radius: 6px; border: 1px solid #c9d2e8; background: #fff; color: #2b3350; font-size: 14px; cursor: pointer; }
+.btn-secondary:hover:enabled { border-color: #4f8cff; }
+
+.predict-box { margin-top: 8px; }
+
+.chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px; margin: 16px 0; }
+.chart-card { background: #fff; border: 1px solid #e3e7f2; border-radius: 10px; padding: 12px 14px; }
+.chart-card h3 { margin: 2px 0 8px; font-size: 14.5px; color: #2a3558; }
+.chart-body { width: 100%; }
+
+.badge-warn { background: #fff3d6; color: #8a6100; }

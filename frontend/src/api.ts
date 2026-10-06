@@ -18,10 +18,30 @@ async function postJson<T>(path: string): Promise<T> {
 }
 
 export const fetchDashboard = () => getJson<import("./types.ts").Dashboard>("/dashboard");
-export const fetchCustomers = (limit: number, offset: number) =>
-  getJson<import("./types.ts").CustomersPage>(`/customers?limit=${limit}&offset=${offset}`);
+export interface CustomerFilters {
+  segment?: string;
+  city?: string;
+  q?: string;
+}
+
+export async function fetchCustomers(
+  limit: number,
+  offset: number,
+  filters: CustomerFilters = {},
+): Promise<import("./types.ts").CustomersPage> {
+  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  if (filters.segment) params.set("segment", filters.segment);
+  if (filters.city) params.set("city", filters.city);
+  if (filters.q) params.set("q", filters.q);
+  return getJson(`/customers?${params.toString()}`);
+}
+
 export const fetchCustomer = (id: string) =>
   getJson<import("./types.ts").CustomerDetail>(`/customers/${encodeURIComponent(id)}`);
+export const predictCustomer = (id: string) =>
+  postJson<import("./types.ts").Prediction>(`/customers/${encodeURIComponent(id)}/predict`);
+export const fetchRuns = () =>
+  getJson<{ count: number; data: import("./types.ts").SegmentationRun[] }>("/segmentation/runs");
 export const fetchSegments = () => getJson<import("./types.ts").SegmentsPage>("/segments");
 export const fetchSegment = (id: number) =>
   getJson<import("./types.ts").SegmentDetail>(`/segments/${id}`);
