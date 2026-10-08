@@ -17,7 +17,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from src.api.routes import customers, dashboard, ingestion, segments
+from src.api.routes import audiences, customers, dashboard, ingestion, segments
 
 logger = logging.getLogger("motor-segmentacion")
 
@@ -46,6 +46,7 @@ def create_app() -> FastAPI:
     app.include_router(customers.router)
     app.include_router(segments.router)
     app.include_router(dashboard.router)
+    app.include_router(audiences.router)
 
     @app.exception_handler(Exception)
     async def error_no_controlado(request: Request, exc: Exception) -> JSONResponse:

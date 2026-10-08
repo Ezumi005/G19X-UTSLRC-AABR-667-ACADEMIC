@@ -134,3 +134,15 @@ CREATE TABLE IF NOT EXISTS recommendations (
     created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_recommendations_segment ON recommendations (segment_id);
+
+-- Audiencias dinamicas (PRD seccion 16 / RF-18, RF-19): condiciones almacenadas,
+-- membresia recalculada en cada consulta contra los datos vigentes
+CREATE TABLE IF NOT EXISTS audiences (
+    audience_id      BIGSERIAL PRIMARY KEY,
+    name             TEXT NOT NULL UNIQUE,
+    description      TEXT,
+    conditions       JSONB NOT NULL,
+    created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+    last_calculated_at TIMESTAMPTZ,
+    n_customers      INT
+);

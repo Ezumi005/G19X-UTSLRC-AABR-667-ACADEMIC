@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 
 import requests
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 from src.persistence import queries
 from src.persistence.ingest import run_ingestion
@@ -13,6 +13,13 @@ from src.persistence.ingest import run_ingestion
 router = APIRouter(prefix="/ingestion", tags=["ingestion"])
 
 DEFAULT_SIMULATOR_URL = "http://127.0.0.1:8001"
+
+
+@router.get("/runs")
+def list_ingestion_runs(limit: int = Query(default=10, ge=1, le=50)) -> dict:
+    """Historial de ingestiones con duracion, conteos e incidencias (PRD seccion 31)."""
+    data = queries.list_ingestion_runs(limit)
+    return {"count": len(data), "data": data}
 
 
 @router.post("/sync")
