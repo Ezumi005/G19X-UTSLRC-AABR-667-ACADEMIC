@@ -1,9 +1,11 @@
 import { Route, Routes, Link, useLocation } from "react-router-dom";
 import Dashboard from "./pages/Dashboard.tsx";
 import Customers from "./pages/Customers.tsx";
+import CustomerDetail from "./pages/CustomerDetail.tsx";
 import Segments from "./pages/Segments.tsx";
 import SegmentDetail from "./pages/SegmentDetail.tsx";
 import Runs from "./pages/Runs.tsx";
+import { AudienceDetailPage, AudiencesList } from "./pages/Audiences.tsx";
 
 function Nav() {
   const { pathname } = useLocation();
@@ -11,6 +13,7 @@ function Nav() {
     { to: "/", label: "Dashboard" },
     { to: "/customers", label: "Clientes" },
     { to: "/segments", label: "Segmentos" },
+    { to: "/audiences", label: "Audiencias" },
     { to: "/runs", label: "Ejecuciones" },
   ];
   return (
@@ -38,8 +41,11 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/customers" element={<Customers />} />
+          <Route path="/customers/:id" element={<CustomerDetail />} />
           <Route path="/segments" element={<Segments />} />
           <Route path="/segments/:id" element={<SegmentDetail />} />
+          <Route path="/audiences" element={<AudiencesList />} />
+          <Route path="/audiences/:id" element={<AudienceDetailPage />} />
           <Route path="/runs" element={<Runs />} />
         </Routes>
       </main>

@@ -25,6 +25,57 @@ export interface CustomerDetail {
     categories_count: number;
   };
   segment: { segment_id: number; label: string; cluster_id: number } | null;
+  features: Record<string, number | null>;
+}
+
+export interface AudienceConditions {
+  segment?: string | null;
+  city?: string | null;
+  min_frequency?: number | null;
+  min_days_without_purchase?: number | null;
+  category?: string | null;
+}
+
+export interface Audience {
+  audience_id: number;
+  name: string;
+  description: string | null;
+  conditions: AudienceConditions;
+  created_at: string;
+  n_customers: number;
+}
+
+export interface AudienceMember {
+  customer_id: string;
+  age: number | null;
+  city: string | null;
+  registered_at: string;
+  segment_label: string | null;
+  cluster_id: number | null;
+  frequency: number;
+  last_purchase: string | null;
+}
+
+export interface AudienceDetail extends Audience {
+  members: AudienceMember[];
+  members_total: number;
+}
+
+export interface IngestionRun {
+  run_id: number;
+  source: string;
+  status: string;
+  started_at: string;
+  finished_at: string | null;
+  customers_read: number;
+  customers_saved: number;
+  transactions_read: number;
+  transactions_saved: number;
+  interactions_read: number;
+  interactions_saved: number;
+  campaign_events_read: number;
+  campaign_events_saved: number;
+  incidents: number;
 }
 
 export interface Segment {

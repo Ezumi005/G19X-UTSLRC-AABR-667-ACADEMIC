@@ -161,6 +161,7 @@ Responsabilidades:
 Endpoints iniciales de la aplicación:
 
 - `POST /ingestion/sync`
+- `GET /ingestion/runs` (historial con duración e incidencias)
 - `GET /customers` (con filtros `segment`, `city`, `q`)
 - `GET /customers/{id}`
 - `POST /customers/{id}/predict` (inferencia en Azure)
@@ -170,6 +171,7 @@ Endpoints iniciales de la aplicación:
 - `GET /segments/{id}`
 - `GET /segments/{id}/recommendation`
 - `POST /segments/{id}/recommendation`
+- `GET/POST/DELETE /audiences[/{id}]` (audiencias dinámicas) + `GET /audiences/{id}/export` (CSV)
 
 Los nombres pueden cambiar, pero las responsabilidades deben mantenerse separadas.
 
@@ -192,7 +194,7 @@ Entidades mínimas esperadas:
 
 No guardar el payload externo como si fuera el modelo interno definitivo. Primero debe pasar por su adaptador y validación.
 
-Implementación actual: `src/persistence/schema.sql` — tablas `customers`, `transactions`, `interactions`, `campaign_events` (espejo del contrato V1, con CHECKs de enums), `ingestion_runs`/`ingestion_incidents` (trazabilidad de ingestiones) y `segmentation_runs`/`segments`/`customer_segments` (trazabilidad de segmentaciones: cada ejecución conserva sus segmentos con perfil JSONB y sus asignaciones). Sin FKs en las tablas de datos: la integridad referencial corresponde al procesamiento (contrato, sección 2); las tablas de segmentación sí llevan FKs estructurales. Falta `recommendations` (llegará con Azure OpenAI).
+Implementación actual: `src/persistence/schema.sql` — tablas `customers`, `transactions`, `interactions`, `campaign_events` (espejo del contrato V1, con CHECKs de enums), `ingestion_runs`/`ingestion_incidents` (trazabilidad de ingestiones), `segmentation_runs`/`segments`/`customer_segments` (trazabilidad de segmentaciones) y `audiences` (audiencias dinámicas PRD §16: condiciones JSONB, membresía recalculada en cada consulta). Sin FKs en las tablas de datos: la integridad referencial corresponde al procesamiento (contrato, sección 2); las tablas de segmentación sí llevan FKs estructurales. Falta `recommendations`… ya existe (Azure OpenAI).
 
 ## 11. Frontend
 
@@ -208,7 +210,7 @@ Vistas mínimas:
 
 React consume únicamente la API del backend. Las claves de Azure y demás secretos nunca deben estar en el frontend.
 
-Implementación actual: `frontend/` — Vite + React 19 + TypeScript + react-router + recharts (gráficas). Vistas: Dashboard (indicadores, 4 gráficas: distribución, gasto, recencia y categorías), Clientes (tabla paginada con filtros por segmento/ciudad/ID, detalle expandible y **botón "Predecir segmento (Azure)"**), Segmentos (tarjetas), Detalle de segmento (perfil, métricas, recomendación) y Ejecuciones (historial de runs con métricas). Cliente HTTP centralizado en `src/api.ts` (URL base configurable con `VITE_API_BASE`); sin credenciales ni llamadas a servicios externos.
+Implementación actual: `frontend/` — Vite + React 19 + TypeScript + react-router + recharts (gráficas). Vistas: Dashboard (indicadores, 4 gráficas), Clientes (filtros, detalle expandible, botón de predicción Azure y enlace a página propia), Detalle de cliente (RFM, features, segmento, predicción), Segmentos, Detalle de segmento (recomendación), Audiencias (creación con condiciones combinables, listado, miembros y export CSV) y Ejecuciones (runs de segmentación e historial de ingestión). Cliente HTTP centralizado en `src/api.ts`; sin credenciales ni llamadas a servicios externos.
 
 ## 12. Orden de desarrollo
 
@@ -333,7 +335,8 @@ MSIA/                          # raíz del proyecto (repositorio Git)
 │   └── src/
 │       ├── api.ts             # cliente HTTP de la API del backend
 │       ├── types.ts           # tipos de las respuestas
-│       └── pages/             # Dashboard, Customers, Segments, SegmentDetail, Runs
+│       └── pages/             # Dashboard, Customers, CustomerDetail, Segments,
+│                                SegmentDetail, Audiences, Runs
 └── .venv/                     # entorno virtual local (no versionado)
 ```
 
@@ -403,8 +406,9 @@ cd frontend; npm install; npm run dev                         # frontend (termin
 
 **Demo diaria (todo inicializado):** levantar simulador + backend + frontend, y recorrer:
 1. **Dashboard**: indicadores y gráficas (distribución, gasto por segmento, recencia, categorías).
-2. **Clientes**: filtros por segmento/ciudad/ID; en el detalle expandible, botón **"Predecir segmento (Azure)"** (p. ej. `CLI-0001`).
-3. **Segmentos**: 6 grupos con etiquetas comerciales; en el detalle, perfil medio y recomendación (Azure OpenAI; ya hay una por segmento).
-4. **Ejecuciones**: historial de runs con sus métricas (trazabilidad).
+2. **Clientes**: filtros por segmento/ciudad/ID; en el detalle expandible, botón **"Predecir segmento (Azure)"**; el ID lleva a la página del cliente (RFM + features + predicción).
+3. **Segmentos**: 6 grupos con etiquetas comerciales; en el detalle, perfil medio y recomendación (Azure OpenAI).
+4. **Audiencias**: crear una con condiciones combinables (p. ej. "en riesgo" + categoría electrónica) y exportar CSV.
+5. **Ejecuciones**: historial de runs de segmentación (métricas) e ingestión (duraciones, conteos, incidencias).
 
 **Recursos Azure activos:** `openai-motor-seg` (Azure OpenAI, gpt-5.4-mini DataZone), `ml-motor-seg-v2` (registro/versionado del modelo) y `motor-seg-scoring` + plan F1 (servicio de scoring).

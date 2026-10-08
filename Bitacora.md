@@ -1088,6 +1088,37 @@ Nivel 2 del plan de mejora: audiencias dinámicas (PRD §16), vista de cliente p
 
 ---
 
+## 07/10/2026 — 20:34
+**Tipo:** Técnico
+
+**Actividad realizada:**  
+Completé el Nivel 2 del plan de mejora: audiencias dinámicas (PRD §16, RF-18/19), página de detalle de cliente y observabilidad de ingestión en la web (PRD §31). Implementé la tabla `audiences` con condiciones JSONB y membresía recalculada en cada consulta; endpoints CRUD + export CSV (`/audiences`); `GET /ingestion/runs` con duraciones, conteos leídos/guardados e incidencias; el detalle de cliente ahora incluye sus 7 features del contrato de scoring; y en el frontend las vistas Audiencias (constructor de condiciones, listado, miembros, export, borrado), Detalle de cliente (RFM, features, predicción en Azure) y el historial de ingestión dentro de Ejecuciones. Verifiqué todo en vivo.
+
+**Decisiones tomadas:**  
+- Condiciones de audiencia combinables por AND: segmento del último run, ciudad (ILIKE), frecuencia mínima, días sin compra y "ha comprado categoría X"; validadas con Pydantic (incluye enum canónico de categorías del contrato).
+- La membresía NO se persiste: se recalcula contra los datos vigentes en cada consulta (RF-19) y se actualiza el tamaño/fecha de último cálculo como estadística.
+- Export CSV servido directamente por el backend (`text/csv` + Content-Disposition) para uso en campañas.
+- La seguridad de la API (API key/roles) queda como pieza separada y deshabilitada para no romper la demo local; documentada como decisión post-MVP.
+- Parámetros SQL con casts explícitos (`::text/::int`) para que PostgreSQL infiera tipos en las comparaciones con NULL.
+
+**Resultado:**  
+- Backend (commit bd7cb03): audiencias + runs de ingesta + features en detalle de cliente, con `tests/test_audiences.py` en verde y suite de API completa.
+- Frontend: vistas nuevas funcionando, `npm run build` en verde.
+- Verificación en vivo: audiencia "riesgo + electrónica" → 64 clientes coherentes; export CSV (66 líneas); detalle CLI-0001 con 7 features y segmento; historial de 8 ingestiones con duraciones e incidencias.
+
+**Archivos o componentes afectados:**  
+- Backend: `schema.sql`, `queries.py`, `routes/{audiences,ingestion,customers,app}.py`, `tests/test_audiences.py`.
+- Frontend: `api.ts`, `types.ts`, `App.tsx`, `styles.css`, `pages/{Audiences, CustomerDetail, Customers, Runs}.tsx`.
+- Docs: `README.md` (§9, §10, §11, §16, §18), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno relevante (dos correcciones menores al vuelo: import de `Link` y casts SQL).
+
+**Siguiente paso:**  
+Nivel 3 del plan de mejora cuando se decida: GitHub Actions (CI gratuito en repo público), Docker Compose, churn/CLV, adaptador CSV; y la decisión pendiente de seguridad de la API para demostraciones externas.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

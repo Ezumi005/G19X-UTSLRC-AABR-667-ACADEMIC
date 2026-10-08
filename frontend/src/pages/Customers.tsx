@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   fetchCustomer,
   fetchCustomers,
@@ -132,7 +133,11 @@ export default function Customers() {
           {page?.data.map((row) => (
             <>
               <tr key={row.customer_id} className="clickable" onClick={() => void toggle(row)}>
-                <td>{row.customer_id}</td>
+                <td>
+                  <Link to={`/customers/${row.customer_id}`} onClick={(e) => e.stopPropagation()}>
+                    {row.customer_id}
+                  </Link>
+                </td>
                 <td>{row.age ?? "—"}</td>
                 <td>{row.city ?? "—"}</td>
                 <td>{fmtDate(row.registered_at)}</td>
