@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { fetchCustomer, fmtNumber, fmtDate, predictCustomer } from "../api.ts";
+import { useSettings } from "../settings.tsx";
 import type { CustomerDetail, Prediction } from "../types.ts";
 
 const FEATURE_LABELS: Record<string, string> = {
@@ -22,6 +23,7 @@ export default function CustomerDetail() {
   const [error, setError] = useState<string | null>(null);
   const [prediccion, setPrediccion] = useState<Prediction | null>(null);
   const [prediciendo, setPrediciendo] = useState(false);
+  const { fmtMoney } = useSettings();
 
   useEffect(() => {
     fetchCustomer(id ?? "").then(setData).catch((e: unknown) => setError(String(e)));
@@ -56,7 +58,7 @@ export default function CustomerDetail() {
         </div>
         <div className="card">
           <span className="card-label">Gasto total</span>
-          <span className="card-value">{fmtNumber(data.stats.monetary, 2)}</span>
+          <span className="card-value">{fmtMoney(data.stats.monetary)}</span>
         </div>
         <div className="card">
           <span className="card-label">Última compra</span>
@@ -91,7 +93,15 @@ export default function CustomerDetail() {
           {Object.entries(data.features ?? {}).map(([key, value]) => (
             <tr key={key}>
               <td>{FEATURE_LABELS[key] ?? key}</td>
-              <td className="num">{value === null ? "—" : fmtNumber(value, 2)}</td>
+              <td className="num">
+                {value === null
+                  ? "—"
+                  : key === "monetary" || key === "avg_ticket"
+                    ? fmtMoney(value)
+                    : key === "campaign_click_rate"
+                      ? `${(value * 100).toFixed(1)}%`
+                      : fmtNumber(value, 2)}
+              </td>
             </tr>
           ))}
         </tbody>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { fetchSegment, fmtNumber, fmtDate, requestRecommendation, fetchRecommendation } from "../api.ts";
+import { useSettings } from "../settings.tsx";
 import type { Recommendation, SegmentDetail } from "../types.ts";
 
 const PROFILE_LABELS: Record<string, string> = {
@@ -23,6 +24,7 @@ export default function SegmentDetail() {
   const [reco, setReco] = useState<Recommendation | null>(null);
   const [recoState, setRecoState] = useState<"idle" | "loading" | "pending" | "error">("idle");
   const [recoMsg, setRecoMsg] = useState("");
+  const { fmtMoney } = useSettings();
 
   useEffect(() => {
     fetchSegment(Number(id)).then(setData).catch((e: unknown) => setError(String(e)));
@@ -56,26 +58,12 @@ export default function SegmentDetail() {
     <section>
       <Link to="/segments" className="back">← Segmentos</Link>
       <h1>{data.label}</h1>
-      <p className="muted">
-        Cluster {data.cluster_id} · Run #{data.run_id} (k={data.k}, {data.run_status}) · {fmtDate(data.started_at)}
-      </p>
+      <p className="muted">Segmento generado el {fmtDate(data.started_at)}</p>
 
       <div className="cards">
         <div className="card">
           <span className="card-label">Clientes</span>
           <span className="card-value">{fmtNumber(data.n_customers)}</span>
-        </div>
-        <div className="card">
-          <span className="card-label">Silhouette</span>
-          <span className="card-value">{data.metrics?.silhouette ?? "—"}</span>
-        </div>
-        <div className="card">
-          <span className="card-label">Davies-Bouldin</span>
-          <span className="card-value">{data.metrics?.davies_bouldin ?? "—"}</span>
-        </div>
-        <div className="card">
-          <span className="card-label">Inertia</span>
-          <span className="card-value">{fmtNumber(data.metrics?.inertia ?? null, 1)}</span>
         </div>
       </div>
 
@@ -88,7 +76,15 @@ export default function SegmentDetail() {
           {Object.entries(data.profile).map(([key, value]) => (
             <tr key={key}>
               <td>{PROFILE_LABELS[key] ?? key}</td>
-              <td className="num">{value === null ? "—" : fmtNumber(value, 2)}</td>
+              <td className="num">
+                {value === null
+                  ? "—"
+                  : key === "monetary" || key === "avg_ticket"
+                    ? fmtMoney(value)
+                    : key === "campaign_click_rate"
+                      ? `${(value * 100).toFixed(1)}%`
+                      : fmtNumber(value, 2)}
+              </td>
             </tr>
           ))}
         </tbody>

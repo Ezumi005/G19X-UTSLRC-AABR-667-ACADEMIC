@@ -1119,6 +1119,36 @@ Nivel 3 del plan de mejora cuando se decida: GitHub Actions (CI gratuito en repo
 
 ---
 
+## 13/10/2026 — 15:46
+**Tipo:** Técnico
+
+**Actividad realizada:**  
+Ajustes de experiencia de usuario pedidos por el usuario final y corrección del fallo de predicción. Diagnostiqué el error de scoring: el plan gratuito F1 de Azure "duerme" la app tras inactividad y el primer request (arranque en frío) excedía nuestro timeout de 15s; el servicio estaba sano (health 0.5s, predicción OK). Antes de cambiar nada, respondí al usuario las preguntas sobre el menú Ejecuciones (trazabilidad/historial) y las audiencias dinámicas (conversión del análisis en listas accionables para campañas, con export CSV).
+
+**Decisiones tomadas:**  
+- Fix de scoring: timeout de 90s + reintento automático (2 intentos) en `src/services/scoring.py`, documentando la causa (arranque en frío del plan F1).
+- Dashboard: se elimina la sección "Últimas ejecuciones"; gasto total y ticket promedio se formatean con moneda configurable.
+- Etiquetas de gráficas: texto completo con salto de línea (componente de tick personalizado) en vez de truncar con "…".
+- Nueva configuración de usuario (engranaje en la barra superior): tema claro/oscuro y moneda (MXN/USD/EUR/COP/ARS/CLP/PEN), persistidos en localStorage y aplicados con variables CSS.
+- Limpieza de datos técnicos para el usuario final: sin "Run #N" ni métricas de clustering (silhouette/DB/inertia) en las vistas de negocio; Segmentos muestra solo totales; porcentajes legibles (campaign_click_rate como %).
+
+**Resultado:**  
+- Predicción verificada en vivo tras el fix (CLI-0005 → cluster 2) y backend reiniciado con el código nuevo; pruebas de scoring y API en verde; `npm run build` OK.
+- Web con tema oscuro/claro y moneda configurable; dashboard y perfiles con montos en moneda; gráficas con etiquetas completas.
+
+**Archivos o componentes afectados:**  
+- Backend: `src/services/scoring.py` (timeout + reintento).
+- Frontend: `settings.tsx` (nuevo: provider de ajustes), `main.tsx`, `App.tsx` (engranaje + panel), `styles.css` (reescrito con variables CSS + tema oscuro), `pages/{Dashboard, SegmentDetail, Segments, Customers, CustomerDetail}.tsx`.
+- `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- El reportado por el usuario (predicción con error de scoring) quedó corregido y explicado: era arranque en frío del plan gratuito, no un fallo del sistema.
+
+**Siguiente paso:**  
+Siguientes mejoras del plan cuando el usuario decida (Nivel 3: CI, Docker, churn/CLV, seguridad de API).
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

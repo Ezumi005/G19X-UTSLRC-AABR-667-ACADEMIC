@@ -21,7 +21,7 @@ export default function Segments() {
       <h1>Segmentos</h1>
       <p className="muted">
         {data.run_id
-          ? `Run #${data.run_id} · ${data.count} segmentos · ${fmtNumber(total)} clientes asignados`
+          ? `${data.count} segmentos · ${fmtNumber(total)} clientes asignados`
           : "Aún no hay segmentaciones."}
       </p>
       <div className="segment-grid">

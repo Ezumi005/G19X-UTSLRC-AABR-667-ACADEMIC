@@ -91,7 +91,7 @@ export default function Customers() {
     <section>
       <h1>Clientes</h1>
       <p className="muted">
-        {page ? `${fmtNumber(page.total)} clientes · segmento del último run` : "Cargando…"}
+        {page ? `${fmtNumber(page.total)} clientes · segmento asignado` : "Cargando…"}
       </p>
 
       <div className="filter-bar">

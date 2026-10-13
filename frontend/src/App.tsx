@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Route, Routes, Link, useLocation } from "react-router-dom";
 import Dashboard from "./pages/Dashboard.tsx";
 import Customers from "./pages/Customers.tsx";
@@ -6,9 +7,35 @@ import Segments from "./pages/Segments.tsx";
 import SegmentDetail from "./pages/SegmentDetail.tsx";
 import Runs from "./pages/Runs.tsx";
 import { AudienceDetailPage, AudiencesList } from "./pages/Audiences.tsx";
+import { MONEDAS, useSettings } from "./settings.tsx";
+
+function PanelConfiguracion({ alCerrar }: { alCerrar: () => void }) {
+  const { tema, setTema, moneda, setMoneda } = useSettings();
+  return (
+    <div className="settings-panel">
+      <div className="settings-row">
+        <span>Tema</span>
+        <select value={tema} onChange={(e) => setTema(e.target.value as "claro" | "oscuro")}>
+          <option value="claro">Claro</option>
+          <option value="oscuro">Oscuro</option>
+        </select>
+      </div>
+      <div className="settings-row">
+        <span>Moneda</span>
+        <select value={moneda} onChange={(e) => setMoneda(e.target.value)}>
+          {MONEDAS.map((m) => (
+            <option key={m} value={m}>{m}</option>
+          ))}
+        </select>
+      </div>
+      <button className="btn-secondary" onClick={alCerrar}>Listo</button>
+    </div>
+  );
+}
 
 function Nav() {
   const { pathname } = useLocation();
+  const [configAbierta, setConfigAbierta] = useState(false);
   const items = [
     { to: "/", label: "Dashboard" },
     { to: "/customers", label: "Clientes" },
@@ -28,7 +55,15 @@ function Nav() {
             {item.label}
           </Link>
         ))}
+        <button
+          className="gear"
+          aria-label="Configuración"
+          onClick={() => setConfigAbierta((v) => !v)}
+        >
+          ⚙
+        </button>
       </nav>
+      {configAbierta && <PanelConfiguracion alCerrar={() => setConfigAbierta(false)} />}
     </header>
   );
 }
