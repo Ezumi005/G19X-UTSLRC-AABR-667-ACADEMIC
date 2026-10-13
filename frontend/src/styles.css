@@ -153,3 +153,19 @@ button:disabled { opacity: 0.6; cursor: default; }
 
 .audience-form { display: flex; flex-wrap: wrap; gap: 8px; background: var(--panel); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; margin-bottom: 16px; }
 .audience-form input, .audience-form select { min-width: 150px; }
+
+.infotip { position: relative; display: inline-block; margin-left: 4px; }
+.infotip-btn {
+  width: 17px; height: 17px; padding: 0; border-radius: 50%; font-size: 11px; line-height: 1;
+  background: var(--tabla-header); color: var(--texto-suave); border: 1px solid var(--input-borde);
+  cursor: pointer; vertical-align: middle; font-weight: 700;
+}
+.infotip-btn:hover { background: var(--primario); color: #fff; border-color: var(--primario); }
+.infotip-panel {
+  position: absolute; top: 24px; left: 50%; transform: translateX(-50%); z-index: 50;
+  width: 260px; background: var(--panel); border: 1px solid var(--borde); border-radius: 10px;
+  padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; text-align: left;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.22); font-size: 13.5px; font-weight: 400; color: var(--texto);
+}
+.infotip-panel b { font-size: 13.5px; }
+.infotip-close { align-self: flex-end; padding: 4px 10px; font-size: 12px; }

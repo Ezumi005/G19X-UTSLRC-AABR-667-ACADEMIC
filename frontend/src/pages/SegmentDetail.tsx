@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { fetchSegment, fmtNumber, fmtDate, requestRecommendation, fetchRecommendation } from "../api.ts";
+import InfoTip from "../InfoTip.tsx";
 import { useSettings } from "../settings.tsx";
 import type { Recommendation, SegmentDetail } from "../types.ts";
 
@@ -15,6 +16,13 @@ const PROFILE_LABELS: Record<string, string> = {
   emails_opened: "Correos abiertos",
   campaign_click_rate: "Tasa de clic en campañas",
   tenure_days: "Antigüedad (días)",
+};
+
+const FEATURE_TIPS: Record<string, string> = {
+  recency_days: "recencia",
+  avg_ticket: "ticket",
+  abandoned_carts: "carritos",
+  campaign_click_rate: "clic",
 };
 
 export default function SegmentDetail() {
@@ -70,12 +78,14 @@ export default function SegmentDetail() {
       <h2>Descripción comercial</h2>
       <p>{data.description}</p>
 
-      <h2>Perfil del segmento (medias)</h2>
+      <h2>Perfil del segmento <InfoTip termino="rfm" /></h2>
       <table className="table">
         <tbody>
           {Object.entries(data.profile).map(([key, value]) => (
             <tr key={key}>
-              <td>{PROFILE_LABELS[key] ?? key}</td>
+              <td>
+                {PROFILE_LABELS[key] ?? key} {FEATURE_TIPS[key] && <InfoTip termino={FEATURE_TIPS[key]} />}
+              </td>
               <td className="num">
                 {value === null
                   ? "—"

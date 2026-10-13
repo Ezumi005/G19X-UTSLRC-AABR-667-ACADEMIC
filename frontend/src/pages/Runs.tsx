@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchIngestionRuns, fetchRuns, fmtDate, fmtNumber } from "../api.ts";
+import InfoTip from "../InfoTip.tsx";
 import type { IngestionRun, SegmentationRun } from "../types.ts";
 
 const duracion = (inicio: string, fin: string | null): string => {
@@ -16,8 +17,10 @@ function IngestionHistory() {
   if (!runs) return null;
   return (
     <>
-      <h2>Historial de ingestión</h2>
-      <p className="muted">Trazabilidad y calidad por ejecución (PRD §31): leídos/guardados e incidencias.</p>
+      <h2>Historial de ingestión <InfoTip termino="ingesta" /></h2>
+      <p className="muted">
+        Qué datos entraron y con qué calidad. Se muestra guardados/leídos por tipo de registro.
+      </p>
       <table className="table">
         <thead>
           <tr>
@@ -28,7 +31,7 @@ function IngestionHistory() {
             <th>Transacciones</th>
             <th>Interacciones</th>
             <th>Eventos</th>
-            <th>Incidencias</th>
+            <th>Incidencias <InfoTip termino="incidencias" /></th>
             <th>Estado</th>
           </tr>
         </thead>
@@ -69,18 +72,20 @@ export default function Runs() {
 
   return (
     <section>
-      <h1>Ejecuciones de segmentación</h1>
-      <p className="muted">Historial con trazabilidad: cada corrida conserva sus métricas (PRD §19/§30).</p>
+      <h1>Ejecuciones</h1>
+      <p className="muted">
+        Historial de confianza: qué ejecutó el sistema, cuándo y con qué calidad. Vista de soporte.
+      </p>
       <table className="table">
         <thead>
           <tr>
             <th>Run</th>
             <th>Fecha</th>
             <th>Modelo</th>
-            <th>k</th>
+            <th>k <InfoTip termino="k" /></th>
             <th>Clientes</th>
-            <th>Silhouette</th>
-            <th>Davies-Bouldin</th>
+            <th>Silhouette <InfoTip termino="silhouette" /></th>
+            <th>Davies-Bouldin <InfoTip termino="davies" /></th>
             <th>Estado</th>
           </tr>
         </thead>

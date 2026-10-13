@@ -85,7 +85,7 @@ export default function App() {
         </Routes>
       </main>
       <footer className="footer">
-        MVP con datos simulados · el frontend consume únicamente la API del backend (puerto 8000)
+        Motor de Segmentación de Clientes · MVP con datos simulados
       </footer>
     </div>
   );

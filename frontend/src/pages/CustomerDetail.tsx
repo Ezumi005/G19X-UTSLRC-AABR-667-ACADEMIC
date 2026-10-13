@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { fetchCustomer, fmtNumber, fmtDate, predictCustomer } from "../api.ts";
+import InfoTip from "../InfoTip.tsx";
 import { useSettings } from "../settings.tsx";
 import type { CustomerDetail, Prediction } from "../types.ts";
 
@@ -15,6 +16,13 @@ const FEATURE_LABELS: Record<string, string> = {
   emails_opened: "Correos abiertos",
   campaign_click_rate: "Tasa de clic en campañas",
   tenure_days: "Antigüedad (días)",
+};
+
+const FEATURE_TIPS: Record<string, string> = {
+  recency_days: "recencia",
+  avg_ticket: "ticket",
+  abandoned_carts: "carritos",
+  campaign_click_rate: "clic",
 };
 
 export default function CustomerDetail() {
@@ -87,12 +95,14 @@ export default function CustomerDetail() {
         </button>
       )}
 
-      <h2>Perfil del cliente (features)</h2>
+      <h2>Perfil del cliente <InfoTip termino="rfm" /></h2>
       <table className="table">
         <tbody>
           {Object.entries(data.features ?? {}).map(([key, value]) => (
             <tr key={key}>
-              <td>{FEATURE_LABELS[key] ?? key}</td>
+              <td>
+                {FEATURE_LABELS[key] ?? key} {FEATURE_TIPS[key] && <InfoTip termino={FEATURE_TIPS[key]} />}
+              </td>
               <td className="num">
                 {value === null
                   ? "—"

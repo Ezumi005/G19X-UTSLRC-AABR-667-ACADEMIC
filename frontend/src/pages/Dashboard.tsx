@@ -9,6 +9,7 @@ import {
   YAxis,
 } from "recharts";
 import { fetchDashboard, fmtNumber } from "../api.ts";
+import InfoTip from "../InfoTip.tsx";
 import { useSettings } from "../settings.tsx";
 import type { Dashboard as DashboardData } from "../types.ts";
 
@@ -52,7 +53,7 @@ function EtiquetaEje({ x = 0, y = 0, payload }: PropsTick) {
 
 const tickEje = (props: unknown) => EtiquetaEje(props as PropsTick);
 
-function ChartCard({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+function ChartCard({ titulo, children }: { titulo: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="chart-card">
       <h3>{titulo}</h3>
@@ -87,6 +88,9 @@ export default function Dashboard() {
   return (
     <section>
       <h1>Dashboard</h1>
+      <p className="muted">
+        Panorama general: cuántos clientes hay, cómo se distribuyen sus segmentos y cómo compran.
+      </p>
       <div className="cards">
         <div className="card">
           <span className="card-label">Clientes</span>
@@ -101,7 +105,9 @@ export default function Dashboard() {
           <span className="card-value">{fmtMoney(data.total_spend)}</span>
         </div>
         <div className="card">
-          <span className="card-label">Ticket promedio</span>
+          <span className="card-label">
+            Ticket promedio <InfoTip termino="ticket" />
+          </span>
           <span className="card-value">{fmtMoney(data.avg_ticket)}</span>
         </div>
       </div>
@@ -131,7 +137,7 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard titulo="DÃ­as desde la Ãºltima compra (promedio)">
+        <ChartCard titulo={<>Días desde la última compra (promedio) <InfoTip termino="recencia" /></>}>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={recencia} layout="vertical" margin={{ left: 8, right: 16 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--borde)" horizontal={false} />
@@ -143,7 +149,7 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard titulo="Compras por categorÃ­a (top 8)">
+        <ChartCard titulo="Compras por categoría (top 8)">
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={categorias} margin={{ left: 0, right: 8, bottom: 34 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--borde)" vertical={false} />

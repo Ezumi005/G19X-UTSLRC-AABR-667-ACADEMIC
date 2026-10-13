@@ -130,6 +130,8 @@ Responsabilidades cumplidas:
 
 **Desviación aprobada (documentada):** la inferencia se sirve en **Azure App Service** (`motor-seg-scoring`, plan F1 gratuito en centralus) con el MISMO artefacto y lógica (`azure/scoring_app/`, autenticación `X-API-Key`). El backend lo consume mediante `src/services/scoring.py` (`POST /customers/{id}/predict`); React nunca lo toca. El contrato de scoring es idéntico al de `azure/score.py` (Azure ML) para poder migrar a un endpoint online si la suscripción lo permite en el futuro.
 
+**Nota operativa — arranque en frío:** el plan gratuito F1 "duerme" la app tras ~20 minutos sin uso; el primer request tras inactividad tarda 10-30 segundos. El diagnóstico (servicio sano, health 0.5s) confirmó que los fallos de predicción venían de eso y no de una avería. Fix implementado: timeout de 90 s + reintento automático en `src/services/scoring.py`.
+
 ## 8. Azure OpenAI
 
 Azure OpenAI NO realiza la segmentación.

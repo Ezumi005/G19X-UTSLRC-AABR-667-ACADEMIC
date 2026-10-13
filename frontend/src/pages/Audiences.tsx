@@ -11,6 +11,7 @@ import {
   fmtNumber,
 } from "../api.ts";
 import type { Audience, AudienceConditions, AudienceDetail, SegmentsPage } from "../types.ts";
+import InfoTip from "../InfoTip.tsx";
 
 const CATEGORIAS = ["electronica", "hogar", "moda", "deportes", "belleza", "alimentos", "juguetes", "otros"];
 
@@ -109,10 +110,10 @@ export function AudiencesList() {
 
   return (
     <section>
-      <h1>Audiencias dinámicas</h1>
+      <h1>Audiencias dinámicas <InfoTip termino="audiencia" /></h1>
       <p className="muted">
-        Condiciones combinables sobre segmento, ciudad, frecuencia, inactividad y categorías. El tamaño se
-        recalcula contra los datos vigentes en cada consulta (RF-19).
+        Construye listas para campañas con condiciones combinables; se recalculan solas con los
+        datos vigentes y se exportan en CSV.
       </p>
       <h2>Crear audiencia</h2>
       <FormularioCreacion onCreated={cargar} />

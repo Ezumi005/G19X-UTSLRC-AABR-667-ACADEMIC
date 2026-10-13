@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchSegments, fmtNumber } from "../api.ts";
+import InfoTip from "../InfoTip.tsx";
 import type { SegmentsPage } from "../types.ts";
 
 export default function Segments() {
@@ -20,9 +21,8 @@ export default function Segments() {
     <section>
       <h1>Segmentos</h1>
       <p className="muted">
-        {data.run_id
-          ? `${data.count} segmentos · ${fmtNumber(total)} clientes asignados`
-          : "Aún no hay segmentaciones."}
+        Grupos descubiertos automáticamente por el modelo <InfoTip termino="cluster" /> con su
+        estrategia comercial. {data.run_id ? `${data.count} segmentos · ${fmtNumber(total)} clientes asignados.` : "Aún no hay segmentaciones."}
       </p>
       <div className="segment-grid">
         {data.data.map((s) => (

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import InfoTip from "../InfoTip.tsx";
 import {
   fetchCustomer,
   fetchCustomers,
@@ -91,7 +92,7 @@ export default function Customers() {
     <section>
       <h1>Clientes</h1>
       <p className="muted">
-        {page ? `${fmtNumber(page.total)} clientes · segmento asignado` : "Cargando…"}
+        Explora, filtra y predice el segmento de cada cliente. La predicción se consulta en Azure.
       </p>
 
       <div className="filter-bar">
@@ -165,7 +166,7 @@ export default function Customers() {
                     <div className="predict-box">
                       {predicciones[row.customer_id] ? (
                         <span>
-                          Predicción (Azure):{" "}
+                          Predicción (Azure) <InfoTip termino="inferencia" />:{" "}
                           <b className="badge">
                             Cluster {predicciones[row.customer_id].cluster} · {predicciones[row.customer_id].segment?.label ?? "sin etiqueta"}
                           </b>

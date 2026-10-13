@@ -1149,6 +1149,35 @@ Siguientes mejoras del plan cuando el usuario decida (Nivel 3: CI, Docker, churn
 
 ---
 
+## 13/10/2026 — 15:52
+**Tipo:** Técnico / Documentación
+
+**Actividad realizada:**  
+Ronda de usabilidad para el usuario final, pedida explícitamente. Anoté en el README (§7) el diagnóstico y fix del arranque en frío del scoring en Azure. Añadí subtítulos de propósito en cada menú, un glosario con modales informativos (`InfoTip`) solo en términos poco comunes (RFM, recencia, ticket, carritos abandonados, tasa de clic, cluster, silhouette, Davies-Bouldin, k, audiencia, ingesta, incidencias, inferencia), y pulí detalles: footer sin jerga técnica, eliminé la línea redundante de conteo en Clientes (ya la muestra el paginador), títulos simplificados. Conservé la trazabilidad completa (página Ejecuciones) con su papel de soporte. Ejecuté pruebas de uso.
+
+**Decisiones tomadas:**  
+- Glosario central (`glossary.ts`) + componente `InfoTip` reutilizable: botón "?" que abre un mini-modal con explicación coloquial; solo en términos no obvios, como pidió el usuario.
+- Cada menú explica su propósito en una línea bajo el título (curva de aprendizaje rápida).
+- La página de Ejecuciones se mantiene íntegra (trazabilidad) pero etiquetada como "vista de soporte", y las vistas de negocio quedan limpias de datos técnicos.
+- Corregí en el acto una doble codificación de acentos en Dashboard.tsx que introdujo un `Set-Content` de PowerShell (lección: reescrituras de archivo solo con las herramientas de edición, no con cmdlets).
+
+**Resultado:**  
+- README §7 con la nota operativa del cold start (causa, diagnóstico y fix).
+- Web: 13 términos con modal explicativo, 5 menús con propósito claro, footer y textos pulidos.
+- Pruebas de uso: `npm run build` en verde; suites de API y audiencias en verde; dev server sirviendo los módulos nuevos (InfoTip/glosario/ajustes verificados por HTTP); checklist estructural completado (propósito por menú, tips solo en términos poco comunes, sin redundancias, sin datos técnicos en vistas de negocio).
+
+**Archivos o componentes afectados:**  
+- `README.md` (§7), `Bitacora.md` (esta entrada).
+- Frontend: `glossary.ts` y `InfoTip.tsx` (nuevos), `App.tsx`, `styles.css` (estilos del tip), `pages/{Dashboard, Customers, CustomerDetail, Segments, SegmentDetail, Audiences, Runs}.tsx`.
+
+**Problemas o bloqueos:**  
+- Ninguno pendiente. (Corregido al vuelo el problema de encoding mencionado.)
+
+**Siguiente paso:**  
+Revisión visual del usuario en el navegador (refresh con HMR ya aplicado) y siguientes mejoras del plan (Nivel 3) cuando decida.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
