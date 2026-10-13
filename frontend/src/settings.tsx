@@ -2,45 +2,40 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 
 export type Tema = "claro" | "oscuro";
 
-export const MONEDAS = ["MXN", "USD", "EUR", "COP", "ARS", "CLP", "PEN"];
-
 interface Ajustes {
   tema: Tema;
-  moneda: string;
   setTema: (tema: Tema) => void;
-  setMoneda: (moneda: string) => void;
   fmtMoney: (valor: number | null | undefined, decimales?: number) => string;
 }
 
 const Ctx = createContext<Ajustes | null>(null);
 
+const formatoPesos = new Intl.NumberFormat("es-MX", {
+  style: "currency",
+  currency: "MXN",
+  maximumFractionDigits: 0,
+});
+
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [tema, setTemaState] = useState<Tema>(() => (localStorage.getItem("tema") as Tema) || "claro");
-  const [moneda, setMonedaState] = useState<string>(() => localStorage.getItem("moneda") || "MXN");
 
   useEffect(() => {
     document.documentElement.dataset.tema = tema;
     localStorage.setItem("tema", tema);
   }, [tema]);
 
-  useEffect(() => {
-    localStorage.setItem("moneda", moneda);
-  }, [moneda]);
-
-  const fmtMoney = (valor: number | null | undefined, decimales = 0): string =>
-    new Intl.NumberFormat("es-MX", {
+  const fmtMoney = (valor: number | null | undefined, decimales = 0): string => {
+    if (decimales === 0) {
+      return formatoPesos.format(valor ?? 0);
+    }
+    return new Intl.NumberFormat("es-MX", {
       style: "currency",
-      currency: moneda,
+      currency: "MXN",
       maximumFractionDigits: decimales,
     }).format(valor ?? 0);
+  };
 
-  return (
-    <Ctx.Provider
-      value={{ tema, moneda, setTema: setTemaState, setMoneda: setMonedaState, fmtMoney }}
-    >
-      {children}
-    </Ctx.Provider>
-  );
+  return <Ctx.Provider value={{ tema, setTema: setTemaState, fmtMoney }}>{children}</Ctx.Provider>;
 }
 
 export function useSettings(): Ajustes {

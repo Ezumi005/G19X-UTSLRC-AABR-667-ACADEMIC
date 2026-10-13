@@ -1178,6 +1178,29 @@ Revisión visual del usuario en el navegador (refresh con HMR ya aplicado) y sig
 
 ---
 
+## 13/10/2026 — 15:56
+**Tipo:** Técnico
+
+**Actividad realizada:**  
+Simplifiqué la configuración a pedido del usuario: la moneda queda fija en pesos mexicanos (MXN) y se eliminó el selector; el panel de configuración conserva únicamente el tema claro/oscuro.
+
+**Decisiones tomadas:**  
+- El formateo de montones (`fmtMoney`) queda fijo en MXN sin depender de preferencias; se eliminó el estado de moneda y su persistencia.
+
+**Resultado:**  
+- Panel de configuración con solo el tema; build en verde y cambios aplicados en caliente por el dev server.
+
+**Archivos o componentes afectados:**  
+- `frontend/src/settings.tsx`, `frontend/src/App.tsx`, `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno.
+
+**Siguiente paso:**  
+Continuar con el plan de mejora cuando el usuario decida.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

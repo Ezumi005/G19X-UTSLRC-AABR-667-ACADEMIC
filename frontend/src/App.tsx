@@ -7,10 +7,10 @@ import Segments from "./pages/Segments.tsx";
 import SegmentDetail from "./pages/SegmentDetail.tsx";
 import Runs from "./pages/Runs.tsx";
 import { AudienceDetailPage, AudiencesList } from "./pages/Audiences.tsx";
-import { MONEDAS, useSettings } from "./settings.tsx";
+import { useSettings } from "./settings.tsx";
 
 function PanelConfiguracion({ alCerrar }: { alCerrar: () => void }) {
-  const { tema, setTema, moneda, setMoneda } = useSettings();
+  const { tema, setTema } = useSettings();
   return (
     <div className="settings-panel">
       <div className="settings-row">
@@ -18,14 +18,6 @@ function PanelConfiguracion({ alCerrar }: { alCerrar: () => void }) {
         <select value={tema} onChange={(e) => setTema(e.target.value as "claro" | "oscuro")}>
           <option value="claro">Claro</option>
           <option value="oscuro">Oscuro</option>
-        </select>
-      </div>
-      <div className="settings-row">
-        <span>Moneda</span>
-        <select value={moneda} onChange={(e) => setMoneda(e.target.value)}>
-          {MONEDAS.map((m) => (
-            <option key={m} value={m}>{m}</option>
-          ))}
         </select>
       </div>
       <button className="btn-secondary" onClick={alCerrar}>Listo</button>
