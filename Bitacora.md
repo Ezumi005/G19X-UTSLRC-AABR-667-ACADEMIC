@@ -1201,6 +1201,33 @@ Continuar con el plan de mejora cuando el usuario decida.
 
 ---
 
+## 15/10/2026 — 12:37
+**Tipo:** Técnico / Pruebas
+
+**Actividad realizada:**  
+Atendí el reporte de pantalla en blanco al entrar a Segmentos. Diagnostiqué el sistema completo: las 9 suites de pruebas en verde y los endpoints que consume la página funcionando; la causa operativa fue que los servidores locales estaban caídos tras el paso de los días (el backend además tarda ~20 s en arrancar por la carga de librerías). Añadí robustez real: `ErrorBoundary` en la raíz de la app para que cualquier error de la interfaz se muestre con un mensaje legible y botón de recarga, en lugar de una pantalla en blanco. Reinicié el servidor de desarrollo con la caché de Vite limpia y dejé backend y frontend operativos y verificados.
+
+**Decisiones tomadas:**  
+- ErrorBoundary con mensaje amigable + detalle del error y botón de recarga: la pantalla en blanco queda eliminada como modo de fallo y, si algo se rompe, el usuario puede reportar el mensaje exacto.
+- Reinicio limpio del dev server (borrado de `node_modules/.vite`) para descartar estado envenenado del HMR tras las ediciones en caliente.
+- Documentada en el README la nota operativa del arranque lento del backend (~20 s).
+
+**Resultado:**  
+- Backend arriba (health OK), frontend servido con módulos nuevos verificados, `GET /segments` respondiendo 6 segmentos.
+- `npm run build` en verde; usuario puede recargar la app con confianza.
+
+**Archivos o componentes afectados:**  
+- Nuevos: `frontend/src/ErrorBoundary.tsx`.
+- Modificados: `frontend/src/main.tsx` (envoltura de ErrorBoundary), `README.md` (§11 + nota operativa), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Resuelto el reporte: servidores arriba y fallos visibles a partir de ahora.
+
+**Siguiente paso:**  
+Confirmar con el usuario que la app carga correctamente tras el refresh y continuar con el plan de mejora cuando decida.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

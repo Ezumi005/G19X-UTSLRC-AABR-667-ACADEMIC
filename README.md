@@ -212,7 +212,9 @@ Vistas mínimas:
 
 React consume únicamente la API del backend. Las claves de Azure y demás secretos nunca deben estar en el frontend.
 
-Implementación actual: `frontend/` — Vite + React 19 + TypeScript + react-router + recharts (gráficas). Vistas: Dashboard (indicadores, 4 gráficas), Clientes (filtros, detalle expandible, botón de predicción Azure y enlace a página propia), Detalle de cliente (RFM, features, segmento, predicción), Segmentos, Detalle de segmento (recomendación), Audiencias (creación con condiciones combinables, listado, miembros y export CSV) y Ejecuciones (runs de segmentación e historial de ingestión). Cliente HTTP centralizado en `src/api.ts`; sin credenciales ni llamadas a servicios externos.
+Implementación actual: `frontend/` — Vite + React 19 + TypeScript + react-router + recharts (gráficas). Vistas: Dashboard (indicadores, 4 gráficas), Clientes (filtros, detalle expandible, botón de predicción Azure y enlace a página propia), Detalle de cliente (RFM, features, segmento, predicción), Segmentos, Detalle de segmento (recomendación), Audiencias (creación con condiciones combinables, listado, miembros y export CSV) y Ejecuciones (runs de segmentación e historial de ingestión). Cliente HTTP centralizado en `src/api.ts`; sin credenciales ni llamadas a servicios externos. Incluye `ErrorBoundary` (errores visibles, nunca pantalla en blanco), glosario con modales informativos (`InfoTip`) y tema claro/oscuro con montos en pesos MXN.
+
+**Nota operativa:** el backend tarda ~20 s en arrancar (carga de pandas/sklearn); si la web muestra error de conexión justo después de levantarlo, espera unos segundos y recarga.
 
 ## 12. Orden de desarrollo
 
