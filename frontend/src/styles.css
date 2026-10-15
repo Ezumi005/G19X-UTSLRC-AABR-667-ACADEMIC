@@ -81,7 +81,7 @@ body { margin: 0; }
 .settings-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 14px; }
 .settings-row select { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--input-borde); background: var(--panel); color: var(--texto); }
 
-.footer { background: var(--footer-bg); color: var(--texto-suave); font-size: 13px; text-align: center; padding: 12px; }
+.actions-bar { display: flex; align-items: center; gap: 12px; margin: 8px 0 16px; }
 
 h1 { font-size: 26px; margin: 8px 0 4px; }
 h2 { font-size: 18px; margin: 28px 0 10px; color: var(--texto); }

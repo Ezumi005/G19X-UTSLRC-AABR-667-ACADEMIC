@@ -78,6 +78,8 @@ export const createAudience = (payload: {
 export const deleteAudience = (id: number) => delJson<{ deleted: number }>(`/audiences/${id}`);
 export const audienceExportUrl = (id: number) => `${API_BASE}/audiences/${id}/export`;
 export const fetchSegments = () => getJson<import("./types.ts").SegmentsPage>("/segments");
+export const runSegmentation = () =>
+  postJson<{ run_id: number; k: number; segments: unknown[] }>("/segmentation/run");
 export const fetchSegment = (id: number) =>
   getJson<import("./types.ts").SegmentDetail>(`/segments/${id}`);
 export const fetchRecommendation = (id: number) =>

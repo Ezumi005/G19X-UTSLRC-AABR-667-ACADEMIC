@@ -1252,6 +1252,30 @@ Continuar con el plan de mejora cuando el usuario decida.
 
 ---
 
+## 15/10/2026 — 12:51
+**Tipo:** Técnico
+
+**Actividad realizada:**  
+Añadí el botón **"Recalcular segmentos"** en la página de Segmentos (`POST /segmentation/run` desde la interfaz, sin necesidad de usar el backend o la consola) y eliminé el pie de página con el nombre del proyecto, como pidió el usuario. Verifiqué en vivo la ruta del botón: ejecutó el run #5 (k=6, 6 segmentos, 1.6 s) y la lista refleja el run nuevo.
+
+**Decisiones tomadas:**  
+- El botón deshabilita mientras recalcula y muestra un aviso de confirmación al terminar; refresca la lista automáticamente (los enlaces a detalles antiguos siguen válidos porque el historial se conserva).
+- Fuera el footer; su regla CSS se reemplazó por la barra de acciones del botón.
+
+**Resultado:**  
+- La segmentación se puede disparar 100% desde la web; build en verde y verificación en vivo OK.
+
+**Archivos o componentes afectados:**  
+- `frontend/src/api.ts` (+runSegmentation), `frontend/src/pages/Segments.tsx` (botón + recarga), `frontend/src/App.tsx` (sin footer), `frontend/src/styles.css`, `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno.
+
+**Siguiente paso:**  
+Lo que el usuario decida del plan de mejora.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

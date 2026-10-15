@@ -76,9 +76,6 @@ export default function App() {
           <Route path="/runs" element={<Runs />} />
         </Routes>
       </main>
-      <footer className="footer">
-        Motor de Segmentación de Clientes · MVP con datos simulados
-      </footer>
     </div>
   );
 }
