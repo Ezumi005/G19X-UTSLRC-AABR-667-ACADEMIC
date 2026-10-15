@@ -1228,6 +1228,30 @@ Confirmar con el usuario que la app carga correctamente tras el refresh y contin
 
 ---
 
+## 15/10/2026 — 12:47
+**Tipo:** Documentación
+
+**Actividad realizada:**  
+Documenté en el README la nueva sección **"6-bis. Cómo se generan los segmentos y las audiencias"** a pedido del usuario, para dejar clara la distinción en los documentos técnicos: el flujo de generación de segmentos (datos → features RFM+engagement → preparación → K-Means → etiquetas por perfil, con su ejecución e historial), el funcionamiento de las audiencias dinámicas (condiciones AND del usuario, evaluadas en SQL, recalculadas en cada consulta, export CSV) y una tabla con la diferencia esencial (algoritmo descubre vs. usuario define; entender vs. actuar; cuándo cambia cada una), cerrando con el flujo de negocio completo.
+
+**Decisiones tomadas:**  
+- Sección insertada tras la §6 (contexto de ML) con sufijo "6-bis" para no renumerar el resto del documento.
+- Lenguaje claro y directo, con referencias a los módulos y comandos reales para que cualquiera pueda trazar cada paso.
+
+**Resultado:**  
+- README actualizado como mapa completo: cualquier desarrollador, IA o usuario técnico puede entender cómo nacen los segmentos y las audiencias sin leer código.
+
+**Archivos o componentes afectados:**  
+- `README.md` (nueva §6-bis), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno.
+
+**Siguiente paso:**  
+Continuar con el plan de mejora cuando el usuario decida.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

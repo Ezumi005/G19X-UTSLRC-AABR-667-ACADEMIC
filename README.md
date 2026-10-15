@@ -119,6 +119,34 @@ Implementación actual: `src/ml/clustering.py` — prepara la matriz (imputació
 
 Interpretación y persistencia: `src/ml/segmentation.py` asigna **etiquetas comerciales** mediante reglas sobre el perfil de cada cluster (independientes del número de cluster; falla si dos clusters reciben la misma etiqueta) y guarda cada ejecución en `segmentation_runs`, `segments` (con perfil JSONB) y `customer_segments`. Etiquetas vigentes: Clientes frecuentes de alto valor · Navegadores sin compra · Compradores ocasionales · Clientes nuevos · Navegadores con compra esporádica · Clientes en riesgo de inactividad.
 
+## 6-bis. Cómo se generan los segmentos y las audiencias
+
+### Segmentos: los descubre el modelo (Machine Learning)
+
+Nadie define los grupos: el algoritmo los encuentra a partir del comportamiento.
+
+1. **Datos**: clientes con compras, interacciones y campañas, ya normalizados en PostgreSQL (contrato V1).
+2. **Features por cliente** (`src/features/rfm.py`): RFM (hace cuánto compró, cuántas veces, cuánto gastó) + engagement (visitas web, carritos abandonados, tasa de clic) + antigüedad.
+3. **Preparación** (`src/ml/clustering.py`): imputación de recency nulo, log1p en variables sesgadas y escalado.
+4. **K-Means (k=6)**: agrupa clientes similares entre sí y distintos de los demás; validado con Silhouette, estabilidad y contraste contra el ground truth del simulador.
+5. **Etiquetas comerciales** (`src/ml/segmentation.py`): reglas sobre el PERFIL de cada grupo (no sobre su número) asignan "Clientes frecuentes de alto valor", "En riesgo de inactividad", etc.
+
+Se generan cada vez que se ejecuta una segmentación (`POST /segmentation/run` o `.venv\Scripts\python.exe -m src.ml.segmentation`); cada corrida conserva su historial completo (tablas `segmentation_runs`, `segments`, `customer_segments`).
+
+### Audiencias dinámicas: las define el usuario (reglas)
+
+Sin machine learning: son **filtros con condiciones combinables (AND)** definidas por el usuario — segmento, ciudad, frecuencia mínima, días sin compra, categoría comprada — evaluadas con SQL (`queries.audience_members`). La membresia NO se persiste: se **recalcula con los datos vigentes en cada consulta** (RF-19) y se exporta en CSV para campañas (`GET /audiences/{id}/export`).
+
+### Diferencia esencial
+
+| | Segmentos | Audiencias |
+|---|---|---|
+| ¿Quién decide? | El algoritmo (descubre) | El usuario (define reglas) |
+| ¿Para qué? | Entender la cartera (¿qué tipos de cliente tengo?) | Actuar (¿a quién va esta campaña?) |
+| ¿Cuándo cambian? | Al ejecutar una nueva segmentación | En cada consulta, con los datos vigentes |
+
+Flujo de negocio completo: **segmentos** (entender) → **audiencias** (lista exacta) → **CSV** (campaña) → **Azure OpenAI** (estrategia sugerida por segmento).
+
 ## 7. Azure Machine Learning
 
 Azure Machine Learning se usa DESPUÉS de validar el modelo localmente.
