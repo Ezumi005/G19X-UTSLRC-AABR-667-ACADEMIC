@@ -132,6 +132,15 @@ body { margin: 0; }
 .girando { animation: girar 1s linear infinite; }
 @keyframes girar { to { transform: rotate(360deg); } }
 
+.wizard { margin-bottom: 20px; }
+.wizard-subir p { margin-top: 0; }
+.wizard-cabecera { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0; }
+.wizard-cabecera .badge { display: inline-flex; align-items: center; gap: 5px; }
+.wizard-resultado { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+.table select { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--input-borde); background: var(--panel); color: var(--texto); font-size: 13.5px; }
+.filter-bar label { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--texto-suave); }
+.filter-bar label input, .filter-bar label select { min-width: 180px; }
+
 @media (max-width: 760px) {
   .topbar { flex-direction: column; gap: 10px; }
   .topbar nav { flex-wrap: wrap; justify-content: center; }

@@ -1405,6 +1405,35 @@ Publicar el release v1.0.0 en GitHub con notas de versión. Tras eso, el proyect
 
 ---
 
+## 16/10/2026 — 11:48
+**Tipo:** Técnico / Arquitectura
+
+**Actividad realizada:**  
+Construí la **adaptación de fuentes sin código y asistida por IA**, pedido del usuario ("todo lo posible desde el frontend", "sin hardcoding", "una IA que se encargue"). Backend: `DynamicCSVAdapter` (misma interfaz `BaseAdapter` que el simulado — el motor no se enteró), tabla `data_sources`, endpoints de fuentes (subir CSV con detección de columnas, validación en seco, creación, sincronización y borrado) y refactor de la ingesta a `persist_result()` reutilizable por cualquier adaptador. Eliminé el hardcoding de esquemas: los campos por entidad ahora se derivan por **introspección de los modelos Pydantic del contrato** (única fuente de verdad; un campo nuevo aparece solo en UI, validación y prompt de IA). Servicio `mapping_suggest.py`: Azure OpenAI (gpt-5.4-mini, temperature 0) recibe esquema introspectado + columnas + filas de muestra y sugiere entidad + mapeo; el endpoint endurece la respuesta (filtra columnas inexistentes) y degrada con 503 si la IA no está. Frontend: nueva vista **Fuentes** (icono Database) con asistente de 3 pasos (subir → mapeo con sugerencia IA pre-llenada y badge de confianza, todo editable → validación en seco con vista previa e incidencias → guardar y sincronizar), listado con ciclo de vida (sincronizar/eliminar).
+
+**Decisiones tomadas:**  
+- La IA **sugiere todo** (entidad y mapeo), el humano **confirma**: su salida pasa el filtro de columnas, la validación Pydantic del contrato y la revisión del usuario antes de tocar la base.
+- Introspección del contrato en lugar de diccionarios duplicados (adiós `ENTITY_FIELDS` manual).
+- Fechas regionales (dd/mm/yyyy) se normalizan en el adaptador (hallazgo de la prueba en vivo: Pydantic solo acepta ISO; la IA incluso lo advirtió en sus notas).
+- Sin IA disponible, el asistente manual queda 100% operativo (degradación elegante).
+
+**Resultado:**  
+- **Verificación en vivo con IA real**: CSV con columnas `id_cliente, anios, poblacion, cuando_se_registro` → la IA sugirió entidad `customers` y los 4 mapeos correctos (99% de confianza); tras el fix de fechas, validación 2/3 (solo la fila con edad 999 cae en incidencias, como debe ser); sincronización exitosa y datos de prueba limpiados.
+- 10 suites + ruff en verde (nueva: `test_sources` con flujo manual completo, sugerencia con mock y degradación 503); `npm run build` OK.
+
+**Archivos o componentes afectados:**  
+- Backend: `src/adapters/csv_adapter.py`, `src/services/mapping_suggest.py`, `src/api/routes/sources.py`, `src/persistence/ingest.py` (persist_result), `schema.sql` (+data_sources), `requirements.txt` (+python-multipart), `tests/test_sources.py`.
+- Frontend: `pages/Sources.tsx` (nueva), `api.ts`, `types.ts`, `App.tsx` (nav Fuentes), `styles.css`, `glossary.ts` (+término contrato).
+- Docs: `README.md` (§3, §9, §16, §18), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno pendiente. Corregidos en el camino: filtro de la sugerencia endurecido en el endpoint, prueba del 503 con token real y normalización de fechas regionales.
+
+**Siguiente paso:**  
+Push con CI verificando la suite de fuentes; el usuario puede probar el asistente desde la web (vista Fuentes).
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

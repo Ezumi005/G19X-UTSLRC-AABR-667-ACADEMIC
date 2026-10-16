@@ -120,6 +120,9 @@ def suggest_csv_mapping(payload: SuggestPayload) -> dict:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Sugerencia IA no disponible: {exc}") from exc
+    sugerencia["mapping"] = {
+        campo: columna for campo, columna in (sugerencia.get("mapping") or {}).items() if columna in columnas
+    }
     sugerencia["columns"] = columnas
     sugerencia["missing_required"] = validar_mapeo(sugerencia["entity"], sugerencia["mapping"])
     return sugerencia

@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Route, Routes, Link, useLocation } from "react-router-dom";
-import { History, LayoutDashboard, PieChart, Settings, Target, Users } from "lucide-react";
+import { History, LayoutDashboard, Database, PieChart, Settings, Target, Users } from "lucide-react";
 import Dashboard from "./pages/Dashboard.tsx";
 import Customers from "./pages/Customers.tsx";
 import CustomerDetail from "./pages/CustomerDetail.tsx";
 import Segments from "./pages/Segments.tsx";
 import SegmentDetail from "./pages/SegmentDetail.tsx";
 import Runs from "./pages/Runs.tsx";
+import Sources from "./pages/Sources.tsx";
 import { AudienceDetailPage, AudiencesList } from "./pages/Audiences.tsx";
 import Logo from "./Logo.tsx";
 import { useSettings } from "./settings.tsx";
@@ -35,6 +36,7 @@ function Nav() {
     { to: "/customers", label: "Clientes", icon: Users },
     { to: "/segments", label: "Segmentos", icon: PieChart },
     { to: "/audiences", label: "Audiencias", icon: Target },
+    { to: "/sources", label: "Fuentes", icon: Database },
     { to: "/runs", label: "Ejecuciones", icon: History },
   ];
   return (
@@ -76,6 +78,7 @@ export default function App() {
           <Route path="/segments/:id" element={<SegmentDetail />} />
           <Route path="/audiences" element={<AudiencesList />} />
           <Route path="/audiences/:id" element={<AudienceDetailPage />} />
+          <Route path="/sources" element={<Sources />} />
           <Route path="/runs" element={<Runs />} />
         </Routes>
       </main>

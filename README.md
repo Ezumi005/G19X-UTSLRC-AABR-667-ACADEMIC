@@ -56,6 +56,8 @@ La API simulada NO debe devolver directamente las features finales del modelo. D
 
 Implementación actual: `crm_simulator/` — generador de dataset con semilla fija (6 perfiles de comportamiento, ~500 clientes, 18 meses de historia) + API FastAPI en el puerto 8001. Su formato externo (`clientId`, `totalAmount` como texto, `productLine`, etc.) es deliberadamente distinto del contrato interno. El perfil real de cada cliente se guarda como ground truth en `data/meta.json` y NO se sirve por la API.
 
+**Fuentes adicionales sin código (asistidas por IA):** la vista **Fuentes** de la web permite subir cualquier CSV y conectarlo al sistema: Azure OpenAI sugiere la entidad y el mapeo de columnas (sinónimos en español/inglés, formatos de fecha diversos), el usuario revisa y confirma, se valida en seco contra el contrato y se sincroniza al pipeline normal con la misma trazabilidad (`DynamicCSVAdapter`, misma interfaz `BaseAdapter`). Los campos disponibles se derivan por introspección del contrato (`src/contracts`), sin duplicación. Las API externas (HubSpot, Salesforce…) siguen integrándose con un adaptador en código.
+
 ## 4. Contrato interno de datos
 
 Los adaptadores deben convertir cualquier fuente al siguiente modelo conceptual.
@@ -216,6 +218,7 @@ Endpoints iniciales de la aplicación:
 - `GET /segments/{id}/recommendation`
 - `POST /segments/{id}/recommendation`
 - `GET/POST/DELETE /audiences[/{id}]` (audiencias dinámicas) + `GET /audiences/{id}/export` (CSV)
+- `GET /sources` · `POST /sources/csv/upload|suggest|validate|` · `POST /sources/{id}/sync` (fuentes CSV con mapeo asistido por IA)
 
 Los nombres pueden cambiar, pero las responsabilidades deben mantenerse separadas.
 
@@ -344,10 +347,11 @@ MSIA/                          # raíz del proyecto (repositorio Git)
 │   ├── PRD_Motor_..._v1.1.md                         # texto extraído del PRD (referencia)
 │   └── MVP_Motor_..._v1.1.md                         # texto extraído del MVP (referencia)
 ├── src/                       # núcleo de la aplicación
-│   ├── contracts/             # contrato interno codificado (Pydantic)
+│   ├── contracts/             # contrato interno codificado (Pydantic; fuente única de verdad)
 │   ├── adapters/              # adaptadores: fuente externa → contrato interno
-│   │   ├── base.py            # BaseAdapter (ABC) + AdapterResult/AdapterReport
-│   │   └── simulated_crm_adapter.py   # SimulatedCRMAdapter (API en puerto 8001)
+│   │   ├── base.py            # BaseAdapter (ABC) + AdapterResult/AdapterReport/Incident
+│   │   ├── simulated_crm_adapter.py   # SimulatedCRMAdapter (API en puerto 8001)
+│   │   └── csv_adapter.py     # DynamicCSVAdapter (CSV subido desde la web, mapeo dinámico)
 │   ├── persistence/           # PostgreSQL: esquema, repositorio, ingesta y consultas
 │   │   ├── schema.sql         # esquema interno (espejo del contrato V1 + segmentación)
 │   │   ├── db.py              # conexión vía DATABASE_URL (.env)
@@ -455,7 +459,8 @@ cd frontend; npm install; npm run dev                         # frontend (termin
 2. **Clientes**: filtros por segmento/ciudad/ID; en el detalle expandible, botón **"Predecir segmento (Azure)"**; el ID lleva a la página del cliente (RFM + features + predicción).
 3. **Segmentos**: 6 grupos con etiquetas comerciales; en el detalle, perfil medio y recomendación (Azure OpenAI).
 4. **Audiencias**: crear una con condiciones combinables (p. ej. "en riesgo" + categoría electrónica) y exportar CSV.
-5. **Ejecuciones**: historial de runs de segmentación (métricas) e ingestión (duraciones, conteos, incidencias).
+5. **Fuentes**: subir un CSV de prueba con columnas en español crudo → la IA sugiere el mapeo → confirmar → sincronizar (demostración de adaptabilidad sin código).
+6. **Ejecuciones**: historial de runs de segmentación (métricas) e ingestión (duraciones, conteos, incidencias).
 
 **Recursos Azure activos:** `openai-motor-seg` (Azure OpenAI, gpt-5.4-mini DataZone), `ml-motor-seg-v2` (registro/versionado del modelo) y `motor-seg-scoring` + plan F1 (servicio de scoring).
 

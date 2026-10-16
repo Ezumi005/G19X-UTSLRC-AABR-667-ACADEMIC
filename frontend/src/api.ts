@@ -68,6 +68,43 @@ export const fetchIngestionRuns = () =>
   getJson<{ count: number; data: import("./types.ts").IngestionRun[] }>("/ingestion/runs");
 export const fetchAudiences = () =>
   getJson<{ count: number; data: import("./types.ts").Audience[] }>("/audiences");
+export const fetchSources = () =>
+  getJson<{ count: number; data: import("./types.ts").DataSourceItem[] }>("/sources");
+export const fetchEntitySchema = (entity: string) =>
+  getJson<{ entity: string; fields: Record<string, boolean> }>(
+    `/sources/schema/${encodeURIComponent(entity)}`,
+  );
+
+export async function uploadSourceCsv(file: File): Promise<import("./types.ts").UploadResult> {
+  const form = new FormData();
+  form.append("archivo", file);
+  const res = await fetch(`${API_BASE}/sources/csv/upload`, { method: "POST", body: form });
+  const body = (await res.json().catch(() => null)) as { detail?: string } | null;
+  if (!res.ok) {
+    throw new Error(body?.detail ?? `Subida -> HTTP ${res.status}`);
+  }
+  return body as unknown as import("./types.ts").UploadResult;
+}
+
+export const suggestCsvMapping = (token: string) =>
+  postJsonBody<import("./types.ts").Suggestion>("/sources/csv/suggest", { upload_token: token });
+
+export const validateCsvMapping = (payload: {
+  name: string;
+  entity: string;
+  upload_token: string;
+  mapping: Record<string, string>;
+}) => postJsonBody<import("./types.ts").ValidationSummary>("/sources/csv/validate", payload);
+
+export const createCsvSource = (payload: {
+  name: string;
+  entity: string;
+  upload_token: string;
+  mapping: Record<string, string>;
+}) => postJsonBody<{ source_id: number; name: string; entity: string }>("/sources/csv", payload);
+
+export const syncSource = (id: number) => postJson<Record<string, unknown>>(`/sources/${id}/sync`);
+export const deleteSource = (id: number) => delJson<{ deleted: number }>(`/sources/${id}`);
 export const fetchAudience = (id: number) =>
   getJson<import("./types.ts").AudienceDetail>(`/audiences/${id}`);
 export const createAudience = (payload: {

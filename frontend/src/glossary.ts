@@ -68,4 +68,9 @@ export const GLOSARIO: Record<string, EntradaGlosario> = {
     descripcion:
       "Consulta al modelo servido en la nube de Azure: recibe el perfil del cliente y responde a qué segmento pertenece.",
   },
+  contrato: {
+    titulo: "Contrato interno",
+    descripcion:
+      "El formato estándar de datos del sistema (clientes, transacciones, interacciones y campañas). Toda fuente externa se traduce a este formato mediante un adaptador; el motor solo lo conoce a él.",
+  },
 };

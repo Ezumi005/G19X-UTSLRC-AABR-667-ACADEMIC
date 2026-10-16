@@ -7,6 +7,8 @@ que el SimulatedCRMAdapter: el motor no distingue la fuente.
 
 from __future__ import annotations
 
+import re
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -20,6 +22,9 @@ from src.contracts import (
     NormalizedDataset,
     Transaction,
 )
+
+CAMPOS_FECHA = {"registered_at", "purchased_at", "occurred_at"}
+PATRON_FECHA_REGIONAL = re.compile(r"^\d{1,2}/\d{1,2}/\d{4}$")
 
 ENTITY_MODELS: dict[str, type] = {
     "customers": Customer,
@@ -82,6 +87,10 @@ class DynamicCSVAdapter(BaseAdapter):
                 for campo, columna in self.mapping.items()
                 if columna in fila and str(fila[columna]).strip() != ""
             }
+            for campo in CAMPOS_FECHA:
+                valor = registro.get(campo)
+                if valor and PATRON_FECHA_REGIONAL.match(valor):
+                    registro[campo] = datetime.strptime(valor, "%d/%m/%Y").date().isoformat()
             filas.append(registro)
         return filas
 

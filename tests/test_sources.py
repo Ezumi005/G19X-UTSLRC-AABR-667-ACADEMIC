@@ -101,9 +101,12 @@ def prueba_sugerencia_ia_con_mock():
 
 
 def prueba_sugerencia_ia_no_disponible():
-    """Sin IA configurada, el endpoint responde 503 y el flujo manual sigue vivo."""
+    """Sin IA disponible, el endpoint responde 503 y el flujo manual sigue vivo."""
+    csv_fresco = io.BytesIO(b"ident,alta\nC-1,2025-01-01\n")
+    subida = client.post("/sources/csv/upload", files={"archivo": ("x.csv", csv_fresco, "text/csv")})
+    token = subida.json()["upload_token"]
     with patch("src.api.routes.sources.suggest_mapping", side_effect=RuntimeError("Azure OpenAI no configurado")):
-        r = client.post("/sources/csv/suggest", json={"upload_token": "tokeninexistente1"})
+        r = client.post("/sources/csv/suggest", json={"upload_token": token})
     assert r.status_code == 503
     assert "no configurado" in r.json()["detail"]
 

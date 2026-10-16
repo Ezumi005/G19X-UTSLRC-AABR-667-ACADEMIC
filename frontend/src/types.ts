@@ -78,6 +78,42 @@ export interface IngestionRun {
   incidents: number;
 }
 
+export interface DataSourceItem {
+  source_id: number;
+  name: string;
+  type: string;
+  entity: string;
+  mapping?: Record<string, string>;
+  created_at?: string;
+  last_sync_at?: string | null;
+  detail?: string;
+}
+
+export interface UploadResult {
+  upload_token: string;
+  filename: string;
+  columns: string[];
+  sample_rows: Record<string, string>[];
+}
+
+export interface Suggestion {
+  entity: string;
+  mapping: Record<string, string>;
+  unused_columns: string[];
+  confidence: number | null;
+  notes: string | null;
+  columns: string[];
+  missing_required: string[];
+}
+
+export interface ValidationSummary {
+  read: number;
+  accepted: number;
+  rejected: number;
+  incidents: string[];
+  preview: Record<string, unknown>[];
+}
+
 export interface Segment {
   segment_id: number;
   cluster_id: number;
