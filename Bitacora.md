@@ -1330,6 +1330,29 @@ Validación visual del usuario y, cuando apruebe, Sesión 2 del plan (CI, /healt
 
 ---
 
+## 15/10/2026 — 23:14
+**Tipo:** Técnico
+
+**Actividad realizada:**  
+Sustituí el punto decorativo del título por un **logo de marca** real: componente `Logo.tsx` con las barras de segmentos en degradado caramelo (idéntico al favicon), junto al título "Motor de Segmentación de Clientes" en la barra superior. Coherencia favicon ↔ logo ↔ gráficos.
+
+**Decisiones tomadas:**  
+- Logo como componente SVG propio (mismo diseño del favicon) en vez de un icono genérico de librería: refuerza la identidad de marca.
+
+**Resultado:**  
+- Build en verde; dev server sirviendo el componente; barra superior con identidad completa.
+
+**Archivos o componentes afectados:**  
+- Nuevos: `frontend/src/Logo.tsx`. Modificados: `App.tsx`, `styles.css` (fuera .brand-dot), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno.
+
+**Siguiente paso:**  
+Sesión 2 del plan (CI, /health real, lint) cuando el usuario apruebe; el login queda como decisión opcional según el destino de la demo.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

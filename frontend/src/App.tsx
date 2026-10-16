@@ -8,6 +8,7 @@ import Segments from "./pages/Segments.tsx";
 import SegmentDetail from "./pages/SegmentDetail.tsx";
 import Runs from "./pages/Runs.tsx";
 import { AudienceDetailPage, AudiencesList } from "./pages/Audiences.tsx";
+import Logo from "./Logo.tsx";
 import { useSettings } from "./settings.tsx";
 
 function PanelConfiguracion({ alCerrar }: { alCerrar: () => void }) {
@@ -39,7 +40,7 @@ function Nav() {
   return (
     <header className="topbar">
       <div className="brand">
-        <span className="brand-dot" />
+        <Logo size={26} />
         Motor de Segmentación de Clientes
       </div>
       <nav>

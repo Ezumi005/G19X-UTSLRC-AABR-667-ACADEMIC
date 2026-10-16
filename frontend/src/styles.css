@@ -65,7 +65,6 @@ body { margin: 0; }
   background: var(--topbar-bg); color: #fff; position: relative;
 }
 .brand { font-weight: 700; display: flex; align-items: center; gap: 10px; }
-.brand-dot { width: 10px; height: 10px; border-radius: 50%; background: #d9a44b; display: inline-block; }
 .topbar nav { display: flex; gap: 6px; align-items: center; }
 .nav-link { color: #d9c9ac; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 15px; display: inline-flex; align-items: center; gap: 7px; }
 .nav-link:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
