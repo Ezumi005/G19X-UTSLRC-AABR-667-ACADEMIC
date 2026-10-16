@@ -1436,6 +1436,29 @@ Push con CI verificando la suite de fuentes (hecho, verde); el usuario puede pro
 
 ---
 
+## 16/10/2026 — 12:25
+**Tipo:** Documentación
+
+**Actividad realizada:**  
+Pasé de revisión completa del README para registrar lo hecho que había quedado sin documentar: endpoints `/sources` completos y corregidos (la línea anterior tenía un `|` suelto y omitía `POST /sources/csv` de creación y `DELETE /sources/{id}`, además de `/schema/{entidad}` por introspección), router `mapping_suggest.py` y routers `audiences`/`sources` en el árbol del proyecto, tabla `data_sources` en la sección del esquema, vista `Sources` en el listado de páginas React, sección de pruebas actualizada a **10 suites** (con ejemplo `test_sources`) y estado del proyecto al 16/10/2026 (MVP cerrado + fuentes CSV asistidas por IA).
+
+**Decisiones tomadas:**  
+- Mantener el árbol y las listas de endpoints como mapa fiel del sistema: cualquier archivo nuevo del núcleo se refleja en §16 en el mismo avance que lo crea.
+
+**Resultado:**  
+- README consistentes con el código real (verificado por grep contra el árbol de archivos); sin código nuevo en este avance.
+
+**Archivos o componentes afectados:**  
+- `README.md` (§4 estado, §9 fuentes, §11 esquema, §16 árbol, §17 pruebas), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno.
+
+**Siguiente paso:**  
+El usuario prueba la vista **Fuentes** en el navegador; siguientes mejoras cuando decida (seguridad de API para demostraciones externas, churn/CLV, adaptadores de CRM reales).
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

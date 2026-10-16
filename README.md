@@ -218,11 +218,11 @@ Endpoints iniciales de la aplicación:
 - `GET /segments/{id}/recommendation`
 - `POST /segments/{id}/recommendation`
 - `GET/POST/DELETE /audiences[/{id}]` (audiencias dinámicas) + `GET /audiences/{id}/export` (CSV)
-- `GET /sources` · `POST /sources/csv/upload|suggest|validate|` · `POST /sources/{id}/sync` (fuentes CSV con mapeo asistido por IA)
+- `GET /sources` · `POST /sources/csv/upload` · `POST /sources/csv/suggest` · `POST /sources/csv/validate` · `POST /sources/csv` · `POST /sources/{id}/sync` · `DELETE /sources/{id}` (fuentes CSV con mapeo asistido por IA; `/schema/{entidad}` expone los campos del contrato por introspección)
 
 Los nombres pueden cambiar, pero las responsabilidades deben mantenerse separadas.
 
-Implementación actual: `src/api/` (puerto 8000: `.venv\Scripts\python.exe -m uvicorn src.api.app:app --port 8000`). Routers por dominio (`ingestion`, `customers`, `segments`, `dashboard`) más `/health`. `GET /segments` devuelve el último run exitoso; `POST /segments/{id}/recommendation` está reservado (501) hasta la etapa de Azure OpenAI. Lecturas centralizadas en `src/persistence/queries.py`. CORS habilitado solo para desarrollo React (localhost:5173/3000). Verificado en vivo: los 8 endpoints responden, incluidos 404 y 501.
+Implementación actual: `src/api/` (puerto 8000: `.venv\Scripts\python.exe -m uvicorn src.api.app:app --port 8000`). Routers por dominio (`ingestion`, `customers`, `segments`, `dashboard`, `audiences`, `sources`) más `/health`. `GET /segments` devuelve el último run exitoso; `POST /segments/{id}/recommendation` está reservado (501) hasta la etapa de Azure OpenAI. Lecturas centralizadas en `src/persistence/queries.py`. CORS habilitado solo para desarrollo React (localhost:5173/3000). Verificado en vivo: los 8 endpoints responden, incluidos 404 y 501.
 
 ## 10. PostgreSQL
 
@@ -241,7 +241,7 @@ Entidades mínimas esperadas:
 
 No guardar el payload externo como si fuera el modelo interno definitivo. Primero debe pasar por su adaptador y validación.
 
-Implementación actual: `src/persistence/schema.sql` — tablas `customers`, `transactions`, `interactions`, `campaign_events` (espejo del contrato V1, con CHECKs de enums), `ingestion_runs`/`ingestion_incidents` (trazabilidad de ingestiones), `segmentation_runs`/`segments`/`customer_segments` (trazabilidad de segmentaciones) y `audiences` (audiencias dinámicas PRD §16: condiciones JSONB, membresía recalculada en cada consulta). Sin FKs en las tablas de datos: la integridad referencial corresponde al procesamiento (contrato, sección 2); las tablas de segmentación sí llevan FKs estructurales. Falta `recommendations`… ya existe (Azure OpenAI).
+Implementación actual: `src/persistence/schema.sql` — tablas `customers`, `transactions`, `interactions`, `campaign_events` (espejo del contrato V1, con CHECKs de enums), `ingestion_runs`/`ingestion_incidents` (trazabilidad de ingestiones), `segmentation_runs`/`segments`/`customer_segments` (trazabilidad de segmentaciones), `audiences` (audiencias dinámicas PRD §16: condiciones JSONB, membresía recalculada en cada consulta) y `data_sources` (fuentes externas conectadas: entidad, mapeo columna→campo, última sincronización). Sin FKs en las tablas de datos: la integridad referencial corresponde al procesamiento (contrato, sección 2); las tablas de segmentación sí llevan FKs estructurales. Falta `recommendations`… ya existe (Azure OpenAI).
 
 ## 11. Frontend
 
@@ -282,6 +282,8 @@ Implementación actual: `frontend/` — Vite + React 19 + TypeScript + react-rou
 Nota: las etapas 10-12 (Azure ML / Azure OpenAI) requieren suscripción de Azure; la etapa 13 (React) se adelantó mientras se obtiene la suscripción (registro en `Bitacora.md`, 22/09/2026).
 
 Estado al 28/09/2026: **etapas 1-14 completadas**. Etapas 10-11 con desviación aprobada (§7). Etapa 15: esta documentación y la guía de demostración (§18).
+
+Estado al 16/10/2026: **MVP cerrado + servicio de fuentes CSV asistidas por IA en producción** (adaptador dinámico introspectado, sugerencia de mapeo con Azure OpenAI, asistente web de 3 pasos y ciclos de vida de fuentes; 10 suites + CI en GitHub Actions con badge).
 
 ## 13. Reglas que NO se deben romper
 
@@ -366,11 +368,12 @@ MSIA/                          # raíz del proyecto (repositorio Git)
 │   │   └── segmentation.py    # etiquetas comerciales + persistencia de ejecuciones
 │   ├── services/              # servicios que consumen plataformas Azure
 │   │   ├── recommendations.py # Azure OpenAI (gpt-5.4-mini DataZone)
-│   │   └── scoring.py         # cliente del scoring en Azure App Service
+│   │   ├── scoring.py         # cliente del scoring en Azure App Service
+│   │   └── mapping_suggest.py # sugerencia de mapeo CSV → contrato (Azure OpenAI)
 │   └── api/                   # API principal FastAPI (puerto 8000)
 │       ├── app.py             # create_app + /health + CORS de desarrollo
-│       └── routes/            # routers: ingestion, customers, segments, dashboard
-├── tests/                     # pruebas (contrato y adaptador)
+│       └── routes/            # routers: ingestion, customers, segments, dashboard, audiences, sources
+├── tests/                     # 10 suites de pruebas (una por módulo: contrato, adaptador, features, clustering, segmentación, recomendaciones, scoring, API, audiencias, fuentes)
 ├── crm_simulator/             # API CRM simulada: fuente externa independiente
 │   ├── generate_data.py       # generador del dataset (semilla fija → reproducible)
 │   └── app.py                 # API FastAPI con formato externo propio (puerto 8001)
@@ -386,7 +389,7 @@ MSIA/                          # raíz del proyecto (repositorio Git)
 │       ├── api.ts             # cliente HTTP de la API del backend
 │       ├── types.ts           # tipos de las respuestas
 │       └── pages/             # Dashboard, Customers, CustomerDetail, Segments,
-│                                SegmentDetail, Audiences, Runs
+│                                SegmentDetail, Audiences, Sources, Runs
 └── .venv/                     # entorno virtual local (no versionado)
 ```
 
@@ -435,7 +438,7 @@ npm run dev        # abre http://localhost:5173
 .venv\Scripts\python.exe -m src.ml.segmentation        # segmentación persistida (k=6, etiquetas comerciales)
 ```
 
-**Pruebas (9 suites):** ejecutar cada módulo `tests/test_*.py`, p. ej. `.venv\Scripts\python.exe -m tests.test_api`.
+**Pruebas (10 suites):** ejecutar cada módulo `tests/test_*.py`, p. ej. `.venv\Scripts\python.exe -m tests.test_api` o `tests.test_sources` (fuentes CSV con mock de sugerencia IA y degradación 503).
 
 ## 18. Guía de demostración (MVP completo)
 
