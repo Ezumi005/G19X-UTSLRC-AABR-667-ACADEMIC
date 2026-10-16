@@ -11,6 +11,7 @@ import {
   fmtNumber,
 } from "../api.ts";
 import type { Audience, AudienceConditions, AudienceDetail, SegmentsPage } from "../types.ts";
+import { Download, Trash2 } from "lucide-react";
 import { useFeedback } from "../Feedback.tsx";
 import { SkeletonRows } from "../Skeleton.tsx";
 import InfoTip from "../InfoTip.tsx";
@@ -156,6 +157,7 @@ export function AudiencesList() {
                       })();
                     }}
                   >
+                    <Trash2 size={14} />
                     Eliminar
                   </button>
                 </td>
@@ -193,6 +195,7 @@ export function AudienceDetailPage() {
       </p>
       <p>
         <a className="btn-secondary" href={audienceExportUrl(data.audience_id)}>
+          <Download size={14} />
           Exportar CSV
         </a>
       </p>

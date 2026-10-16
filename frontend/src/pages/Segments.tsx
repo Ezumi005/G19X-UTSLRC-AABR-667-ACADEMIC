@@ -5,12 +5,12 @@ import { useFeedback } from "../Feedback.tsx";
 import InfoTip from "../InfoTip.tsx";
 import { SkeletonCards } from "../Skeleton.tsx";
 import type { SegmentsPage } from "../types.ts";
+import { RefreshCw } from "lucide-react";
 
 export default function Segments() {
   const [data, setData] = useState<SegmentsPage | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [recalculando, setRecalculando] = useState(false);
-  const [aviso, setAviso] = useState<string | null>(null);
   const { toast } = useFeedback();
 
   const cargar = () => {
@@ -21,7 +21,6 @@ export default function Segments() {
 
   const recalcular = async () => {
     setRecalculando(true);
-    setAviso(null);
     try {
       const resultado = await runSegmentation();
       cargar();
@@ -54,9 +53,9 @@ export default function Segments() {
       </p>
       <div className="actions-bar">
         <button onClick={() => void recalcular()} disabled={recalculando}>
+          <RefreshCw size={15} className={recalculando ? "girando" : undefined} />
           {recalculando ? "Recalculando…" : "Recalcular segmentos"}
         </button>
-        {aviso && <span className="notice">{aviso}</span>}
       </div>
       <div className="segment-grid">
         {data.data.map((s) => (

@@ -16,7 +16,7 @@ import { SkeletonBlocks, SkeletonCards } from "../Skeleton.tsx";
 import { useSettings } from "../settings.tsx";
 import type { Dashboard as DashboardData } from "../types.ts";
 
-const PALETA = ["#4f8cff", "#7a6bff", "#2bb673", "#f59e0b", "#ef5da8", "#26c3d6"];
+const PALETA = ["#c4744e", "#d9a44b", "#8f9e6a", "#c98b95", "#7c8f86", "#a98458"];
 
 function envolver(texto: string, ancho = 20): string[] {
   const palabras = texto.split(" ");
@@ -257,7 +257,7 @@ export default function Dashboard() {
                   />
                 }
               />
-              <Bar dataKey="compras" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="compras" fill="#d9a44b" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>

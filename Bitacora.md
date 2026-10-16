@@ -1304,6 +1304,32 @@ Sesión 2 (Track B): CI con GitHub Actions, `/health` real por dependencia y lin
 
 ---
 
+## 15/10/2026 — 22:40
+**Tipo:** Técnico
+
+**Actividad realizada:**  
+Rediseño visual "cremoso" pedido por el usuario + integración de iconos profesionales. Reemplacé toda la paleta de la interfaz por tonos cálidos (crema, caramelo, terracota, espresso) en ambos temas — claro tipo latte y oscuro tipo mocha — incluyendo badges, toasts, topbar e inputs. Instalé `lucide-react` y sustituí los iconos básicos: navegación con icono por sección (dashboard/clientes/segmentos/audiencias/ejecuciones), engranaje de configuración, "?" de ayuda (HelpCircle), lupa en filtrar, chispas en predecir (Azure), flecha giratoria animada en recalcular, papelera en eliminar y descarga en export CSV. Actualicé el favicon al nuevo degradado caramelo y la paleta de las gráficas a colores cálidos consistentes (terracota, miel, salvia, rosa envejecido, eucalipto, camello).
+
+**Decisiones tomadas:**  
+- Paleta cálida completa basada en variables CSS (mismas clases, solo valores): fondo crema `#f6f1e7`, panel `#fffdf7`, primario caramelo `#b4703f`, topbar espresso; oscuro en tonos mocha.
+- `lucide-react` (MIT, gratuito, +1500 iconos como componentes) en vez de iconos de texto/emoji: es el estándar de React y hace tree-shaking.
+- Botones y enlaces secundarios ahora admiten icono + texto (inline-flex).
+- Se retiró el aviso inline del recálculo (el toast verde ya lo notifica), evitando redundancia.
+
+**Resultado:**  
+- `npm run build` en verde; dev server sirviendo los cambios; interfaz con identidad cálida coherente en claro/oscuro y gráficas en la misma familia de color.
+
+**Archivos o componentes afectados:**  
+- `frontend/package.json` (+lucide-react), `styles.css` (paleta cremosa, iconos en botones, animación de giro), `App.tsx`, `InfoTip.tsx`, `pages/{Segments, Customers, Audiences, Dashboard}.tsx`, `public/favicon.svg`, `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno.
+
+**Siguiente paso:**  
+Validación visual del usuario y, cuando apruebe, Sesión 2 del plan (CI, /health real, lint).
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

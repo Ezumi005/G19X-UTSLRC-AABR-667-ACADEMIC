@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { HelpCircle } from "lucide-react";
 import { GLOSARIO } from "./glossary.ts";
 
 export default function InfoTip({ termino }: { termino: string }) {
@@ -14,7 +15,7 @@ export default function InfoTip({ termino }: { termino: string }) {
         aria-label={`Qué significa: ${entrada.titulo}`}
         onClick={() => setAbierto((valor) => !valor)}
       >
-        ?
+        <HelpCircle size={13} />
       </button>
       {abierto && (
         <span className="infotip-panel" role="tooltip">

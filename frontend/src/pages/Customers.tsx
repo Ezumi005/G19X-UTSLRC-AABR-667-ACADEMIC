@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Search, Sparkles } from "lucide-react";
 import { useFeedback } from "../Feedback.tsx";
 import InfoTip from "../InfoTip.tsx";
 import { SkeletonRows } from "../Skeleton.tsx";
@@ -118,7 +119,10 @@ export default function Customers() {
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
         />
-        <button className="btn-secondary" onClick={aplicarFiltros}>Filtrar</button>
+        <button className="btn-secondary" onClick={aplicarFiltros}>
+          <Search size={14} />
+          Filtrar
+        </button>
         <button className="btn-secondary" onClick={limpiarFiltros}>Limpiar</button>
       </div>
 
@@ -180,6 +184,7 @@ export default function Customers() {
                           disabled={prediciendo === row.customer_id}
                           onClick={() => void predecir(row.customer_id)}
                         >
+                          <Sparkles size={14} />
                           {prediciendo === row.customer_id ? "Consultando Azure…" : "Predecir segmento (Azure)"}
                         </button>
                       )}

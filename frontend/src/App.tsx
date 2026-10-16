@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Route, Routes, Link, useLocation } from "react-router-dom";
+import { History, LayoutDashboard, PieChart, Settings, Target, Users } from "lucide-react";
 import Dashboard from "./pages/Dashboard.tsx";
 import Customers from "./pages/Customers.tsx";
 import CustomerDetail from "./pages/CustomerDetail.tsx";
@@ -29,11 +30,11 @@ function Nav() {
   const { pathname } = useLocation();
   const [configAbierta, setConfigAbierta] = useState(false);
   const items = [
-    { to: "/", label: "Dashboard" },
-    { to: "/customers", label: "Clientes" },
-    { to: "/segments", label: "Segmentos" },
-    { to: "/audiences", label: "Audiencias" },
-    { to: "/runs", label: "Ejecuciones" },
+    { to: "/", label: "Dashboard", icon: LayoutDashboard },
+    { to: "/customers", label: "Clientes", icon: Users },
+    { to: "/segments", label: "Segmentos", icon: PieChart },
+    { to: "/audiences", label: "Audiencias", icon: Target },
+    { to: "/runs", label: "Ejecuciones", icon: History },
   ];
   return (
     <header className="topbar">
@@ -44,6 +45,7 @@ function Nav() {
       <nav>
         {items.map((item) => (
           <Link key={item.to} to={item.to} className={pathname === item.to ? "nav-link active" : "nav-link"}>
+            <item.icon size={15} />
             {item.label}
           </Link>
         ))}
@@ -52,7 +54,7 @@ function Nav() {
           aria-label="Configuración"
           onClick={() => setConfigAbierta((v) => !v)}
         >
-          ⚙
+          <Settings size={16} />
         </button>
       </nav>
       {configAbierta && <PanelConfiguracion alCerrar={() => setConfigAbierta(false)} />}
