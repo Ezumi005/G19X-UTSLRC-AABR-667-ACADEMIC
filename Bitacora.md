@@ -1378,6 +1378,33 @@ Sesión 3: API tipada (response models), capturas del README, Docker documentado
 
 ---
 
+## 16/10/2026 — 06:27
+**Tipo:** Técnico (Sesión 3 — cierre del plan de profesionalización)
+
+**Actividad realizada:**  
+Completé la Sesión 3 y con ella el plan de profesionalización. Resultados de la Sesión 2 primero: **el CI de GitHub Actions pasó en su primera ejecución** (1m22s: PostgreSQL servicio + esquema + simulador + ingesta + segmentación + 9 suites + ruff + build del frontend; badge verde en el README). En esta sesión: **API tipada** con response models de Pydantic en todos los endpoints de lectura/escritura principales (`src/api/schemas.py` — Swagger/OpenAPI completo), **documentación de la decisión de autenticación** (nueva sección 19 del README: por qué el MVP no tiene login — demo académica local, PRD §25 condicional, y qué se agregaría si el entorno lo exige), **archivos Docker** (`docker-compose.yml` + Dockerfiles por servicio, documentados y cubiertos por diseño aunque sin Docker Desktop local), **capturas automáticas del README** (Playwright + Chromium headless: dashboard claro/oscuro, clientes, segmento con recomendación y audiencias, guardadas en `docs/img/`) y preparación del **release v1.0.0**.
+
+**Decisiones tomadas:**  
+- Response models centralizados en un solo módulo; anotados vía `response_model` para que FastAPI documente y valide las respuestas.
+- La ausencia de login queda como decisión documentada con su justificación y su camino de evolución (API key/JWT → roles), no como pendiente silencioso.
+- Capturas generadas con navegador real automatizado (2x de escala para nitidez), tema claro y oscuro incluidos.
+- Docker documentado como opcional; el stack de demo local sigue siendo el camino principal.
+
+**Resultado:**  
+- Todas las suites y lint en verde; CI verde en GitHub; README con badge, capturas y secciones 19-20.
+- El proyecto queda con acabado profesional completo para su entrega académica.
+
+**Archivos o componentes afectados:**  
+- `src/api/schemas.py` (nuevo), `routes/{customers, segments, audiences, ingestion}.py` (response models), `README.md` (capturas + §19 + §20), `docker-compose.yml` y `docker/Dockerfile.{python, frontend}` (nuevos), `docs/img/*.png` (5 capturas), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno. (Corregidos al vuelo: orden de imports señalado por ruff y un response_model provisional mal elegido en el POST de audiencias.)
+
+**Siguiente paso:**  
+Publicar el release v1.0.0 en GitHub con notas de versión. Tras eso, el proyecto queda cerrado salvo decisiones futuras del usuario (login, despliegue en la nube, nuevos modelos).
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

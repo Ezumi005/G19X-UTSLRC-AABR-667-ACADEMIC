@@ -8,6 +8,18 @@ Construir una aplicación web que reciba datos de clientes, los normalice, calcu
 
 El proyecto se desarrolla para **PluriOne S.A. de C.V. (Develop Talent & Technology)** y se implementará inicialmente con **datos simulados**, porque no se contará con acceso a los sistemas reales de la empresa.
 
+## Capturas
+
+| Dashboard (tema claro) | Dashboard (tema oscuro) |
+|---|---|
+| ![Dashboard claro](docs/img/dashboard-claro.png) | ![Dashboard oscuro](docs/img/dashboard-oscuro.png) |
+
+| Clientes con filtros y predicción | Segmento con recomendación (Azure OpenAI) |
+|---|---|
+| ![Clientes](docs/img/clientes.png) | ![Recomendación](docs/img/segmento-recomendacion.png) |
+
+![Audiencias dinámicas](docs/img/audiencias.png)
+
 ## 2. Decisión de arquitectura principal
 
 **El sistema NO se construye alrededor del CRM simulado.**
@@ -446,3 +458,24 @@ cd frontend; npm install; npm run dev                         # frontend (termin
 5. **Ejecuciones**: historial de runs de segmentación (métricas) e ingestión (duraciones, conteos, incidencias).
 
 **Recursos Azure activos:** `openai-motor-seg` (Azure OpenAI, gpt-5.4-mini DataZone), `ml-motor-seg-v2` (registro/versionado del modelo) y `motor-seg-scoring` + plan F1 (servicio de scoring).
+
+## 19. Autenticación y seguridad (decisión documentada)
+
+**Estado actual:** la API y la interfaz del MVP **no exigen inicio de sesión**. Es una decisión deliberada, no una omisión:
+
+1. **El PRD lo condiciona** (§25): la autenticación aplica *"cuando el entorno lo requiera"* — con roles (administrador, analista, marketing, ventas) y Microsoft Entra ID para entornos empresariales.
+2. **El destino del MVP es una demostración académica local**: un solo usuario (el presentador) opera la aplicación en `localhost`; un login añadiría fricción sin aportar valor en ese contexto.
+3. **Lo que SÍ está protegido desde el día uno:** credenciales exclusivamente en el `.env` local (nunca en el repo ni en el frontend), el servicio de scoring en Azure con autenticación por `X-API-Key`, CORS restringido a los orígenes de desarrollo, y validación de entradas en todos los endpoints.
+
+**Si el entorno llegara a requerirlo** (uso multiusuario, demo externa, despliegue público), el camino definido es: login simple con API key o JWT (~1 día) y, en su evolución, roles por perfil (~2 días) según la matriz del PRD. La arquitectura por capas no requiere cambios: sería un middleware más del backend.
+
+## 20. Docker (opcional, documentado)
+
+Para levantar todo el stack con un comando (requiere Docker Desktop instalado):
+
+```powershell
+docker compose up --build
+# frontend: http://localhost:5173 · backend: http://localhost:8000 · simulador: 8001 · postgres: 5432
+```
+
+Archivos: `docker-compose.yml` (postgres 18 + simulador + backend + frontend nginx) y `Dockerfile` por servicio. Nota: verificado por diseño y CI; la máquina de desarrollo del proyecto no tiene Docker Desktop, por lo que la ejecución local de estos archivos queda a discreción del usuario.
