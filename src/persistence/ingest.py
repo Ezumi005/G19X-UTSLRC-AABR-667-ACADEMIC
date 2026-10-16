@@ -63,14 +63,13 @@ def _finish_error(conn, run_id: int, error: str) -> None:
         )
 
 
-def run_ingestion(base_url: str = "http://127.0.0.1:8001") -> int:
-    """Ejecuta una sincronizacion completa. Devuelve el run_id registrado."""
-    adapter = SimulatedCRMAdapter(base_url)
+def persist_result(result: AdapterResult) -> int:
+    """Persiste el resultado de CUALQUIER adaptador con trazabilidad completa."""
+    report = result.report
     with connect() as conn:
-        run_id = _start_run(conn, "crm_simulado")
+        run_id = _start_run(conn, report.source)
         conn.commit()
         try:
-            result = adapter.fetch_normalized()
             saved = save_dataset(conn, result.dataset)
             _finish_ok(conn, run_id, result, saved)
             conn.commit()
@@ -79,12 +78,18 @@ def run_ingestion(base_url: str = "http://127.0.0.1:8001") -> int:
             _finish_error(conn, run_id, str(exc))
             conn.commit()
             raise
-    r = result.report
-    print(f"Ingestion #{run_id} OK [{r.source}]")
-    for entity in r.read:
-        print(f"  {entity}: leidos={r.read[entity]} guardados={saved[entity]} rechazados={r.rejected[entity]}")
-    print(f"  incidencias registradas: {len(r.incidents)}")
+    for entity in report.read:
+        print(f"  {entity}: leidos={report.read[entity]} guardados={saved[entity]} rechazados={report.rejected[entity]}")
+    print(f"  incidencias registradas: {len(report.incidents)}")
     return run_id
+
+
+def run_ingestion(base_url: str = "http://127.0.0.1:8001") -> int:
+    """Ejecuta una sincronizacion completa del CRM simulado. Devuelve el run_id."""
+    adapter = SimulatedCRMAdapter(base_url)
+    result = adapter.fetch_normalized()
+    print(f"Ingestion [{result.report.source}]")
+    return persist_result(result)
 
 
 if __name__ == "__main__":

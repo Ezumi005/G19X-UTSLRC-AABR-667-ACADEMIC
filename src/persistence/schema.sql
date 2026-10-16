@@ -146,3 +146,16 @@ CREATE TABLE IF NOT EXISTS audiences (
     last_calculated_at TIMESTAMPTZ,
     n_customers      INT
 );
+
+-- Fuentes de datos conectadas (adaptacion sin codigo para archivos CSV):
+-- config guarda el mapeo de columnas al contrato interno por entidad
+CREATE TABLE IF NOT EXISTS data_sources (
+    source_id   BIGSERIAL PRIMARY KEY,
+    name        TEXT NOT NULL,
+    type        TEXT NOT NULL DEFAULT 'csv' CHECK (type IN ('csv')),
+    entity      TEXT NOT NULL CHECK (entity IN ('customers','transactions','interactions','campaign_events')),
+    filename    TEXT NOT NULL,
+    mapping     JSONB NOT NULL,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    last_sync_at TIMESTAMPTZ
+);
