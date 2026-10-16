@@ -1427,10 +1427,12 @@ Construí la **adaptación de fuentes sin código y asistida por IA**, pedido de
 - Docs: `README.md` (§3, §9, §16, §18), `Bitacora.md` (esta entrada).
 
 **Problemas o bloqueos:**  
-- Ninguno pendiente. Corregidos en el camino: filtro de la sugerencia endurecido en el endpoint, prueba del 503 con token real y normalización de fechas regionales.
+- Ninguno pendiente. Corregidos en el camino: filtro de la sugerencia endurecido en el endpoint, prueba del 503 con token real y normalización de fechas regionales. Extra: al revisar el workflow descubrí que la lista de suites del CI estaba hardcodeada con las 9 originales y **no ejecutaba `test_sources`**; lo corregí en el mismo cierre (job renombrado a "10 suites + lint") y verifiqué en el log de Actions que la suite nueva realmente corre en CI.
+
+**Resultado del cierre:** commits `41a9e0d` (vista Fuentes + asistente IA + fix fechas + docs) y `cf10a69` (CI con 10 suites) pusheados a `main` (repo público); run de Actions **green** con la suite `test_sources` ejecutándose dentro del CI (verificado por log).
 
 **Siguiente paso:**  
-Push con CI verificando la suite de fuentes; el usuario puede probar el asistente desde la web (vista Fuentes).
+Push con CI verificando la suite de fuentes (hecho, verde); el usuario puede probar el asistente desde la web (vista Fuentes).
 
 ---
 
