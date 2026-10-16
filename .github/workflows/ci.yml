@@ -8,7 +8,7 @@ on:
 
 jobs:
   backend:
-    name: Pruebas del backend (9 suites + lint)
+    name: Pruebas del backend (10 suites + lint)
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -51,9 +51,9 @@ jobs:
       - name: Segmentacion inicial
         run: python -m src.ml.segmentation
 
-      - name: Pruebas (9 suites)
+      - name: Pruebas (10 suites)
         run: |
-          for t in contrato adapter features clustering segmentation recommendations scoring api audiences; do
+          for t in contrato adapter features clustering segmentation recommendations scoring api audiences sources; do
             echo "== tests.test_$t =="
             python -m tests.test_$t
           done
