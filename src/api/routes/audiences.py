@@ -12,6 +12,7 @@ import io
 from fastapi import APIRouter, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 
+from src.api.schemas import AudienceDetailResponse, AudienceItem, AudiencesResponse
 from src.contracts import ProductCategory
 from src.persistence import queries
 
@@ -34,7 +35,7 @@ class AudienceCreate(BaseModel):
     conditions: AudienceConditions
 
 
-@router.post("")
+@router.post("", response_model=AudienceItem)
 def create_audience(payload: AudienceCreate) -> dict:
     try:
         audience_id = queries.create_audience(
@@ -47,13 +48,13 @@ def create_audience(payload: AudienceCreate) -> dict:
     return queries.get_audience(audience_id)
 
 
-@router.get("")
+@router.get("", response_model=AudiencesResponse)
 def list_audiences() -> dict:
     data = queries.list_audiences()
     return {"count": len(data), "data": data}
 
 
-@router.get("/{audience_id}")
+@router.get("/{audience_id}", response_model=AudienceDetailResponse)
 def get_audience(
     audience_id: int, limit: int = Query(default=50, ge=1, le=500), offset: int = Query(default=0, ge=0)
 ) -> dict:

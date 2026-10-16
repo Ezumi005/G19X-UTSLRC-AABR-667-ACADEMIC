@@ -4,13 +4,14 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Query
 
+from src.api.schemas import CustomerDetailResponse, CustomersResponse, PredictionResponse
 from src.persistence import queries
 from src.services import scoring as scoring_service
 
 router = APIRouter(tags=["customers"])
 
 
-@router.get("/customers")
+@router.get("/customers", response_model=CustomersResponse)
 def list_customers(
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
@@ -24,7 +25,7 @@ def list_customers(
     return {"total": total, "count": len(items), "data": items}
 
 
-@router.get("/customers/{customer_id}")
+@router.get("/customers/{customer_id}", response_model=CustomerDetailResponse)
 def get_customer(customer_id: str) -> dict:
     """Detalle de un cliente: datos, estadisticas de compra y segmento asignado."""
     customer = queries.get_customer(customer_id)
@@ -33,7 +34,7 @@ def get_customer(customer_id: str) -> dict:
     return customer
 
 
-@router.post("/customers/{customer_id}/predict")
+@router.post("/customers/{customer_id}/predict", response_model=PredictionResponse)
 def predict_customer(customer_id: str) -> dict:
     """Predice el cluster de un cliente con el modelo servido en Azure.
 

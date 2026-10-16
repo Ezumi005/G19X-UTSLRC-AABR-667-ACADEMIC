@@ -6,6 +6,13 @@ import os
 
 from fastapi import APIRouter, HTTPException, Query
 
+from src.api.schemas import (
+    RecommendationQueryResponse,
+    RecommendationResponse,
+    SegmentationRunsResponse,
+    SegmentDetailResponse,
+    SegmentsResponse,
+)
 from src.ml.segmentation import run_segmentation
 from src.persistence import queries
 from src.services import recommendations as reco_service
@@ -20,21 +27,21 @@ def run_segmentation_endpoint() -> dict:
     return queries.segmentation_run_summary(run_id)
 
 
-@router.get("/segmentation/runs")
+@router.get("/segmentation/runs", response_model=SegmentationRunsResponse)
 def list_runs(limit: int = Query(default=20, ge=1, le=100)) -> dict:
     """Historial de ejecuciones de segmentacion con sus metricas (PRD seccion 19)."""
     runs = queries.list_segmentation_runs(limit)
     return {"count": len(runs), "data": runs}
 
 
-@router.get("/segments")
+@router.get("/segments", response_model=SegmentsResponse)
 def list_segments() -> dict:
     """Segmentos del ultimo run de segmentacion exitoso."""
     run_id, segments = queries.latest_segments()
     return {"run_id": run_id, "count": len(segments), "data": segments}
 
 
-@router.get("/segments/{segment_id}")
+@router.get("/segments/{segment_id}", response_model=SegmentDetailResponse)
 def get_segment(segment_id: int) -> dict:
     """Detalle de un segmento: perfil, metricas del run y vista previa de clientes."""
     segment = queries.get_segment(segment_id)
@@ -43,7 +50,7 @@ def get_segment(segment_id: int) -> dict:
     return segment
 
 
-@router.get("/segments/{segment_id}/recommendation")
+@router.get("/segments/{segment_id}/recommendation", response_model=RecommendationQueryResponse)
 def get_recommendation(segment_id: int) -> dict:
     """Ultima recomendacion generada para el segmento (o null si nunca se genero)."""
     if queries.get_segment(segment_id) is None:
@@ -51,7 +58,7 @@ def get_recommendation(segment_id: int) -> dict:
     return {"recommendation": queries.latest_recommendation(segment_id)}
 
 
-@router.post("/segments/{segment_id}/recommendation")
+@router.post("/segments/{segment_id}/recommendation", response_model=RecommendationResponse)
 def create_recommendation(segment_id: int) -> dict:
     """Genera (con Azure OpenAI) y persiste la recomendacion comercial del segmento.
 
