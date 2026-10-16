@@ -4,6 +4,8 @@ Cubren los 8 endpoints del MVP, incluidos los casos de error (404, 501 y 502
 cuando el simulador no esta disponible).
 """
 
+import os
+
 from fastapi.testclient import TestClient
 
 from src.api.app import create_app
@@ -21,8 +23,12 @@ ETIQUETAS_ESPERADAS = {
 
 
 def prueba_health_y_raiz():
-    assert client.get("/health").status_code == 200
-    assert client.get("/health").json()["status"] == "ok"
+    r = client.get("/health")
+    assert r.status_code == 200
+    cuerpo = r.json()
+    assert cuerpo["status"] in {"ok", "degradado"}
+    assert set(cuerpo["dependencies"]) == {"postgresql", "azure_scoring", "azure_openai"}
+    assert cuerpo["dependencies"]["postgresql"] == "ok"
     raiz = client.get("/").json()
     assert "endpoints" in raiz
 
@@ -89,10 +95,18 @@ def prueba_recomendaciones():
 
 
 def prueba_ingestion_sin_simulador():
-    """Sin simulador en 8001, la ingesta debe responder 502 (error controlado)."""
-    r = client.post("/ingestion/sync")
-    assert r.status_code == 502
-    assert "no disponible" in r.json()["detail"].lower()
+    """Sin acceso al simulador, la ingesta debe responder 502 (error controlado)."""
+    anterior = os.environ.get("SIMULATOR_URL")
+    os.environ["SIMULATOR_URL"] = "http://127.0.0.1:9"
+    try:
+        r = client.post("/ingestion/sync")
+        assert r.status_code == 502
+        assert "no disponible" in r.json()["detail"].lower()
+    finally:
+        if anterior is None:
+            os.environ.pop("SIMULATOR_URL", None)
+        else:
+            os.environ["SIMULATOR_URL"] = anterior
 
 
 def prueba_dashboard():

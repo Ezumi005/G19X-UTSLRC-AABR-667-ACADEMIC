@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Pruebas del backend (9 suites + lint)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: motor_segmentacion
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/motor_segmentacion
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: python -m pip install -r requirements.txt
+
+      - name: Preparar base de datos y datos
+        run: |
+          python -m src.persistence.init_db
+          python -m crm_simulator.generate_data
+
+      - name: Levantar simulador CRM e ingerir
+        run: |
+          nohup python -m uvicorn crm_simulator.app:app --port 8001 &
+          sleep 6
+          python -m src.persistence.ingest
+
+      - name: Segmentacion inicial
+        run: python -m src.ml.segmentation
+
+      - name: Pruebas (9 suites)
+        run: |
+          for t in contrato adapter features clustering segmentation recommendations scoring api audiences; do
+            echo "== tests.test_$t =="
+            python -m tests.test_$t
+          done
+
+      - name: Lint (ruff)
+        run: python -m ruff check src tests crm_simulator azure
+
+  frontend:
+    name: Build del frontend (TypeScript)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar dependencias
+        run: npm ci
+        working-directory: frontend
+
+      - name: Compilar (tsc + vite)
+        run: npm run build
+        working-directory: frontend

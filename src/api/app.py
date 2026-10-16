@@ -12,7 +12,9 @@ contiene lógica de ML.
 from __future__ import annotations
 
 import logging
+import os
 
+import requests
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -56,7 +58,41 @@ def create_app() -> FastAPI:
 
     @app.get("/health", tags=["infra"])
     def health() -> dict:
-        return {"status": "ok", "service": "motor-segmentacion"}
+        """Estado del servicio y de sus dependencias (PostgreSQL, Azure)."""
+        reporte: dict = {"status": "ok", "service": "motor-segmentacion", "dependencies": {}}
+
+        def revisar(nombre: str, chequeo) -> None:
+            try:
+                detalle = chequeo()
+                reporte["dependencies"][nombre] = detalle or "ok"
+            except Exception as exc:  # noqa: BLE001
+                reporte["dependencies"][nombre] = f"error: {str(exc)[:140]}"
+                reporte["status"] = "degradado"
+
+        def _postgres():
+            from src.persistence.db import connect
+
+            with connect() as conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT 1")
+
+        def _scoring():
+            url = os.environ.get("AZURE_SCORING_URL")
+            if not url:
+                return "no configurado"
+            respuesta = requests.get(f"{url.rstrip('/')}/health", timeout=8)
+            respuesta.raise_for_status()
+            return "ok"
+
+        def _openai():
+            if not (os.environ.get("AZURE_OPENAI_API_KEY") and os.environ.get("AZURE_OPENAI_ENDPOINT")):
+                return "no configurado"
+            return "configurado"
+
+        revisar("postgresql", _postgres)
+        revisar("azure_scoring", _scoring)
+        revisar("azure_openai", _openai)
+        return reporte
 
     @app.get("/", tags=["infra"])
     def root() -> dict:

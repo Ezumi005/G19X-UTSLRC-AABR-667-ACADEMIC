@@ -1353,6 +1353,31 @@ Sesión 2 del plan (CI, /health real, lint) cuando el usuario apruebe; el login 
 
 ---
 
+## 16/10/2026 — 06:20
+**Tipo:** Técnico (Sesión 2 — Track B)
+
+**Actividad realizada:**  
+Implementé la Sesión 2 del plan de profesionalización: `/health` real por dependencia (PostgreSQL con ping, Azure scoring con verificación HTTP tolerante al arranque en frío, Azure OpenAI con chequeo de configuración; estado global "ok"/"degradado"), lint con `ruff` (config en `pyproject.toml`, selección E/F/I/W; el código pasó limpio) y **CI con GitHub Actions**: workflow `ci.yml` con dos jobs — backend (PostgreSQL 18 como servicio, esquema, simulador en segundo plano, ingesta, segmentación, las 9 suites y ruff) y frontend (npm ci + build TypeScript). Badge de estado agregado al inicio del README. Ajusté dos pruebas para CI: health tolera dependencias externas degradadas y la prueba del 502 fuerza `SIMULATOR_URL` a un puerto muerto.
+
+**Decisiones tomadas:**  
+- El health reporta "degradado" (no error 500) si una dependencia externa falla: el diagnóstico es información, no una caída.
+- CI usa Python 3.13 en el runner (compatibilidad garantizada de wheels) aunque desarrollamos en 3.14.
+- La prueba de ingesta sin simulador se aísla con variable de entorno para no depender del estado del puerto 8001.
+
+**Resultado:**  
+- 9 suites + ruff en verde localmente; workflow publicado para su primera ejecución en GitHub con este commit.
+
+**Archivos o componentes afectados:**  
+- `src/api/app.py` (health real), `pyproject.toml` (nuevo, ruff), `requirements.txt` (+ruff), `.github/workflows/ci.yml` (nuevo), `tests/test_api.py` (health e ingesta CI-safe), `README.md` (badge), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno local; pendiente verificar la primera corrida del workflow en GitHub tras el push.
+
+**Siguiente paso:**  
+Sesión 3: API tipada (response models), capturas del README, Docker documentado, sección de autenticación en la documentación y release v1.0.0.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

@@ -1,5 +1,7 @@
 # Motor Inteligente de Segmentación de Clientes
 
+[![CI](https://github.com/Ezumi005/G19X-UTSLRC-AABR-667-ACADEMIC/actions/workflows/ci.yml/badge.svg)](https://github.com/Ezumi005/G19X-UTSLRC-AABR-667-ACADEMIC/actions/workflows/ci.yml)
+
 ## 1. Propósito del proyecto
 
 Construir una aplicación web que reciba datos de clientes, los normalice, calcule variables útiles, segmente clientes mediante Machine Learning y genere recomendaciones comerciales por segmento mediante Azure OpenAI.
