@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { fetchCustomer, fmtNumber, fmtDate, predictCustomer } from "../api.ts";
+import { useFeedback } from "../Feedback.tsx";
 import InfoTip from "../InfoTip.tsx";
+import { SkeletonCards } from "../Skeleton.tsx";
 import { useSettings } from "../settings.tsx";
 import type { CustomerDetail, Prediction } from "../types.ts";
 
@@ -32,6 +34,7 @@ export default function CustomerDetail() {
   const [prediccion, setPrediccion] = useState<Prediction | null>(null);
   const [prediciendo, setPrediciendo] = useState(false);
   const { fmtMoney } = useSettings();
+  const { toast } = useFeedback();
 
   useEffect(() => {
     fetchCustomer(id ?? "").then(setData).catch((e: unknown) => setError(String(e)));
@@ -42,14 +45,21 @@ export default function CustomerDetail() {
     try {
       setPrediccion(await predictCustomer(id ?? ""));
     } catch (e) {
-      window.alert(`No se pudo predecir: ${String(e)}`);
+      toast(`No se pudo predecir: ${String(e)}`, "error");
     } finally {
       setPrediciendo(false);
     }
   };
 
   if (error) return <p className="error">{error}</p>;
-  if (!data) return <p className="muted">Cargando…</p>;
+  if (!data) {
+    return (
+      <section>
+        <h1>Cliente</h1>
+        <SkeletonCards n={4} />
+      </section>
+    );
+  }
 
   return (
     <section>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchIngestionRuns, fetchRuns, fmtDate, fmtNumber } from "../api.ts";
 import InfoTip from "../InfoTip.tsx";
+import { SkeletonRows } from "../Skeleton.tsx";
 import type { IngestionRun, SegmentationRun } from "../types.ts";
 
 const duracion = (inicio: string, fin: string | null): string => {
@@ -68,7 +69,14 @@ export default function Runs() {
   }, []);
 
   if (error) return <p className="error">No se pudo conectar con el backend: {error}</p>;
-  if (!runs) return <p className="muted">Cargando…</p>;
+  if (!runs) {
+    return (
+      <section>
+        <h1>Ejecuciones</h1>
+        <SkeletonRows n={5} columnas={8} />
+      </section>
+    );
+  }
 
   return (
     <section>

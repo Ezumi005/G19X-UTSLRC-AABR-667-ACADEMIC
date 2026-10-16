@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useFeedback } from "../Feedback.tsx";
 import InfoTip from "../InfoTip.tsx";
+import { SkeletonRows } from "../Skeleton.tsx";
 import {
   fetchCustomer,
   fetchCustomers,
@@ -28,6 +30,7 @@ export default function Customers() {
   const [predicciones, setPredicciones] = useState<Record<string, Prediction>>({});
   const [prediciendo, setPrediciendo] = useState<string | null>(null);
   const [segments, setSegments] = useState<SegmentsPage | null>(null);
+  const { toast } = useFeedback();
 
   const [filtroSegmento, setFiltroSegmento] = useState("");
   const [filtroCiudad, setFiltroCiudad] = useState("");
@@ -63,7 +66,7 @@ export default function Customers() {
       const p = await predictCustomer(customer_id);
       setPredicciones((prev) => ({ ...prev, [customer_id]: p }));
     } catch (e) {
-      window.alert(`No se pudo predecir: ${String(e)}`);
+      toast(`No se pudo predecir el segmento de ${customer_id}: ${String(e)}`, "error");
     } finally {
       setPrediciendo(null);
     }
@@ -94,7 +97,6 @@ export default function Customers() {
       <p className="muted">
         Explora, filtra y predice el segmento de cada cliente. La predicción se consulta en Azure.
       </p>
-
       <div className="filter-bar">
         <select
           value={filtroSegmento}
@@ -120,6 +122,8 @@ export default function Customers() {
         <button className="btn-secondary" onClick={limpiarFiltros}>Limpiar</button>
       </div>
 
+      {!page && <SkeletonRows n={6} columnas={5} />}
+      {page && (
       <table className="table">
         <thead>
           <tr>
@@ -187,6 +191,7 @@ export default function Customers() {
           ))}
         </tbody>
       </table>
+      )}
       <div className="pager">
         <button disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}>
           ← Anterior

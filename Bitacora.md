@@ -1276,6 +1276,34 @@ Lo que el usuario decida del plan de mejora.
 
 ---
 
+## 15/10/2026 — 22:08
+**Tipo:** Técnico
+
+**Actividad realizada:**  
+Completé la **Sesión 1 del plan de profesionalización (Track A — acabado visual)**, con el requisito añadido por el usuario de que las gráficas aporten valor real sin datos redundantes. Realicé auditoría de las 4 gráficas del Dashboard (cada una responde una pregunta de negocio distinta: masa de clientes, valor, enfriamiento y producto; ninguna duplica las tarjetas globales) y las potencié: paleta consistente por segmento entre gráficas, tooltips con formato (pesos exactos, días, conteos y nombre completo), y barras clicables que navegan al detalle del segmento. Implementé el sistema de feedback propio (`Feedback.tsx`): notificaciones toast y diálogos de confirmación estilizados que reemplazan todos los `window.alert/confirm` (predicción, recálculo de segmentos, borrado de audiencias). Añadí skeletons de carga (`Skeleton.tsx`) en Dashboard, Clientes, Segmentos, Audiencias, Ejecuciones y detalle de cliente; responsive para móvil/tablet (tablas con scroll, barra colapsable, grids a una columna); y branding propio (favicon SVG con monograma de barras de segmentos).
+
+**Decisiones tomadas:**  
+- Auditoría de gráficas: se mantienen exactamente 4 porque cada una responde una pregunta distinta; no se agregaron gráficas redundantes (p. ej. frecuencia/ticket por segmento se descartaron por correlación con gasto).
+- Un solo proveedor de feedback (toasts + confirm) global vía contexto; los errores de Azure/OpenAI ahora se notifican con toast rojo y las confirmaciones usan modal propio.
+- Colores por segmento consistentes en todas las gráficas para lectura cruzada.
+- Verificación extra de encoding tras usar cmdlets sobre Dashboard.tsx (sin corrupción esta vez).
+
+**Resultado:**  
+- `npm run build` en verde; dev server sirviendo todos los módulos nuevos; backend arriba.
+- La app ya no muestra diálogos nativos del navegador ni textos "Cargando…"; experiencia visual considerablemente más profesional.
+
+**Archivos o componentes afectados:**  
+- Nuevos: `frontend/src/Feedback.tsx`, `frontend/src/Skeleton.tsx`, `frontend/public/favicon.svg`.
+- Modificados: `main.tsx` (proveedor de feedback), `pages/{Dashboard, Customers, CustomerDetail, Segments, Audiences, Runs}.tsx`, `styles.css` (toasts, modal, skeleton, tooltips, responsive), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno (dos roces de tipado de recharts resueltos al instante).
+
+**Siguiente paso:**  
+Sesión 2 (Track B): CI con GitHub Actions, `/health` real por dependencia y lint — cuando el usuario apruebe.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

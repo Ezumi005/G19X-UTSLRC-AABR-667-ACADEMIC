@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchSegments, fmtNumber, runSegmentation } from "../api.ts";
+import { useFeedback } from "../Feedback.tsx";
 import InfoTip from "../InfoTip.tsx";
+import { SkeletonCards } from "../Skeleton.tsx";
 import type { SegmentsPage } from "../types.ts";
 
 export default function Segments() {
@@ -9,6 +11,7 @@ export default function Segments() {
   const [error, setError] = useState<string | null>(null);
   const [recalculando, setRecalculando] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
+  const { toast } = useFeedback();
 
   const cargar = () => {
     fetchSegments().then(setData).catch((e: unknown) => setError(String(e)));
@@ -20,18 +23,25 @@ export default function Segments() {
     setRecalculando(true);
     setAviso(null);
     try {
-      await runSegmentation();
+      const resultado = await runSegmentation();
       cargar();
-      setAviso("Segmentación recalculada con los datos vigentes.");
+      toast(`Segmentación recalculada (run #${resultado.run_id}) con los datos vigentes.`, "exito");
     } catch (e) {
-      window.alert(`No se pudo recalcular la segmentación: ${String(e)}`);
+      toast(`No se pudo recalcular: ${String(e)}`, "error");
     } finally {
       setRecalculando(false);
     }
   };
 
   if (error) return <p className="error">No se pudo conectar con el backend: {error}</p>;
-  if (!data) return <p className="muted">Cargando…</p>;
+  if (!data) {
+    return (
+      <section>
+        <h1>Segmentos</h1>
+        <SkeletonCards n={6} alto={140} />
+      </section>
+    );
+  }
 
   const total = data.data.reduce((acc, s) => acc + s.n_customers, 0);
 

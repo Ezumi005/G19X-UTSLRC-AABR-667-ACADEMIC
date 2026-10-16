@@ -11,6 +11,8 @@ import {
   fmtNumber,
 } from "../api.ts";
 import type { Audience, AudienceConditions, AudienceDetail, SegmentsPage } from "../types.ts";
+import { useFeedback } from "../Feedback.tsx";
+import { SkeletonRows } from "../Skeleton.tsx";
 import InfoTip from "../InfoTip.tsx";
 
 const CATEGORIAS = ["electronica", "hogar", "moda", "deportes", "belleza", "alimentos", "juguetes", "otros"];
@@ -69,8 +71,7 @@ function FormularioCreacion({ onCreated }: { onCreated: () => void }) {
       setError(String(e));
     } finally {
       setCreando(false);
-    }
-  };
+    }  };
 
   return (
     <div className="filter-bar audience-form">
@@ -100,6 +101,7 @@ function FormularioCreacion({ onCreated }: { onCreated: () => void }) {
 export function AudiencesList() {
   const [data, setData] = useState<Audience[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { toast, confirmar } = useFeedback();
 
   const cargar = () => {
     fetchAudiences().then((r) => setData(r.data)).catch((e: unknown) => setError(String(e)));
@@ -118,8 +120,7 @@ export function AudiencesList() {
       <h2>Crear audiencia</h2>
       <FormularioCreacion onCreated={cargar} />
       {data && data.length > 0 && (
-        <table className="table">
-          <thead>
+        <table className="table">          <thead>
             <tr>
               <th>Nombre</th>
               <th>Condiciones</th>
@@ -139,9 +140,20 @@ export function AudiencesList() {
                   <button
                     className="btn-secondary"
                     onClick={() => {
-                      if (window.confirm(`¿Eliminar la audiencia '${a.name}'?`)) {
-                        deleteAudience(a.audience_id).then(cargar).catch((e) => window.alert(String(e)));
-                      }
+                      void (async () => {
+                        const ok = await confirmar(
+                          "Eliminar audiencia",
+                          `¿Eliminar la audiencia '${a.name}'? Esta acción no se puede deshacer.`,
+                        );
+                        if (!ok) return;
+                        try {
+                          await deleteAudience(a.audience_id);
+                          toast(`Audiencia '${a.name}' eliminada.`, "exito");
+                          cargar();
+                        } catch (e) {
+                          toast(`No se pudo eliminar: ${String(e)}`, "error");
+                        }
+                      })();
                     }}
                   >
                     Eliminar
@@ -152,6 +164,7 @@ export function AudiencesList() {
           </tbody>
         </table>
       )}
+      {!data && <SkeletonRows n={4} columnas={5} />}
       {data && data.length === 0 && <p className="muted">Aún no hay audiencias. Crea la primera arriba.</p>}
     </section>
   );
