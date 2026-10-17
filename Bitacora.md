@@ -1459,6 +1459,32 @@ El usuario prueba la vista **Fuentes** en el navegador; siguientes mejoras cuand
 
 ---
 
+## 16/10/2026 — 18:12
+**Tipo:** Pruebas y calidad
+
+**Actividad realizada:**  
+Ejecuté una revisión integral de pruebas del sistema (a pedido del usuario): 10 suites unitarias, recorrido funcional de la API por todos los apartados (health, dashboard, clientes con filtros/paginación, detalle con features, predicción real en Azure, segmentos y métricas, recomendación regenerada con IA real, ejecuciones de segmentación e ingesta, audiencias con ciclo de vida, fuentes CSV con ciclo completo y IA real), casos de error y smoke E2E de las 7 páginas del frontend con Playwright, incluyendo el asistente de Fuentes operando en el navegador con la sugerencia de IA real.
+
+**Decisiones tomadas:**  
+- No alteré el diseño de `label_clusters` (falla si dos clusters reciben la misma etiqueta, decisión documentada que "exige revisión humana");documenté el hallazgo como riesgo estructural pendiente de decisión del usuario: cualquier carga nueva que desplace levemente los perfiles de cluster puede provocar una etiqueta duplicada y fallar el recálculo con error 500.
+
+**Resultado:**  
+- Suites: 10/10 en verde; ruff limpio. Frontend dev up (estaba caído tras los días).
+- E2E en vivo (4/4 fases):health ok con las 3 dependencias; predict real en 1 s con cluster correcto (y validado también con un cliente sincronizado por IA con 0 transacciones: cluster 5, comportamiento huérfano razonable); audiencias 4/4 (422 enum con lista esperada, 409 por nombre duplicado con detalle, 404 en inexistente, membresía recalculada75 → export CSV con 75+header); fuentes: IA real sugirió mapping con 98% de confianza, dry-run 2/3 (la fila de edad 999 en incidencias, como debe), sync 2 → predict del cliente nuevo contra Azure OK → limpieza integral (fuente eliminada, clientes C-IA-% borrados, run de segmentación #6 re-creado OK con 498 clientes); recomendación real regenerada en 3 s.
+- Frontend Playwright 7/7 páginas sin ErrorBoundary; smoke del asistente de Fuentes en el navegador: badge IA real, los 4 selects autocompletados (`id_cliente→id_cliente`, etc.) y validación en seco visible.
+- Hallazgos (sentencia en el resumen al usuario): 1) 500 real de `POST /segmentation/run` con etiqueta duplicada en clusters 0 y 2 — disparado por los 2 clientes de prueba, no un bug; riesgo de diseño latente documentado; 2) `predict` devuelve `segment.cluster_id: null` (inconsistencia cosmetica del response model); 3) el endpoint `/dashboard` no tiene variante `/dashboard/summary` (así lo diseñé y la UI usa `/dashboard`); 4) los textos de error HTTP muestran `¿` como `�` solo en consolas Windows (los JSON de la API son UTF-8 correctos); 5) desempate PS 5.1: sin `-Form`/`-SkipHttpErrorCheck` (usé curl.exe).
+
+**Archivos o componentes afectados:**  
+- Solo `Bitacora.md` y `README.md` (estado del proyecto al 16/10); sin cambios de código: los hallazgos quedan documentados y la base restaurada a 498 clientes con run #6 OK.
+
+**Problemas o bloqueos:**  
+- Ninguno operativo. Pendiente de decisión del usuario: endurecer la asignación de etiquetas (desempate determinista) o dejar el comportamiento vigilante actual.
+
+**Siguiente paso:**  
+Decisión del usuario sobre el desempate de etiquetas; luego posibles mejoras de seguridad de API / churn-CLV.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
