@@ -1510,6 +1510,36 @@ Push y CI; el desempate queda verificado de punta a punta. Posibles mejoras rest
 
 ---
 
+## 16/10/2026 — 19:22
+**Tipo:** Documentación / Cierre oficial
+
+**Actividad realizada:**  
+**Cierre oficial del MVP (v2.0 FINAL)** a instrucción del usuario, bajo la regla de solo añadir información (sin eliminar el historial ni los documentos v1.1). Ejecuté la certificación final (10/10 suites, ruff, build del frontend — todo en verde) y generé documentación técnica de cierre:
+
+- `docs/PRD_Motor_Inteligente_Segmentacion_Clientes_v2.0_FINAL.md` (nuevo): estado final de los 19 RF y 13 RNF con evidencia de cada uno, 5 desviaciones/decisiones de arquitectura aprobadas, criterios de aceptación verificados y evolución futura. Referencia explícita de que el PDF v1.1 manda.
+- `docs/MVP_Motor_Inteligente_Segmentacion_Clientes_v2.0_FINAL.md` (nuevo): alcance entregado etapa por etapa, arquitectura final, historial de versiones (v1.0 → v1.1 → v2.0 FINAL).
+- `README.md` (solo adiciones): nueva **sección 21 "Dónde se usa Inteligencia Artificial"** (mapa de los 3 usos de IA con sus guardas: recomendaciones con Azure OpenAI, sugerencia de mapeo de fuentes CSV con Azure OpenAI y el modelo K-Means como machine learning no generativo — incluyendo qué NO usa IA), nueva **sección 22 "Manual de arranque completo"** (pasos 1-8 desde clonar el repositorio hasta la web: venv, .env, PostgreSQL, simulador, ingesta, segmentación, backend, frontend + verificación + pruebas + Docker + CI) y nueva **sección 23 "Estado final del proyecto"** con la declaración de cierre y los documentos v2.0.
+
+**Decisiones tomadas:**  
+- Los documentos v2.0 son ADICIONALES y de cierre: el PRD/MVP v1.1 (PDF y extractos) se conserva intacto como base normativa.
+- El mapa de IA queda en README (§21) y en el PRD FINAL (§5) para que nunca haya duda de dónde se usa IA: recomendación por segmento, sugerencia de mapeo y el modelo ML (nunca decide clusters ni etiquetas).
+
+**Resultado:**  
+- Certificación final en verde: 10 suites, ruff, `npm run build`. CI en GitHub Actions green.
+- Repositorio completo con instrucciones de arranque desde cero (README §22) y estado final declarado (§23).
+
+**Archivos o componentes afectados:**  
+- Nuevos: los 2 documentos v2.0 en `docs/`.
+- Modificados (solo adiciones): `README.md` (§21, §22, §23), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno. Corregidos al vuelo: artefactos de characters del heredoc de PowerShell al escribir el manual (backticks escapados y 4 palabras corruptas) — revisado el contenido final línea por línea.
+
+**Siguiente paso:**  
+Nada bloqueante: MVP v2.0 declarado terminado. Evolución potencial solo si el usuario lo pide (login, churn/CLV, adaptadores de CRM reales, endpoint online de Azure ML).
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

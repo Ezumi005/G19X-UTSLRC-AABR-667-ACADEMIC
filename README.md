@@ -487,3 +487,92 @@ docker compose up --build
 ```
 
 Archivos: `docker-compose.yml` (postgres 18 + simulador + backend + frontend nginx) y `Dockerfile` por servicio. Nota: verificado por diseño y CI; la máquina de desarrollo del proyecto no tiene Docker Desktop, por lo que la ejecución local de estos archivos queda a discreción del usuario.
+
+---
+
+## 21. Donde se usa Inteligencia Artificial (mapa completo)
+
+El sistema usa IA exactamente en **tres puntos**, con fronteras de seguridad definidas (nada del frontend llama a Azure ni expone llaves; toda llamada sale desde el backend):
+
+1. **Recomendaciones comerciales por segmento (IA generativa - Azure OpenAI).**
+   - En `src/services/recommendations.py` y endpoint `POST /segments/{id}/recommendation`.
+   - Entrada: agregados reales del segmento (perfil JSONB). Salida: estrategia comercial en JSON, persistida y regenerable desde la web.
+   - Guardas: temperature 0, timeout, parseo tolerante y degradacion informativa si no esta configurada. Regla inviolable: **la IA nunca decide los clusters ni las etiquetas**.
+
+2. **Sugerencia de mapeo para fuentes CSV (IA generativa - Azure OpenAI).**
+   - En `src/services/mapping_suggest.py` y endpoint `POST /sources/csv/suggest` (vista Fuentes de la web: boton/badge "Sugerido por IA").
+   - Recibe el esquema introspectado del contrato + columnas + filas de muestra y propone entidad y mapping (sinonimos EN/ES, formatos de fecha, confianza). **El humano confirmara**, la validacion en seco contra el contrato y luego sincroniza; sin IA configurada, degrada con 503 y el asistente manual queda operativo.
+   - Este servicio es el diferenciador del cierre: adaptar una fuente nueva **sin escribir codigo**.
+
+3. **Modelo de aprendizaje automatico (no generativo).**
+   - K-Means k=6 con semilla fija (`src/ml/clustering.py`) para segmentacion, cuyo artefacto se sirve en Azure App Service para las predicciones por cliente (`src/services/scoring.py`). Es machine learning, no un modelo de lenguaje.
+
+**No hay IA en:** las etiquetas comerciales (reglas humanas sobre perfiles), las audiencias, el dashboard, las validaciones del contrato ni la ingesta. El simulador de CRM tampoco usa IA (generador deterministico con semilla).
+
+---
+
+## 22. Manual de arranque completo (desde este repositorio)
+
+Instrucciones paso a paso para levantar TODO el proyecto desde cero en una computadora nueva, usando solo este repositorio.
+
+**Prerequisitos:** Windows (o Linux/macOS ajustando comandos), Git, Python 3.12+ (proyecto en 3.14), Node.js 20+, PostgreSQL 16+ (proyecto en 18.6). Sin Azure configurado el sistema arranca en modo degradado (sin recomendaciones ni predicciones), util para probar el motor y la web.
+
+```powershell
+# 1) Clonar
+git clone https://github.com/Ezumi005/G19X-UTSLRC-AABR-667-ACADEMIC.git MotorSeg
+cd MotorSeg
+
+# 2) Entorno Python + dependencias
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install -r requirements.txt
+
+# 3) Variables de entorno
+copy .env.example .env    # editar: DATABASE_URL (+ AZURE_SCORING_* / AZURE_OPENAI_* si aplica)
+
+# 4) Esquema de base de datos
+.\.venv\Scripts\python.exe -m src.persistence.init_db
+
+# 5) CRM simulado (fuente externa; dejar corriendo)
+.\.venv\Scripts\python.exe -m uvicorn crm_simulator.app:app --port 8001
+
+# 6) Primera ingesta + primera segmentacion
+.\.venv\Scripts\python.exe -m src.persistence.ingest
+.\.venv\Scripts\python.exe -m src.ml.segmentation
+
+# 7) Backend principal (arranque ~20 s por la carga de pandas/sklearn)
+.\.venv\Scripts\python.exe -m uvicorn src.api.app:app --port 8000
+
+# 8) Frontend
+cd frontend
+npm install
+npm run dev               # http://localhost:5173
+```
+
+**Verificacion:**
+- http://127.0.0.1:8000/health -> {"status": "ok", ...} (o degradado solo por falta de Azure).
+- http://localhost:5173 -> el dashboard muestra 498 clientes, 6 segmentos y KPIs.
+- Recorrido completo de demo: seccion 18.
+
+**Sin datos nuevos:** el paso 6 crea los ~498 clientes y las tablas de segmentacion de demostracion a partir del simulador (el paso 5 debe estar corriendo). Repetir ingesta/segmentacion es idempotente y queda trazado en las vistas de Ejecuciones.
+
+**Pruebas (opcional pero recomendado):**
+```powershell
+.\.venv\Scripts\python.exe -m tests.test_contrato    # sintaxis por suite: python -m tests.test_<modulo> (10 modulos)
+.\.venv\Scripts\python.exe -m ruff check src tests crm_simulator azure
+cd frontend; npm run build
+```
+
+**Docker (alternativa todo-en-uno):** `docker compose up --build` (seccion 20; requiere Docker Desktop).
+
+**CI:** cada push ejecuta en GitHub Actions: PostgreSQL-servicio + esquema + simulador + ingesta + segmentacion + las 10 suites + ruff + build del frontend (badge al inicio de este documento).
+
+---
+
+## 23. Estado final del proyecto (MVP v2.0)
+
+**MVP declarado cerrado el 16/10/2026 tras la revision integral de pruebas** (10 suites + ruff + build del frontend + CI en verde + E2E en vivo de API, IA real y las 7 paginas web con Playwright). Documentos final de referencia en `docs/`:
+
+- `MVP_Motor_Inteligente_Segmentacion_Clientes_v2.0_FINAL.md` — alcance final, arquitectura, arranque e historial de versiones.
+- `PRD_Motor_Inteligente_Segmentacion_Clientes_v2.0_FINAL.md` — estado de los RF/RNF, desviaciones aprobadas y mapa de IA.
+- Los PDF y extractos v1.1 originales permanecen inalterados (los nuevos documentos se limitan a actualizar su estado).
