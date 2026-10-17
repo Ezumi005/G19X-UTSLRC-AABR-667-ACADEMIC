@@ -50,7 +50,21 @@ CLUSTER_DESCRIPTIONS = {
         "Compran de forma esporadica y con baja interaccion. "
         "Potencial de aumento de frecuencia y ticket."
     ),
+    "Compradores ocasionales de baja actividad": (
+        "Compran poco y casi no navegan: clientes dormidos con historial valido. "
+        "Reactivacion con recordatorios y descuentos suaves."
+    ),
+    "Compradores ocasionales de actividad mínima": (
+        "Comportamiento de compra minimo con interaccion web casi nula. "
+        "Objetivo de campanas baratas de reacuerdo antes de darlos por perdidos."
+    ),
 }
+
+ETIQUETAS_GENERALES = (
+    "Compradores ocasionales",
+    "Compradores ocasionales de baja actividad",
+    "Compradores ocasionales de actividad mínima",
+)
 
 
 def label_clusters(profiles: pd.DataFrame) -> dict[int, dict]:
@@ -63,31 +77,95 @@ def label_clusters(profiles: pd.DataFrame) -> dict[int, dict]:
     4. web_visits >= 30                     -> navegadores con compra esporadica
     5. recency_days >= 150                  -> en riesgo de inactividad
     6. resto                                -> compradores ocasionales
-    Falla si dos clusters reciben la misma etiqueta (exige revision humana).
+
+    Si dos clusters coinciden en una regla, se queda con la etiqueta el que
+    mejor encierra el concepto (metrica por etiqueta: mas monetary en alto
+    valor, menos frecuencia y mas carritos abandonados en navegadores, etc.);
+    el resto se reevalua con reglas de menor prioridad. Los clusters que no
+    cumplen ninguna regla reciben la etiqueta general "Compradores ocasionales"
+    (o su siguiente variante de menor actividad si ya esta tomada). Solo se
+    falla si hay mas clusters sin reglas que variantes disponibles, caso que
+    si exige revision humana.
     """
+    tomadas: dict[str, int] = {}
+    por_resolver = {cluster_id: 0 for cluster_id in profiles.index}
     asignaciones: dict[int, dict] = {}
-    vistos: dict[str, int] = {}
-    for cluster_id, row in profiles.iterrows():
-        if row["frequency"] >= 15 and row["monetary"] >= 30000:
-            label = "Clientes frecuentes de alto valor"
-        elif row["frequency"] <= 0.5:
-            label = "Navegadores sin compra"
-        elif row["tenure_days"] <= 90:
-            label = "Clientes nuevos"
-        elif row["web_visits"] >= 30:
-            label = "Navegadores con compra esporádica"
-        elif row["recency_days"] >= 150:
-            label = "Clientes en riesgo de inactividad"
-        else:
-            label = "Compradores ocasionales"
-        if label in vistos:
-            raise ValueError(
-                f"Etiqueta duplicada '{label}' en clusters {vistos[label]} y {cluster_id}: "
-                "revisar reglas de interpretacion antes de persistir."
-            )
-        vistos[label] = cluster_id
-        asignaciones[cluster_id] = {"label": label, "description": CLUSTER_DESCRIPTIONS[label]}
+    usos_general = 0
+    max_pasos = len(REGLAS) * len(profiles) + 2
+
+    for _ in range(max_pasos):
+        coincidencias: dict[int, list[int]] = {}
+        for cluster_id, desde in por_resolver.items():
+            fila = profiles.loc[cluster_id]
+            indice = len(REGLAS)
+            for i in range(desde, len(REGLAS)):
+                if REGLAS[i][1](fila):
+                    indice = i
+                    break
+            coincidencias.setdefault(indice, []).append(cluster_id)
+
+        ids_general = sorted(
+            coincidencias.pop(len(REGLAS), []),
+            key=lambda c: METRICAS_DESEMPATE["Compradores ocasionales"](profiles.loc[c]),
+            reverse=True,
+        )
+        for cluster_id in ids_general:
+            if usos_general >= len(ETIQUETAS_GENERALES):
+                raise ValueError(
+                    "Mas clusters sin reglas que variantes de 'Compradores ocasionales': "
+                    "revisar reglas de interpretacion antes de persistir."
+                )
+            label = ETIQUETAS_GENERALES[usos_general]
+            usos_general += 1
+            tomadas[label] = cluster_id
+            asignaciones[cluster_id] = {"label": label, "description": CLUSTER_DESCRIPTIONS[label]}
+            del por_resolver[cluster_id]
+
+        hubo_escalado = False
+        for idx, ids in coincidencias.items():
+            label = REGLAS[idx][0]
+            ganador = ids[0] if len(ids) == 1 else max(ids, key=lambda c: METRICAS_DESEMPATE[label](profiles.loc[c]))
+            for cluster_id in ids:
+                if cluster_id == ganador and tomadas.get(label) is None:
+                    tomadas[label] = cluster_id
+                    asignaciones[cluster_id] = {
+                        "label": label,
+                        "description": CLUSTER_DESCRIPTIONS[label],
+                    }
+                    del por_resolver[cluster_id]
+                else:
+                    por_resolver[cluster_id] = idx + 1
+                    hubo_escalado = True
+        if not por_resolver:
+            break
+        if not hubo_escalado:
+            raise RuntimeError("Resolucion de etiquetas sin progreso: revisar reglas de interpretacion.")
+
+    if por_resolver:
+        raise RuntimeError("Resolucion de etiquetas incompleta: revisar reglas de interpretacion.")
     return asignaciones
+
+
+REGLAS = (
+    (
+        "Clientes frecuentes de alto valor",
+        lambda fila: fila["frequency"] >= 15 and fila["monetary"] >= 30000,
+    ),
+    ("Navegadores sin compra", lambda fila: fila["frequency"] <= 0.5),
+    ("Clientes nuevos", lambda fila: fila["tenure_days"] <= 90),
+    ("Navegadores con compra esporádica", lambda fila: fila["web_visits"] >= 30),
+    ("Clientes en riesgo de inactividad", lambda fila: fila["recency_days"] >= 150),
+)
+
+# Metrica de desempate por etiqueta (mayor valor = mejor candidato al concepto).
+METRICAS_DESEMPATE = {
+    "Clientes frecuentes de alto valor": lambda fila: (fila["monetary"], fila["frequency"]),
+    "Navegadores sin compra": lambda fila: (-fila["frequency"], fila["abandoned_carts"]),
+    "Clientes nuevos": lambda fila: -fila["tenure_days"],
+    "Navegadores con compra esporádica": lambda fila: fila["web_visits"],
+    "Clientes en riesgo de inactividad": lambda fila: fila["recency_days"],
+    "Compradores ocasionales": lambda fila: fila["frequency"],
+}
 
 
 def _row_to_json(row: pd.Series) -> dict:

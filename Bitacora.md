@@ -1481,7 +1481,32 @@ Ejecuté una revisión integral de pruebas del sistema (a pedido del usuario): 1
 - Ninguno operativo. Pendiente de decisión del usuario: endurecer la asignación de etiquetas (desempate determinista) o dejar el comportamiento vigilante actual.
 
 **Siguiente paso:**  
-Decisión del usuario sobre el desempate de etiquetas; luego posibles mejoras de seguridad de API / churn-CLV.
+Decisión del usuario sobre el desempate de etiquetas (hecho); luego posibles mejoras de seguridad de API / churn-CLV.
+
+---
+
+## 16/10/2026 — 18:51
+**Tipo:** Técnico / Mejora de robustez
+
+**Actividad realizada:**  
+Implementé la mejora que el usuario aprobó tras la revisión integral: **desempate determinista de etiquetas** en `src/ml/segmentation.py`. Antes, dos clusters que recibieran la misma etiqueta abortaban el recálculo con error 500 (lo vivimos en la revisión con 2 clientes externos con valores por defecto). Ahora: si varios clusters cumplen la misma regla, la etiqueta es del que mejor encierra el concepto (métricas de desempate: mayor monetary en alto valor, menor frecuencia y más carritos abandonados en navegadores, menor tenure en nuevos, más web_visits en navegador esporádico, mayor recency en riesgo) y los perdedores se reevalúan con reglas de menor prioridad; los clusters sin ninguna regla reciben "Compradores ocasionales" o sus variantes documentadas ("… de baja actividad", "… de actividad mínima") si la base ya está tomada. Solo se falla si se agotan las variantes (revisión humana). Además corregí la inconsistencia cosmética de `predict`: el `segment` ahora incluye `cluster_id` (antes `null`).
+
+**Decisiones tomadas:**  
+- Desempate por calidad de concepto en vez de fallar: el típico desplazamiento por cargas pequeñas ya no rompe el sistema; la ambigüedad real (clusters literalmente indistinguibles que agotan las variantes) sigue fallando con mensaje claro.
+- Variantes de etiqueta general en vez de marcas raras: mantienen sentido comercial y las recomendaciones se pueden regenerar por etiqueta.
+
+**Resultado:**  
+- `test_segmentation` ampliada a 7 pruebas (reales, prioridad, desempate por calidad, mejor calificado gana, variante determinista, agotamiento de variantes, serialización) en verde; las otras 9 suites y ruff sin cambios.
+- **Verificación en vivo del caso que antes fallaba**: inserté los 2 clientes huérfanos, `POST /segmentation/run` ahora OK (run 7, 6 etiquetas únicas, cluster desplazado → "Compradores ocasionales de baja actividad"); `predict` regresa `cluster_id` lleno; limpié los clientes de prueba y el run 8 restauró la línea base de 498.
+
+**Archivos o componentes afectados:**  
+- `src/ml/segmentation.py` (label_clusters, reglas/métricas/variantes como datos), `src/api/routes/customers.py` (+cluster_id en predict), `tests/test_segmentation.py` (7 pruebas), `README.md` (§6 interpretación), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno. En el camino detecté y corregí que mi primer escenario de prueba estaba mal construido (empataba en sin compra, no en la general).
+
+**Siguiente paso:**  
+Push y CI; el desempate queda verificado de punta a punta. Posibles mejoras restantes: seguridad de API para demostraciones externas, churn/CLV.
 
 ---
 

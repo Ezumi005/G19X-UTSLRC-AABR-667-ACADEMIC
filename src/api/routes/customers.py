@@ -57,7 +57,11 @@ def predict_customer(customer_id: str) -> dict:
     cluster = int(clusters[0])
     _, segments = queries.latest_segments()
     segment = next(
-        ({"segment_id": s["segment_id"], "label": s["label"]} for s in segments if s["cluster_id"] == cluster),
+        (
+            {"segment_id": s["segment_id"], "label": s["label"], "cluster_id": s["cluster_id"]}
+            for s in segments
+            if s["cluster_id"] == cluster
+        ),
         None,
     )
     return {"customer_id": customer_id, "features": features, "cluster": cluster, "segment": segment}
