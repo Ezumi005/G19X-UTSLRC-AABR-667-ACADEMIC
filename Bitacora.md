@@ -1540,6 +1540,37 @@ Nada bloqueante: MVP v2.0 declarado terminado. Evolución potencial solo si el u
 
 ---
 
+## 17/10/2026 — 22:11
+**Tipo:** Documentación / Entregables
+
+**Actividad realizada:**  
+Generé los **documentos técnicos de entrega** solicitados por el usuario como guías (carpeta `manuales/`, solo adiciones al repositorio):
+
+- `Manual_Tecnico.md`: operación del sistema (componentes y puertos, procesos del pipeline, referencia de la API y códigos de estado, tablas de la base, pruebas y CI, mapa de mantenimiento por archivo y solución de problemas).
+- `Manual_de_Usuario.md`: guía de uso para el usuario final (las 6 vistas de la web paso a paso, cómo leer métricas, significado de mensajes y guion de demostración).
+- `Guia_de_Instalacion.md`: instalación desde cero desde el repositorio (requisitos, venv, .env, PostgreSQL, 4 terminales, verificación, Docker y troubleshooting).
+- `Documento_Tecnico.md`: diseño y decisiones técnicas (arquitectura, contrato V1, motor ML e interpretación, mapa de IA, seguridad, calidad).
+
+Además generé el **código fuente en `.zip`** (`Motor_Segmentacion_Codigo_Fuente_v2.0.zip`, ~1.6 MB, 130+ archivos) con `git archive`: solo contenido versionado del repositorio — sin `.env`, `.venv`, `node_modules`, PDFs pesados ni artefactos binarios.
+
+**Decisiones tomadas:**  
+- Los manuales conviven con la documentación existente (README y docs v2.0 siguen siendo la referencia operativa; los manuales son las guías "para enviar").
+- El zip se genera desde Git (no del sistema de archivos) para garantizar exactamente el estado versionado y sin secretos; el binario queda ignorado por `.gitignore`.
+
+**Resultado:**  
+- 4 manuales listados arriba listos para envío; zip generado tras el commit de los manuales (incluyéndolos).
+
+**Archivos o componentes afectados:**  
+- Nuevos: `manuales/` (4 guías). Modificados: `.gitignore` (+zip), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno. Corregidos al vuelo pequeños artefactos de redacción de los manuales (revisión manual línea por línea).
+
+**Siguiente paso:**  
+Commit/push de los entregables y verificación de CI; proyecto en estado de cierre definitivo.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
