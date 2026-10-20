@@ -569,7 +569,23 @@ cd frontend; npm run build
 
 ---
 
-## 23. Estado final del proyecto (MVP v2.0)
+## 23. Arranque en un clic (scripts del proyecto)
+
+Para operar el proyecto SIN recordar comandos, la raíz del repositorio incluye tres scripts `.bat` de Windows (doble clic):
+
+| Script | Qué hace | Cuándo usarlo |
+|---|---|---|
+| `instalar_proyecto.bat` | Crea `.venv`, instala dependencias (Python + frontend), crea `.env` desde plantilla y aplica el esquema de PostgreSQL | Solo la primera vez (o al cambiar de máquina) |
+| `cargar_datos.bat` | Ingesta del simulador + segmentación inicial | Primera vez, y cuando quieras refrescar datos |
+| `levantar_proyecto.bat` | Levanta TODO en ventanas separadas: simulador (8001), backend (8000, ~20 s) y frontend (5173), y abre el navegador en `http://localhost:5173` | Todos los días |
+
+**Detener el proyecto:** cierra las 3 ventanas negras que abre el script (o Ctrl+C en ellas).
+
+El paso a paso con comandos individuales (Linux/macOS incluido) sigue disponible en la sección 22 y en `manuales/Guia_de_Instalacion.md`.
+
+---
+
+## 24. Estado final del proyecto (MVP v2.0)
 
 **MVP declarado cerrado el 16/10/2026 tras la revision integral de pruebas** (10 suites + ruff + build del frontend + CI en verde + E2E en vivo de API, IA real y las 7 paginas web con Playwright). Documentos final de referencia en `docs/`:
 

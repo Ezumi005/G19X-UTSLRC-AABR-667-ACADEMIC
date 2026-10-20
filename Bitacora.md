@@ -1571,6 +1571,36 @@ Commit/push de los entregables y verificación de CI; proyecto en estado de cier
 
 ---
 
+## 20/10/2026 — 06:14
+**Tipo:** Técnico / Documentación
+
+**Actividad realizada:**  
+A la pregunta del usuario "¿cómo levanto mi proyecto sin pedirte ayuda?", documenté el proceso existente (README §22, `manuales/Guia_de_Instalacion.md`) y creé **scripts de arranque en un clic** en la raíz del proyecto:
+
+- `instalar_proyecto.bat`: primera configuración (crea `.venv`, instala dependencias Python y frontend, genera `.env` desde plantilla abriendo el bloc de notas para editarla, aplica el esquema de PostgreSQL).
+- `cargar_datos.bat`: ingesta + segmentación con protección (avisa si el simulador está caído).
+- `levantar_proyecto.bat`: levanta el stack completo en 3 ventanas separadas (simulador 8001, backend 8000, frontend 5173), espera el arranque del backend (~25 s) y abre el navegador en la web. Para detener: cerrar las 3 ventanas.
+
+README: nueva **sección 23 "Arranque en un clic"** con la tabla de los 3 scripts y su uso; la sección de estado final quedó como §24 (solo adiciones, sin borrar contenido).
+
+**Decisiones tomadas:**  
+- Scripts `.bat` con `title` informativo y mensajes de cierre/parada integrados (doble clic; sin recordar comandos).
+- El flujo de comandos individuales (README §22 y Guía de Instalación) se mantiene como referencia para Linux/macOS o arranque manual.
+
+**Resultado:**  
+- Scripts creados en la raíz del repositorio y documentados; el proyecto es levantable por el usuario de forma independiente.
+
+**Archivos o componentes afectados:**  
+- Nuevos: `levantar_proyecto.bat`, `instalar_proyecto.bat`, `cargar_datos.bat`. Modificados: `README.md` (§23 nueva + renumeración del estado final a §24), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno.
+
+**Siguiente paso:**  
+Úsalo directo: doble clic en `levantar_proyecto.bat` (primera vez: `instalar_proyecto.bat` y `cargar_datos.bat`).
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
