@@ -1601,6 +1601,31 @@ README: nueva **sección 23 "Arranque en un clic"** con la tabla de los 3 script
 
 ---
 
+## 20/10/2026 — 06:25
+**Tipo:** Pruebas / Técnico
+
+**Actividad realizada:**  
+Creé el **CSV de demostración para la presentación** del usuario (`demos/ventas_tienda_fisica.csv`) y lo probé de punta a punta por la API con la IA real: 9 filas de ventas con columnas crudas en español (`folio, id_cliente, fecha_compra, importe, rubro, producto`), fechas mezcladas (ISO y dd/mm/yyyy) y 3 valores inválidos intencionales. Resultado verificado en vivo: la IA identifica la entidad `transactions` (98% de confianza — no `customers`, demostrando que distingue entidades) con los 6 mapeos correctos, y el dry-run reporta 9 leídas / 6 válidas / 3 incidencias con su motivo claro ('ayer' no es fecha, '$1,250.00' no es número, 'Camisas Verde' no está en el catálogo).
+
+**Bonus técnico del camino:** al probar el archivo original detecté que un CSV estructuralmente roto (coma sin comillar → fila con más columnas que el encabezado) provocaba **500** en el dry-run: maduro el guardado, la validación ese error ahora responde **422 controlado** con mensaje claro en `routes/sources.py` (`/csv/validate`) y con nueva prueba (`prueba_csv_mal_estructurado_controlado`; un CSV más roto aún — hasta la muestra falla destruye el upload con 400, comportamiento ya correcto). Suites en verde tras el fix.
+
+**Decisiones tomadas:**  
+- El archivo demo vive en el repositorio (`demos/`) para reusarse en cualquier presentación, y ya está referenciado en el README §18.
+
+**Resultado:**  
+- `test_sources`, `test_api` y `test_audiences` en verde tras el fix; demo verificada en vivo sin sincronizar (dry-run no escribe).
+
+**Archivos o componentes afectados:**  
+- Nuevos: `demos/ventas_tienda_fisica.csv`. Modificados: `src/api/routes/sources.py` (422 controlado), `tests/test_sources.py` (+prueba), `README.md` (§18), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno.
+
+**Siguiente paso:**  
+Commit y CI; usar el archivo en la presentación (subida → sugerencia IA 98% → dry-run con incidencias explicadas → guardar y sincronizar).
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

@@ -1,0 +1,10 @@
+folio,id_cliente,fecha_compra,importe,rubro,producto
+VT-2026-101,CLI-0001,15/01/2026,5890.00,electronica,"Televisor 55pulg"
+VT-2026-102,CLI-0001,2026-02-03,2399.50,electronica,"Audifonos BT"
+VT-2026-103,CLI-0002,24/01/2026,15750.00,hogar,"Salón de mesa 6 piezas"
+VT-2026-104,CLI-0003,01/02/2026,899.90,moda,"Camisa caballero"
+VT-2026-105,CLI-0007,ayer,2400.00,deportes,"Bicicrita rodada 26"
+VT-2026-106,CLI-0012,05/02/2026,"$1,250.00",belleza,"Kit de skincare facial"
+VT-2026-107,CLI-0015,10/02/2026,4599.00,Camisas Verde,Playera deportiva
+VT-2026-108,CLI-0022,2026-02-12,22900.00,electronica,"Computadora portatil"
+VT-2026-109,CLI-0030,18/02/2026,1246.80,alimentos,"Vinoteca gourmet"

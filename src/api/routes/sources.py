@@ -135,7 +135,12 @@ def validate_csv(payload: MappingPayload) -> dict:
     if errores:
         raise HTTPException(status_code=400, detail="; ".join(errores))
     adaptador = DynamicCSVAdapter(payload.name, payload.entity, _ruta_upload(payload.upload_token), payload.mapping)
-    resultado = adaptador.fetch_normalized()
+    try:
+        resultado = adaptador.fetch_normalized()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=422, detail=f"El CSV no se pudo procesar con este mapeo: {str(exc)[:200]}"
+        ) from exc
     reporte = resultado.report
     preview: list = []
     entidades = getattr(resultado.dataset, payload.entity)

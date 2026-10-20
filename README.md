@@ -462,7 +462,7 @@ cd frontend; npm install; npm run dev                         # frontend (termin
 2. **Clientes**: filtros por segmento/ciudad/ID; en el detalle expandible, botón **"Predecir segmento (Azure)"**; el ID lleva a la página del cliente (RFM + features + predicción).
 3. **Segmentos**: 6 grupos con etiquetas comerciales; en el detalle, perfil medio y recomendación (Azure OpenAI).
 4. **Audiencias**: crear una con condiciones combinables (p. ej. "en riesgo" + categoría electrónica) y exportar CSV.
-5. **Fuentes**: subir un CSV de prueba con columnas en español crudo → la IA sugiere el mapeo → confirmar → sincronizar (demostración de adaptabilidad sin código).
+5. **Fuentes**: subir un CSV de prueba con columnas en español crudo → la IA sugiere el mapeo → confirmar → sincronizar (demostración de adaptabilidad sin código). Archivo de demostración listo en `demos/ventas_tienda_fisica.csv` (9 filas de ventas con columnas crudas: `folio, id_cliente, fecha_compra, importe, rubro, producto`; la IA sugiere entidad `transactions` al 98% y el dry-run muestra 6 válidas + 3 incidencias con su motivo, ideal para explicar la validación).
 6. **Ejecuciones**: historial de runs de segmentación (métricas) e ingestión (duraciones, conteos, incidencias).
 
 **Recursos Azure activos:** `openai-motor-seg` (Azure OpenAI, gpt-5.4-mini DataZone), `ml-motor-seg-v2` (registro/versionado del modelo) y `motor-seg-scoring` + plan F1 (servicio de scoring).

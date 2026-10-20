@@ -111,10 +111,26 @@ def prueba_sugerencia_ia_no_disponible():
     assert "no configurado" in r.json()["detail"]
 
 
+def prueba_csv_mal_estructurado_controlado():
+    """Un CSV con fila rota despues de la muestra responde 422 en la validacion en seco, no 500."""
+    buenas = "\n".join(["ident,edad,ciudad,alta"] + [f"C-{i},30,Guadalajara,2025-05-10" for i in range(1, 6)])
+    roto = io.BytesIO((buenas + "\nC-6,30,Guadalajara,2025-05-10,campoextra\n").encode("utf-8"))
+    subida = client.post("/sources/csv/upload", files={"archivo": ("roto.csv", roto, "text/csv")})
+    assert subida.status_code == 200, subida.text
+    token = subida.json()["upload_token"]
+    r = client.post(
+        "/sources/csv/validate",
+        json={"name": "x", "entity": "customers", "upload_token": token, "mapping": MAPEO},
+    )
+    assert r.status_code == 422, r.text
+    assert "no se pudo procesar" in r.json()["detail"]
+
+
 if __name__ == "__main__":
     prueba_mapeo_incompleto_rechazado()
+    prueba_csv_mal_estructurado_controlado()
     sid = prueba_listado_y_sync()
     prueba_limpieza(sid)
     prueba_sugerencia_ia_con_mock()
     prueba_sugerencia_ia_no_disponible()
-    print("OK: fuentes CSV verificadas (manual completo + sugerencia IA con mock + degradacion 503)")
+    print("OK: fuentes CSV verificadas (manual + 422 controlado + IA con mock + degradacion 503)")
