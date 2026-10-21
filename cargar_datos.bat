@@ -25,13 +25,37 @@ if errorlevel 1 (
     if errorlevel 2 exit /b 1
 )
 
+if not exist "data\customers.json" (
+    echo.
+    echo Dataset del simulador no encontrado - generandolo, primera vez...
+    call .venv\Scripts\python.exe -m crm_simulator.generate_data
+    if errorlevel 1 (
+        echo ERROR: no se pudo generar el dataset del simulador.
+        pause
+        exit /b 1
+    )
+)
+
 echo.
 echo [1/2] INGESTA (simulador - PostgreSQL)...
 call .venv\Scripts\python.exe -m src.persistence.ingest
+if errorlevel 1 (
+    echo.
+    echo ERROR: la ingesta fallo - NO se ejecuta la segmentacion.
+    echo        Revisa que PostgreSQL este corriendo y el .env tenga DATABASE_URL correcta.
+    pause
+    exit /b 1
+)
 
 echo.
 echo [2/2] SEGMENTACION (K-Means + etiquetas)...
 call .venv\Scripts\python.exe -m src.ml.segmentation
+if errorlevel 1 (
+    echo.
+    echo ERROR: la segmentacion fallo. Revisa el mensaje de arriba.
+    pause
+    exit /b 1
+)
 
 echo.
 echo ============================================

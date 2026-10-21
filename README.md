@@ -248,7 +248,7 @@ Entidades mínimas esperadas:
 
 No guardar el payload externo como si fuera el modelo interno definitivo. Primero debe pasar por su adaptador y validación.
 
-Implementación actual: `src/persistence/schema.sql` — tablas `customers`, `transactions`, `interactions`, `campaign_events` (espejo del contrato V1, con CHECKs de enums), `ingestion_runs`/`ingestion_incidents` (trazabilidad de ingestiones), `segmentation_runs`/`segments`/`customer_segments` (trazabilidad de segmentaciones), `audiences` (audiencias dinámicas PRD §16: condiciones JSONB, membresía recalculada en cada consulta) y `data_sources` (fuentes externas conectadas: entidad, mapeo columna→campo, última sincronización). Sin FKs en las tablas de datos: la integridad referencial corresponde al procesamiento (contrato, sección 2); las tablas de segmentación sí llevan FKs estructurales. Falta `recommendations`… ya existe (Azure OpenAI).
+Implementación actual: `src/persistence/schema.sql` — tablas `customers`, `transactions`, `interactions`, `campaign_events` (espejo del contrato V1, con CHECKs de enums), `ingestion_runs`/`ingestion_incidents` (trazabilidad de ingestiones), `segmentation_runs`/`segments`/`customer_segments` (trazabilidad de segmentaciones), `audiences` (audiencias dinámicas PRD §16: condiciones JSONB, membresía recalculada en cada consulta), `recommendations` (recomendaciones de Azure OpenAI persistidas por segmento) y `data_sources` (fuentes externas conectadas: entidad, mapeo columna→campo, última sincronización). Sin FKs en las tablas de datos: la integridad referencial corresponde al procesamiento (contrato, sección 2); las tablas de segmentación sí llevan FKs estructurales.
 
 ## 11. Frontend
 
@@ -311,7 +311,7 @@ Todo el desarrollo debe registrarse progresivamente en Git para generar un histo
 - Se realizan commits después de avances significativos, con mensajes claros y descriptivos.
 - No se espera hasta el final para crear el historial.
 - No se elimina ni altera el historial de commits existente.
-- El repositorio debe quedar preparado para vincularse posteriormente con GitHub (remoto pendiente de configurar).
+- El repositorio vive en GitHub desde el inicio del desarrollo (público: `Ezumi005/G19X-UTSLRC-AABR-667-ACADEMIC`), con CI en cada push.
 - Cada avance importante queda reflejado tanto en Git como en `Bitacora.md`.
 
 ## 14. Qué debe demostrar el MVP
@@ -584,7 +584,7 @@ Para operar el proyecto SIN recordar comandos, la raíz del repositorio incluye 
 | Script | Qué hace | Cuándo usarlo |
 |---|---|---|
 | `instalar_proyecto.bat` | Crea `.venv`, instala dependencias (Python + frontend), crea `.env` desde plantilla, genera el dataset del simulador y aplica el esquema de PostgreSQL | Solo la primera vez (o al cambiar de máquina) |
-| `cargar_datos.bat` | Ingesta del simulador + segmentación inicial | Primera vez, y cuando quieras refrescar datos |
+| `cargar_datos.bat` | Genera el dataset del simulador si falta, ejecuta la ingesta y la segmentación; **se detiene con mensaje claro si la ingesta o la segmentación fallan** (no segmenta datos a medias) | Primera vez, y cuando quieras refrescar datos |
 | `levantar_proyecto.bat` | Levanta TODO en ventanas separadas: simulador (8001), backend (8000, ~20 s) y frontend (5173), y abre el navegador en `http://localhost:5173` | Todos los días |
 
 **Detener el proyecto:** cierra las 3 ventanas negras que abre el script (o Ctrl+C en ellas).
@@ -618,3 +618,13 @@ Con un `.env` que SOLO tenga `DATABASE_URL` (la plantilla `.env.example` sirve t
 | Sugerencia de mapeo CSV (`POST /sources/csv/suggest`) | `503`: "IA no disponible" — el asistente **manual** de 3 pasos queda plenamente operativo |
 
 Es decir: sin Azure el proyecto pierde exactamente las tres asistencias de IA (mapa en §21) y conserva todo el recorrido de datos → segmentos → audiencias → campañas. Las 10 suites de pruebas corren igual en CI (la IA se prueba con mocks; ver `tests/test_recommendations.py` y `tests/test_sources.py`).
+
+---
+
+## 26. Declaración de uso de IA durante el desarrollo
+
+Para transparencia del proceso (distinto del uso de IA **dentro del producto**, mapeado en §21):
+
+- El desarrollo fue asistido por **IA generativa de programación** (Claude, mediante la CLI opencode) actuando como pareja de programación bajo dirección del autor: redacción de código y pruebas, refactorizaciones, documentación técnica y análisis de errores.
+- Las decisiones de arquitectura, alcance, reglas de negocio e interpretación de resultados fueron definidas y validadas por el autor; cada avance quedó registrado en `Bitacora.md` y verificado con las 10 suites de pruebas, el lint y la CI del repositorio antes de aceptarse.
+- Las credenciales y recursos de Azure del producto pertenecen al autor y nunca fueron generadas ni manejadas por la herramienta de desarrollo.

@@ -49,7 +49,17 @@ AZURE_OPENAI_ENDPOINT=https://openai-motor-seg.../openai + AZURE_OPENAI_API_KEY 
 ```
 ⚠️ Nunca subir el `.env` al repositorio (el `.gitignore` ya lo excluye).
 
-**Modo sin Azure (100% local):** las claves de Azure son opcionales; con solo `DATABASE_URL` el proyecto funciona completo (ingesta, segmentación, web, audiencias) y las tres asistencias de IA degradan de forma controlada (501/503). Detalle en README §25.
+**Modo sin Azure (100% local):** las claves de Azure son opcionales; con solo `DATABASE_URL` el proyecto funciona completo y las tres asistencias de IA degradan de forma controlada. Qué se ve exactamente en cada pantalla sin las variables `AZURE_*` (no es una falla):
+
+| Pantalla / acción | Comportamiento sin Azure |
+|---|---|
+| Dashboard, Segmentos, Audiencias, Ejecuciones, Fuentes (listado) | Todo funciona normal (el motor es local) |
+| Clientes → botón "Predecir segmento (Azure)" | Mensaje de error controlado: `501 — Servicio de scoring en Azure no configurado` |
+| Detalle de segmento → botón de recomendación | `501 — Azure OpenAI no configurado` (no se genera ni persiste recomendación) |
+| Fuentes → "Sugerir mapeo con IA" | `503 — IA no disponible`; el mapeo se llena **a mano** y el resto del asistente (validar, guardar, sincronizar) sigue operativo |
+| Clientes → filtro por segmento, export de audiencias | Todo funciona normal |
+
+Detalle completo en README §25 ("Modo sin Azure").
 
 ## 5. Dataset del CRM simulado
 

@@ -1655,6 +1655,34 @@ Commit + push + CI; regenerar el zip del código fuente con estos cambios cuando
 
 ---
 
+## 21/10/2026 — 15:24
+**Tipo:** Técnico / Documentación (segunda ronda de observaciones del tutor)
+
+**Actividad realizada:**  
+Cerré la segunda lista de observaciones del tutor (varias ya habían quedado cubiertas por la entrada anterior a las 15:16):
+
+1. **`cargar_datos.bat` endurecido:** ahora genera el dataset del simulador si falta (`data\customers.json` ausente → `crm_simulator.generate_data`, con paro si falla) y **se detiene con mensaje claro si la ingesta falla**, sin ejecutar la segmentación con datos a medias; también frena si la propia segmentación falla. La tabla de scripts del README §23 quedó actualizada.
+2. **Barrido de frases viejas del README:** la regla de Git de §13 decía "remoto pendiente de configurar" (el repo vive en GitHub desde el inicio — corregido con la URL real); §10 decía "Falta `recommendations`… ya existe" (limpiado: la tabla está en el listado del esquema); comentario de `.gitignore` "(frontend futuro)" ajustado. Las frases legítimas de diseño ("reemplazar en el futuro la fuente simulada…") se conservan porque describen la decisión de arquitectura, no un estado pendiente.
+3. **Modo sin Azure en `Guia_de_Instalacion.md` ampliado:** tabla concreta de qué pantalla y qué mensaje exacto aparece sin las variables `AZURE_*` (predict → 501 scoring, recomendación → 501 OpenAI, sugerencia IA → 503 con asistente manual operativo, resto normal), para que un evaluador no lo tome por falla.
+4. **README §26 nueva — "Declaración de uso de IA durante el desarrollo":** transparencia sobre la IA de programación (Claude vía opencode) como pareja de código bajo dirección, decisión y validación del autor (bitácora + 10 suites + CI), distinguida del uso de IA dentro del producto (§21).
+
+**Decisiones tomadas:**  
+- Mantener v1.1 y v2.0 FINAL como archivos separados con banner histórico (opción A del tutor) en lugar de fusionar: preserva el historial del repositorio, regla inviolable del proyecto.
+
+**Resultado:**  
+- Sin cambios de código de runtime; documentación y scripts revisados. Suites y ruff siguen en verde (sin regresiones; el único cambio Python fue ninguno en esta ronda).
+
+**Archivos o componentes afectados:**  
+- Modificados: `cargar_datos.bat`, `README.md` (§10, §13, §23, §26 nueva), `manuales/Guia_de_Instalacion.md`, `.gitignore`, `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno.
+
+**Siguiente paso:**  
+Commit + push + CI.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
