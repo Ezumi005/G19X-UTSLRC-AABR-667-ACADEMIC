@@ -1,0 +1,9 @@
+{
+  "service": "Azure App Service motor-seg-scoring",
+  "artifact": "models/kmeans_local.pkl (copiado a azure/scoring_app/ al desplegar)",
+  "run_id": 4,
+  "n_customers": 498,
+  "trained_with": "Linea base del CRM simulado (498 clientes; misma linea de datos de los runs 1-6 y 8 por semilla fija y datos identicos)",
+  "exported_at": "2026-09-23T13:06:00-07:00",
+  "how_to_realign": "Tras cambiar datos y recalcular segmentos: re-exportar el artefacto (python -m src.ml.clustering), copiar models/kmeans_local.json a este archivo actualizando run_id/n_customers, redesplegar el App Service y confirmar /health (README seccion 7)."
+}

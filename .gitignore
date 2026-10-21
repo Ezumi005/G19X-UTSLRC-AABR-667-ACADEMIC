@@ -14,7 +14,7 @@ __pycache__/
 data/
 
 # Artefactos de modelos (regenerables con semilla fija)
-models/
+models/*
 # Excepcion: metadatos del artefacto desplegado en Azure (describen con que run se entreno; SI se versionan)
 !models/artefacto_desplegado.json
 
