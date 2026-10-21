@@ -64,4 +64,26 @@ def predict_customer(customer_id: str) -> dict:
         ),
         None,
     )
-    return {"customer_id": customer_id, "features": features, "cluster": cluster, "segment": segment}
+    # Coherencia del modelo remoto: el artefacto de Azure NO se reentrena al
+    # recalcular segmentos en local; si los datos cambiaron, se advierte en la
+    # respuesta en lugar de ocultarlo (hallazgo de revision, README seccion 7).
+    warnings: list[str] = []
+    if queries.data_changed_since_segmentation():
+        warnings.append(
+            "Hay datos ingeridos despues de la ultima segmentacion: recalcula segmentos para que "
+            "clusters y etiquetas reflejen los datos vigentes."
+        )
+    run_info = queries.latest_run_info()
+    coherencia = scoring_service.artifact_coherence(
+        run_info.get("run_id") if run_info else None,
+        run_info.get("n_customers") if run_info else None,
+    )
+    if coherencia["stale"] is True or coherencia["stale"] is None:
+        warnings.append(coherencia["note"])
+    return {
+        "customer_id": customer_id,
+        "features": features,
+        "cluster": cluster,
+        "segment": segment,
+        "warnings": warnings,
+    }

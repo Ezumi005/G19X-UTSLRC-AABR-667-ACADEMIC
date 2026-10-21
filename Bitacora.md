@@ -1626,6 +1626,35 @@ Commit y CI; usar el archivo en la presentación (subida → sugerencia IA 98% �
 
 ---
 
+## 21/10/2026 — 15:16
+**Tipo:** Técnico / Pruebas / Documentación (correcciones de la evaluación del tutor)
+
+**Actividad realizada:**  
+Atendí los hallazgos de la revisión del tutor sobre el código y la documentación:
+
+1. **Coherencia artefacto remoto ↔ segmentos vigentes** (riesgo señalado: el botón "Recalcular segmentos" reentrena en local mientras la predicción usa el artefacto desplegado en Azure; si los datos cambian, los clusters podían dejar de corresponder). Implementé la mitigación visible: `models/artefacto_desplegado.json` (versionado, con excepción en `.gitignore`) declara con qué run/línea se entrenó el artefacto (run #4, 498 clientes); `scoring.artifact_coherence()` compara esa línea con el run vigente; `queries.data_changed_since_segmentation()` detecta ingestas exitosas posteriores a la última segmentación; y `POST /customers/{id}/predict` ahora responde `warnings: []` con ambas advertencias cuando aplican. La web las muestra (caja amarilla en Detalle de cliente, indicador "⚠ desalineado" en la lista). `save_artifact` además escribe `models/kmeans_local.json` con el contexto del exporte para futuras realineaciones. Verificado en vivo: con una ingesta posterior a la segmentación la predicción advirtió (warnings=1); tras recalcular (run #9) la advertencia desapareció (warnings=0) y el cluster se mantuvo (datos idénticos, semilla fija).
+2. **Validación del `upload_token`** en `routes/sources.py`: regex `[0-9a-f]{16}` (formato real de los tokens uuid4().hex[:16]) → path traversal y tokens inventados responden 400 controlado (prueba `prueba_token_invalido_controlado`).
+3. **Inconsistencias documentación ↔ código:** README §9 decía que la recomendación estaba "reservada (501)" cuando ya está implementada (corregido); la temperatura de las recomendaciones documentada como 0 cuando el código usa 0.4 (alineado en README §21, PRD v2.0 FINAL y Documento_Tecnico: recomendaciones 0.4, mapeo CSV 0 determinista); los PRD/MVP v1.1 ahora llevan banner de "versión histórica" y el README §16 indica que la vigente es v2.0 FINAL; los PDF de la raíz quedan anotados como entregables externos no versionados.
+4. **Reproducibilidad:** `instalar_proyecto.bat` ahora genera el dataset del simulador (paso 4/6, `python -m crm_simulator.generate_data`) y `levantar_proyecto.bat` lo auto-genera si falta `data/customers.json` — se cerró el tropiezo de instalación limpia detectado por el tutor; `Guia_de_Instalacion.md` ganó la sección "Dataset del CRM simulado" (renumerada 5-12) y una nota de modo sin Azure; README §25 nueva "Modo sin Azure (100% local)" con la tabla de qué funciona y qué degrada sin credenciales.
+
+**Decisiones tomadas:**  
+- Elegí advertir la desalineación en la respuesta (transparencia) en lugar de bloquear la predicción o intentar redesplegar Azure: la realineación queda documentada como procedimiento en el propio `artefacto_desplegado.json` y en README §7.
+- No se implementó login/protección adicional: la decisión de localhost sigue documentada (README §19) y el tutor la validó como correcta.
+
+**Resultado:**  
+- 10/10 suites en verde (nuevas: coherencia del artefacto en `test_scoring`, token seguro en `test_sources`), ruff limpio, `npm run build` verde, verificación en vivo del ciclo advertencia→recálculo→advertencia resuelta.
+
+**Archivos o componentes afectados:**  
+- Modificados: `src/services/scoring.py`, `src/persistence/queries.py`, `src/api/routes/customers.py`, `src/api/schemas.py`, `src/api/routes/sources.py`, `src/ml/clustering.py`, `frontend/src/types.ts`, `frontend/src/pages/CustomerDetail.tsx`, `frontend/src/pages/Customers.tsx`, `frontend/src/styles.css`, `README.md` (§7, §9, §16, §21, §23, §25 nueva), `manuales/Documento_Tecnico.md`, `manuales/Guia_de_Instalacion.md`, `docs/PRD_..._v2.0_FINAL.md`, `docs/PRD_..._v1.1.md`, `docs/MVP_..._v1.1.md`, `instalar_proyecto.bat`, `levantar_proyecto.bat`, `.gitignore`, `tests/test_scoring.py`, `tests/test_sources.py`, `Bitacora.md`. Nuevos: `models/artefacto_desplegado.json`.
+
+**Problemas o bloqueos:**  
+- Docker sigue sin poder probarse localmente (sin Docker Desktop; documentado en README §20).
+
+**Siguiente paso:**  
+Commit + push + CI; regenerar el zip del código fuente con estos cambios cuando el usuario lo pida.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

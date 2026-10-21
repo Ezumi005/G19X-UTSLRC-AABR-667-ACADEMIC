@@ -126,11 +126,23 @@ def prueba_csv_mal_estructurado_controlado():
     assert "no se pudo procesar" in r.json()["detail"]
 
 
+def prueba_token_invalido_controlado():
+    """Un upload_token malicioso (path traversal) se rechaza con 400, nunca llega al filesystem."""
+    for malo in ["../../.envx", "../secretos", "..\\..\\windows"]:
+        r = client.post(
+            "/sources/csv/validate",
+            json={"name": "x", "entity": "customers", "upload_token": malo, "mapping": MAPEO},
+        )
+        assert r.status_code == 400, f"{malo}: {r.status_code}"
+        assert "Token" in r.json()["detail"]
+
+
 if __name__ == "__main__":
     prueba_mapeo_incompleto_rechazado()
+    prueba_token_invalido_controlado()
     prueba_csv_mal_estructurado_controlado()
     sid = prueba_listado_y_sync()
     prueba_limpieza(sid)
     prueba_sugerencia_ia_con_mock()
     prueba_sugerencia_ia_no_disponible()
-    print("OK: fuentes CSV verificadas (manual + 422 controlado + IA con mock + degradacion 503)")
+    print("OK: fuentes CSV verificadas (manual + token seguro + 422 controlado + IA con mock + degradacion 503)")

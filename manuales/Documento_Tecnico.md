@@ -64,7 +64,7 @@ Fuente única de verdad: `src/contracts/` (Pydantic) + `docs/contrato_interno_da
 
 | Uso | Proveedor | Entrada → salida | Guardas |
 |---|---|---|---|
-| Recomendaciones comerciales | Azure OpenAI `gpt-5.4-mini` | agregados del segmento → JSON comercial | temperature 0, timeout, parseo tolerante, degradación 501/503 |
+| Recomendaciones comerciales | Azure OpenAI `gpt-5.4-mini` | agregados del segmento → JSON comercial | temperature 0.4, timeout, parseo tolerante, degradación 501/503 |
 | Sugerencia de mapeo CSV | Azure OpenAI `gpt-5.4-mini` | esquema introspectado + columnas + muestra → entidad + mapping + confianza | filtro de columnas, validación Pydantic, **confirmación humana**, dry-run |
 | Scoring (predicción por cliente) | Azure App Service (=F1) | 7 features → cluster + etiqueta | API key `X-API-Key`, timeout 90 s + 1 reintento (arranque en frío) |
 

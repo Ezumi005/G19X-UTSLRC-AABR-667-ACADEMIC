@@ -17,6 +17,11 @@ if not exist ".venv\Scripts\python.exe" (
     exit /b 1
 )
 
+if not exist "data\customers.json" (
+    echo Generando dataset del CRM simulado - primera vez...
+    call .venv\Scripts\python.exe -m crm_simulator.generate_data
+)
+
 echo [1/3] Levantando CRM simulado (puerto 8001)...
 start "Simulador CRM (8001) - CIERRA ESTA VENTANA PARA DETENER" cmd /k ".venv\Scripts\python.exe -m uvicorn crm_simulator.app:app --port 8001"
 timeout /t 3 /nobreak >nul

@@ -92,13 +92,22 @@ export default function CustomerDetail() {
 
       <h2>Predicción de segmento (inferencia en Azure)</h2>
       {prediccion ? (
-        <p className="reco-card">
-          Cluster <b>{prediccion.cluster}</b> ·{" "}
-          <b>{prediccion.segment?.label ?? "sin etiqueta"}</b>{" "}
-          <button className="btn-secondary" onClick={() => void predecir()} disabled={prediciendo}>
-            Recalcular
-          </button>
-        </p>
+        <>
+          <p className="reco-card">
+            Cluster <b>{prediccion.cluster}</b> ·{" "}
+            <b>{prediccion.segment?.label ?? "sin etiqueta"}</b>{" "}
+            <button className="btn-secondary" onClick={() => void predecir()} disabled={prediciendo}>
+              Recalcular
+            </button>
+          </p>
+          {(prediccion.warnings ?? []).length > 0 && (
+            <div className="warn-box">
+              {prediccion.warnings?.map((w) => (
+                <p key={w}>⚠ {w}</p>
+              ))}
+            </div>
+          )}
+        </>
       ) : (
         <button onClick={() => void predecir()} disabled={prediciendo}>
           {prediciendo ? "Consultando Azure…" : "Predecir segmento (Azure)"}

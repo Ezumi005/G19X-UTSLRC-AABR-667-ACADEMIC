@@ -6,6 +6,7 @@ validar en seco -> guardar fuente -> sincronizar al pipeline normal.
 
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -48,6 +49,10 @@ class MappingPayload(BaseModel):
 
 
 def _ruta_upload(token: str) -> Path:
+    # El token se genera como uuid4().hex[:16]: solo hexadecimales. Validarlo
+    # evita path traversal (p. ej. "../../algo") y tokens inventados.
+    if not re.fullmatch(r"[0-9a-f]{16}", token):
+        raise HTTPException(status_code=400, detail="Token de subida invalido.")
     ruta = UPLOADS_DIR / f"{token}.csv"
     if not ruta.exists():
         raise HTTPException(status_code=404, detail="Archivo subido no encontrado; vuelve a subirlo.")

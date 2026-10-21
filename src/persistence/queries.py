@@ -16,6 +16,42 @@ def latest_ok_run_id(conn: psycopg.Connection) -> int | None:
         return row[0] if row else None
 
 
+def latest_run_info() -> dict | None:
+    """Run exitoso vigente: run_id y n_customers (para verificar coherencia del artefacto remoto)."""
+    with connect() as conn, conn.cursor(row_factory=dict_row) as cur:
+        cur.execute(
+            "SELECT run_id, n_customers FROM segmentation_runs WHERE status = 'ok' ORDER BY run_id DESC LIMIT 1"
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def data_changed_since_segmentation() -> bool:
+    """True si hubo una ingesta exitosa DESPUES de la ultima segmentacion exitosa.
+
+    Es la senal de que los datos vigentes (y por tanto el artefacto de Azure y
+    los segmentos asignados) pueden estar desactualizados respecto a lo ultimo
+    que entro al sistema.
+    """
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT EXISTS (
+                SELECT 1 FROM ingestion_runs i
+                WHERE i.status = 'ok'
+                  AND i.started_at > (
+                      SELECT COALESCE(MIN(started_at), 'epoch'::timestamptz)
+                      FROM segmentation_runs
+                      WHERE status = 'ok' AND run_id = (
+                          SELECT MAX(run_id) FROM segmentation_runs WHERE status = 'ok'
+                      )
+                  )
+            )
+            """
+        )
+        return bool(cur.fetchone()[0])
+
+
 def list_customers(
     limit: int,
     offset: int,

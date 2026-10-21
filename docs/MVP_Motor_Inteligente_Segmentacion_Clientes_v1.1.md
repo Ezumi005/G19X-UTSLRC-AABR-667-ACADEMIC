@@ -1,4 +1,5 @@
 # MVP_Motor_Inteligente_Segmentacion_Clientes_v1.1.pdf — texto extraido (referencia)
+> **Version HISTORICA (superseded):** la version vigente del MVP en este repositorio es `MVP_Motor_Inteligente_Segmentacion_Clientes_v2.0_FINAL.md` (alcance final y estado de cierre). Este archivo se conserva solo como referencia del documento original.
 > Extraido automaticamente del PDF original con pypdf.
 > El PDF original en la raiz del proyecto sigue siendo la fuente de verdad oficial.
 > Este archivo existe solo para consulta rapida de desarrolladores y modelos de IA.

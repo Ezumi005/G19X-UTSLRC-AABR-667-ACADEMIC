@@ -83,7 +83,7 @@ Estado: **MVP completo y verificado** — 10 suites de pruebas en verde, CI en G
 1. **Recomendaciones comerciales por segmento (IA generativa).**
    - Proveedor: Azure OpenAI (`gpt-5.4-mini`, deployment de DataZone), recurso `openai-motor-seg`.
    - Entrada: agregados reales del segmento (perfil JSONB). Salida: JSON comercial (estrategia, tácticas, canales) persistido.
-   - Guardas: temperature 0, parseo tolerante, timeout, degradación informativa si no está configurada. La información fluye backend→OpenAI; la web nunca llama a Azure directamente (hilo claro).
+   - Guardas: temperature 0.4 (redacción comercial acotada; el mapeo CSV usa 0 determinista), parseo tolerante, timeout, degradación informativa si no está configurada. La información fluye backend→OpenAI; la web nunca llama a Azure directamente (hilo claro).
 
 2. **Sugerencia de mapeo para fuentes CSV (IA generativa).**
    - Mismo deployment: recibe esquema introspectado del contrato + columnas del CSV + filas de muestra y propone entidad + mapping columnas→campos (sinónimos EN/ES, formatos de fecha, confianza estimada).

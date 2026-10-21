@@ -22,6 +22,7 @@ Uso (desde la raiz, requiere .env y base con datos):
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 import joblib
@@ -161,6 +162,25 @@ def save_artifact(model: KMeans, scaler: StandardScaler, info: dict, k: int, met
         },
         path,
     )
+    # Contexto del exporte (run vigente al momento de entrenar): alimenta los
+    # metadatos del artefacto desplegado y permite detectar desalineacion entre
+    # el modelo remoto y los segmentos vigentes (README seccion 7).
+    try:
+        from src.persistence.queries import latest_run_info
+
+        run_info = latest_run_info()
+        contexto = {
+            "run_id": run_info.get("run_id") if run_info else None,
+            "n_customers": run_info.get("n_customers") if run_info else info.get("clientes"),
+            "exported_at": datetime.now(timezone.utc).isoformat(),
+        }
+    except Exception:
+        contexto = {
+            "run_id": None,
+            "n_customers": info.get("clientes"),
+            "exported_at": datetime.now(timezone.utc).isoformat(),
+        }
+    (MODELS_DIR / "kmeans_local.json").write_text(json.dumps(contexto, indent=2), encoding="utf-8")
     return path
 
 

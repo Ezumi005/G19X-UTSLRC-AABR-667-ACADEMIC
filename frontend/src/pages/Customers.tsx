@@ -178,6 +178,11 @@ export default function Customers() {
                           <b className="badge">
                             Cluster {predicciones[row.customer_id].cluster} · {predicciones[row.customer_id].segment?.label ?? "sin etiqueta"}
                           </b>
+                          {(predicciones[row.customer_id].warnings ?? []).length > 0 && (
+                            <span className="muted" title={predicciones[row.customer_id].warnings!.join(" ")}>
+                              {" "}⚠ desalineado
+                            </span>
+                          )}
                         </span>
                       ) : (
                         <button

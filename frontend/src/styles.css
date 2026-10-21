@@ -15,6 +15,7 @@
   --exito-bg: #f0f3e2;
   --exito-borde: #cdd9a8;
   --aviso-bg: #f9efd7;
+  --aviso-borde: #e6d5a3;
   --error-bg: #f7e6df;
   --error-texto: #a34532;
   --input-borde: #d8c9ae;
@@ -39,6 +40,7 @@ html[data-tema="oscuro"] {
   --exito-bg: #2a2e1e;
   --exito-borde: #4a5230;
   --aviso-bg: #332a16;
+  --aviso-borde: #4a3d1c;
   --error-bg: #38221c;
   --error-texto: #e08b74;
   --input-borde: #4a3e2f;
@@ -210,6 +212,8 @@ button:disabled { opacity: 0.6; cursor: default; }
 .filter-bar input { min-width: 200px; }
 
 .predict-box { margin-top: 8px; }
+.warn-box { background: var(--aviso-bg); border: 1px solid var(--aviso-borde); border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; }
+.warn-box p { margin: 4px 0; font-size: 13.5px; color: #7a5b00; }
 
 .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px; margin: 16px 0; }
 .chart-card { background: var(--panel); border: 1px solid var(--borde); border-radius: 10px; padding: 12px 14px; }

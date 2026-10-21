@@ -152,6 +152,7 @@ export interface Prediction {
   features: Record<string, number | null>;
   cluster: number;
   segment: { segment_id: number; label: string } | null;
+  warnings?: string[];
 }
 
 export interface SegmentationRun {

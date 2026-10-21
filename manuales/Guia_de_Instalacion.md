@@ -49,14 +49,23 @@ AZURE_OPENAI_ENDPOINT=https://openai-motor-seg.../openai + AZURE_OPENAI_API_KEY 
 ```
 ⚠️ Nunca subir el `.env` al repositorio (el `.gitignore` ya lo excluye).
 
-## 5. Esquema de base de datos
+**Modo sin Azure (100% local):** las claves de Azure son opcionales; con solo `DATABASE_URL` el proyecto funciona completo (ingesta, segmentación, web, audiencias) y las tres asistencias de IA degradan de forma controlada (501/503). Detalle en README §25.
+
+## 5. Dataset del CRM simulado
+
+```powershell
+.\.venv\Scripts\python.exe -m crm_simulator.generate_data
+```
+Genera `data/*.json` (dataset reproducible con semilla fija: ~500 clientes, transacciones, interacciones y campañas). **Sin este paso el simulador no tiene datos que servir** (la carpeta `data/` no se versiona). `instalar_proyecto.bat` y `levantar_proyecto.bat` lo ejecutan automáticamente si falta.
+
+## 6. Esquema de base de datos
 
 ```powershell
 .\.venv\Scripts\python.exe -m src.persistence.init_db
 ```
 Crea la base `motor_segmentacion` (si no existe) y todas las tablas (contrato V1 + trazabilidad + producto).
 
-## 6. Ejecutar el sistema (4 terminales)
+## 7. Ejecutar el sistema (4 terminales)
 
 **Terminal 1 — CRM simulado (fuente externa, déjalo corriendo):**
 ```powershell
@@ -82,19 +91,19 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-## 7. Verificación de la instalación
+## 8. Verificación de la instalación
 
 1. `http://127.0.0.1:8000/health` → JSON con `"status": "ok"` (o `"degradado"` solo si faltan credenciales de Azure).
 2. `http://localhost:5173` → Dashboard con **498 clientes, 6 segmentos** y KPIs.
 3. `http://127.0.0.1:8000/docs` → Swagger con todos los endpoints.
 4. Pruebas opcionales de confianza: `.venv\Scripts\python.exe -m tests.test_api` (módulo a módulo, 10 en total).
 
-## 8. Arranque diario (datos ya cargados)
+## 9. Arranque diario (datos ya cargados)
 
 Más tarde (datos ya cargados): solo terminales 1 (simulador), 3 (backend) y 4 (frontend). Repetir ingesta/segmentación es idempotente y solo se hace cuando se deseen datos nuevos.
 
 
-## 9. Alternativa todo-en-uno: Docker
+## 10. Alternativa todo-en-uno: Docker
 
 ```powershell
 docker compose up --build
@@ -102,7 +111,7 @@ docker compose up --build
 ```
 Requiere Docker Desktop. Postgres corriendo local es innecesario en este modo.
 
-## 10. Solución de problemas de instalación
+## 11. Solución de problemas de instalación
 
 | Problema | Solución |
 |---|---|
@@ -116,6 +125,6 @@ Requiere Docker Desktop. Postgres corriendo local es innecesario en este modo.
 | Frontend no conecta con el backend | Confirmar que el backend vive en el puerto 8000 (`/health` arriba) y que se ejecutó `npm run dev` desde la carpeta `frontend/` |
 | PowerShell se queja de ejecución de scripts | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` |
 
-## 11. Despliegue (opcional)
+## 12. Despliegue (opcional)
 
 CI (GitHub Actions) automatiza pruebas; para producción se recomienda contenedorizar cada servicio (Dockerfiles ya incluidos) y provisionar PostgreSQL administrado. Las credenciales de Azure vía variables de entorno del servicio de hosting, jamás en el código. Autenticación de la API: ver README §19 (API key/JWT como primer paso).

@@ -176,6 +176,13 @@ Responsabilidades cumplidas:
 
 **Nota operativa — arranque en frío:** el plan gratuito F1 "duerme" la app tras ~20 minutos sin uso; el primer request tras inactividad tarda 10-30 segundos. El diagnóstico (servicio sano, health 0.5s) confirmó que los fallos de predicción venían de eso y no de una avería. Fix implementado: timeout de 90 s + reintento automático en `src/services/scoring.py`.
 
+**Coherencia artefacto remoto ↔ segmentos vigentes (hallazgo de revisión, corregido).** El artefacto servido en Azure NO se reentrena cuando se pulsa "Recalcular segmentos" (que reentrena en local): si los datos cambian (p. ej. tras sincronizar un CSV), el cluster devuelto por Azure puede dejar de corresponder con los segmentos vigentes. Mitigación implementada (visible, no oculta):
+
+- `models/artefacto_desplegado.json` (versionado) declara con qué run/línea de datos se entrenó el artefacto desplegado (hoy: run #4, 498 clientes, línea base del CRM simulado).
+- `POST /customers/{id}/predict` responde además `warnings: []`: (a) si hubo una ingesta exitosa después de la última segmentación exitosa (`queries.data_changed_since_segmentation`), avisa "recalcula segmentos"; (b) si el run vigente difiere de la línea base declarada del artefacto (`scoring.artifact_coherence`), avisa que el cluster puede no corresponder. La web muestra ambas advertencias en la predicción.
+- `save_artifact` escribe junto al `.pkl` un `models/kmeans_local.json` con el run vigente al exportar, para saber qué copiar al realinear.
+- Procedimiento de realineación (documentado en el propio JSON): re-exportar artefacto → actualizar `artefacto_desplegado.json` → redesplegar el App Service → confirmar `/health`.
+
 ## 8. Azure OpenAI
 
 Azure OpenAI NO realiza la segmentación.
@@ -222,7 +229,7 @@ Endpoints iniciales de la aplicación:
 
 Los nombres pueden cambiar, pero las responsabilidades deben mantenerse separadas.
 
-Implementación actual: `src/api/` (puerto 8000: `.venv\Scripts\python.exe -m uvicorn src.api.app:app --port 8000`). Routers por dominio (`ingestion`, `customers`, `segments`, `dashboard`, `audiences`, `sources`) más `/health`. `GET /segments` devuelve el último run exitoso; `POST /segments/{id}/recommendation` está reservado (501) hasta la etapa de Azure OpenAI. Lecturas centralizadas en `src/persistence/queries.py`. CORS habilitado solo para desarrollo React (localhost:5173/3000). Verificado en vivo: los 8 endpoints responden, incluidos 404 y 501.
+Implementación actual: `src/api/` (puerto 8000: `.venv\Scripts\python.exe -m uvicorn src.api.app:app --port 8000`). Routers por dominio (`ingestion`, `customers`, `segments`, `dashboard`, `audiences`, `sources`) más `/health`. `GET /segments` devuelve el último run exitoso; `POST /segments/{id}/recommendation` está implementado con Azure OpenAI (degrada con 501 informativo si no hay credenciales y 502 si el servicio cae). Lecturas centralizadas en `src/persistence/queries.py`. CORS habilitado solo para desarrollo React (localhost:5173/3000). Verificado en vivo: todos los endpoints responden, incluidos los casos de error 404/501/502.
 
 ## 10. PostgreSQL
 
@@ -341,13 +348,14 @@ Para integrar un CRM real:
 MSIA/                          # raíz del proyecto (repositorio Git)
 ├── README.md                  # este documento: mapa del proyecto
 ├── Bitacora.md                # historial cronológico del desarrollo
-├── PRD_*.pdf / MVP_*.pdf      # fuentes de verdad oficiales (documentos originales)
+├── PRD_*.pdf / MVP_*.pdf      # documentos originales de la universidad (entregables externos, NO se versionan; su texto sí vive en docs/)
 ├── .gitignore
 ├── requirements.txt           # dependencias Python del proyecto
 ├── docs/                      # documentación técnica
 │   ├── contrato_interno_datos_v1.md                  # contrato interno V1 (documento)
-│   ├── PRD_Motor_..._v1.1.md                         # texto extraído del PRD (referencia)
-│   └── MVP_Motor_..._v1.1.md                         # texto extraído del MVP (referencia)
+│   ├── PRD_..._v1.1.md / MVP_..._v1.1.md             # texto de referencia HISTÓRICO (superseded)
+│   ├── PRD_..._v2.0_FINAL.md / MVP_..._v2.0_FINAL.md # versión VIGENTE (cierre con evidencia)
+│   └── img/                                           # capturas de la web (dashboard, segmentos, audiencias)
 ├── src/                       # núcleo de la aplicación
 │   ├── contracts/             # contrato interno codificado (Pydantic; fuente única de verdad)
 │   ├── adapters/              # adaptadores: fuente externa → contrato interno
@@ -383,7 +391,7 @@ MSIA/                          # raíz del proyecto (repositorio Git)
 │   ├── conda_env.yml / environment.yml  # entorno registrado en Azure ML
 │   └── deploy_endpoint.py     # despliegue por SDK (endpoint online)
 ├── data/                      # dataset generado *.json + meta.json/ground truth (no versionado)
-├── models/                    # artefactos de modelos, p.ej. kmeans_local.pkl (no versionado)
+├── models/                    # artefactos de modelos, p.ej. kmeans_local.pkl (no versionado; excepción versionada: artefacto_desplegado.json con la línea de datos del modelo remoto)
 ├── frontend/                  # React 19 + TypeScript + Vite (puerto 5173)
 │   └── src/
 │       ├── api.ts             # cliente HTTP de la API del backend
@@ -393,7 +401,7 @@ MSIA/                          # raíz del proyecto (repositorio Git)
 └── .venv/                     # entorno virtual local (no versionado)
 ```
 
-Los extractos en `docs/` son solo para consulta rápida; ante cualquier duda, el PDF original manda.
+Versionado de la documentación: la versión **vigente** de PRD y MVP en `docs/` es la **v2.0 FINAL** (cierre con evidencia de cada requisito); las v1.1 se conservan como histórico. Los PDF originales son entregables externos de la universidad y no se versionan en el repositorio (`.gitignore`).
 
 ## 17. Preparación del entorno de desarrollo
 
@@ -497,7 +505,7 @@ El sistema usa IA exactamente en **tres puntos**, con fronteras de seguridad def
 1. **Recomendaciones comerciales por segmento (IA generativa - Azure OpenAI).**
    - En `src/services/recommendations.py` y endpoint `POST /segments/{id}/recommendation`.
    - Entrada: agregados reales del segmento (perfil JSONB). Salida: estrategia comercial en JSON, persistida y regenerable desde la web.
-   - Guardas: temperature 0, timeout, parseo tolerante y degradacion informativa si no esta configurada. Regla inviolable: **la IA nunca decide los clusters ni las etiquetas**.
+   - Guardas: temperature 0.4 (redacción comercial con margen acotado; el mapeo CSV usa 0 determinista), timeout, parseo tolerante y degradacion informativa si no esta configurada. Regla inviolable: **la IA nunca decide los clusters ni las etiquetas**.
 
 2. **Sugerencia de mapeo para fuentes CSV (IA generativa - Azure OpenAI).**
    - En `src/services/mapping_suggest.py` y endpoint `POST /sources/csv/suggest` (vista Fuentes de la web: boton/badge "Sugerido por IA").
@@ -575,7 +583,7 @@ Para operar el proyecto SIN recordar comandos, la raíz del repositorio incluye 
 
 | Script | Qué hace | Cuándo usarlo |
 |---|---|---|
-| `instalar_proyecto.bat` | Crea `.venv`, instala dependencias (Python + frontend), crea `.env` desde plantilla y aplica el esquema de PostgreSQL | Solo la primera vez (o al cambiar de máquina) |
+| `instalar_proyecto.bat` | Crea `.venv`, instala dependencias (Python + frontend), crea `.env` desde plantilla, genera el dataset del simulador y aplica el esquema de PostgreSQL | Solo la primera vez (o al cambiar de máquina) |
 | `cargar_datos.bat` | Ingesta del simulador + segmentación inicial | Primera vez, y cuando quieras refrescar datos |
 | `levantar_proyecto.bat` | Levanta TODO en ventanas separadas: simulador (8001), backend (8000, ~20 s) y frontend (5173), y abre el navegador en `http://localhost:5173` | Todos los días |
 
@@ -592,3 +600,21 @@ El paso a paso con comandos individuales (Linux/macOS incluido) sigue disponible
 - `MVP_Motor_Inteligente_Segmentacion_Clientes_v2.0_FINAL.md` — alcance final, arquitectura, arranque e historial de versiones.
 - `PRD_Motor_Inteligente_Segmentacion_Clientes_v2.0_FINAL.md` — estado de los RF/RNF, desviaciones aprobadas y mapa de IA.
 - Los PDF y extractos v1.1 originales permanecen inalterados (los nuevos documentos se limitan a actualizar su estado).
+
+---
+
+## 25. Modo sin Azure (100% local)
+
+Los servicios de Azure (OpenAI y scoring en App Service) pertenecen a la cuenta del autor y **no son necesarios para instalar, operar ni evaluar el proyecto**: toda la degradación está implementada y documentada (tabla de códigos en `manuales/Manual_Tecnico.md`).
+
+Con un `.env` que SOLO tenga `DATABASE_URL` (la plantilla `.env.example` sirve tal cual):
+
+| Funcionalidad | Comportamiento sin Azure |
+|---|---|
+| Ingesta (CRM simulado, CSV), segmentación K-Means, etiquetas | **100% operativas** (el motor es local) |
+| Dashboard, Clientes, Segmentos, Audiencias, Ejecuciones, Fuentes | **100% operativas** |
+| Predicción por cliente (`POST /customers/{id}/predict`) | `501` informativo: "Servicio de scoring en Azure no configurado" |
+| Recomendación por segmento (`POST /segments/{id}/recommendation`) | `501` informativo (sin `AZURE_OPENAI_*`) |
+| Sugerencia de mapeo CSV (`POST /sources/csv/suggest`) | `503`: "IA no disponible" — el asistente **manual** de 3 pasos queda plenamente operativo |
+
+Es decir: sin Azure el proyecto pierde exactamente las tres asistencias de IA (mapa en §21) y conserva todo el recorrido de datos → segmentos → audiencias → campañas. Las 10 suites de pruebas corren igual en CI (la IA se prueba con mocks; ver `tests/test_recommendations.py` y `tests/test_sources.py`).

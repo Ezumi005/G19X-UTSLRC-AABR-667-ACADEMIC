@@ -54,6 +54,7 @@ class PredictionResponse(BaseModel):
     features: dict[str, float | None]
     cluster: int
     segment: SegmentRef | None
+    warnings: list[str] = []
 
 
 class SegmentSummary(BaseModel):
