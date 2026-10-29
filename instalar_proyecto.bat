@@ -10,7 +10,7 @@ REM ============================================================
 title Instalacion inicial del Motor de Segmentacion
 
 if not exist ".venv\Scripts\python.exe" (
-    echo [1/6] Creando entorno Python (.venv)...
+    echo [1/6] Creando entorno Python .venv ...
     python -m venv .venv
     if errorlevel 1 (
         echo ERROR: no se pudo crear el entorno virtual. Revisa que Python este instalado y en el PATH.
@@ -33,7 +33,7 @@ if errorlevel 1 (
 if not exist ".env" (
     echo [3/6] Creando .env desde la plantilla...
     copy .env.example .env >nul
-    echo   >>> EDITA el archivo .env con tu DATABASE_URL y credenciales de Azure antes de continuar <<<
+    echo   ** EDITA el archivo .env con tu DATABASE_URL y credenciales de Azure antes de continuar **
     notepad .env
 ) else (
     echo [3/6] .env ya existe, ok.
