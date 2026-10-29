@@ -5,6 +5,7 @@ import pandas as pd
 
 from src.ml.clustering import (
     FEATURE_COLUMNS,
+    centroids_fingerprint,
     choose_k,
     cluster_profiles,
     evaluate_ks,
@@ -108,10 +109,22 @@ def prueba_cluster_profiles():
     assert prof.loc[1, "abandoned_carts"] == 30.5
 
 
+def prueba_huella_centroides_estable():
+    """La huella de centroides es determinista: mismos datos -> misma huella; datos movidos -> huella distinta."""
+    xs = blobs_separados()
+    h1 = centroids_fingerprint(train_kmeans(xs, 2))
+    h2 = centroids_fingerprint(train_kmeans(xs, 2))
+    assert h1 == h2 and len(h1) == 16
+    movidos = xs + np.array([0.5, -0.5])
+    h3 = centroids_fingerprint(train_kmeans(movidos, 2))
+    assert h3 != h1
+
+
 if __name__ == "__main__":
     prueba_prepare_matrix()
     prueba_imputacion_cap()
     prueba_evaluate_y_choose_k()
     prueba_entrenamiento_y_estabilidad()
     prueba_cluster_profiles()
+    prueba_huella_centroides_estable()
     print("OK: clustering verificado (preparacion, imputacion, eleccion de k, estabilidad, perfiles)")

@@ -1683,6 +1683,37 @@ Commit + push + CI.
 
 ---
 
+## 29/10/2026 — 14:00
+**Tipo:** Técnico / Pruebas / Documentación (tercera ronda de observaciones del tutor)
+
+**Actividad realizada:**  
+Atendí la tercera lista del tutor ("lo que sigue"), con evidencia en código y pruebas:
+
+1. **`instalar_proyecto.bat` se detiene si algo falla:** mismo patrón que `cargar_datos.bat` — revisa `errorlevel` tras crear el venv, `pip install`, `generate_data`, `init_db` y `npm install`, con mensaje claro de qué revisar y `exit /b 1`; ya no puede terminar diciendo "Instalación terminada" con una instalación a medias.
+2. **Coherencia del artefacto reforzada con huella de centroides** (el hueco que el tutor señaló: si un CSV cambia datos pero no la cantidad de clientes, la comparación por conteo no lo veía). Implementé `clustering.centroids_fingerprint()` (sha256 corto de los centroides redondeados); `run_segmentation` guarda la huella en `segmentation_runs.params` (`centroids_sha256`) en cada run nuevo; `queries.latest_run_info()` devuelve también `params`; `scoring.artifact_coherence()` compara además la huella del run vigente contra la declarada en `models/artefacto_desplegado.json` (que ahora incluye `centroids_sha256` del artefacto desplegado); si el run vigente no registró huella, la respuesta lo dice y limita la comparación al conteo (stale=None). Hice backfill de la huella del run #9 (vigente al momento) por ser datos idénticos y deterministas.
+3. **Hallazgo real que la huella destapó:** la base tiene hoy 6,515 transacciones contra las 6,509 de la línea base (las 6 válidas del CSV de demostración que el usuario sincronizó ensayando su presentación); el conteo de clientes no cambió (498), así que la comprobación antigua lo dejaba pasar. Verificado en vivo: `predict` respondió la advertencia de huella (run #10 `0a26857952307c32` vs artefacto `933a3d1376f6c577`, entrenado con el run #4). Es el detector funcionando, no un fallo: la realineación (re-exportar artefacto + redesplegar) queda documentada en el propio JSON y en README §7; la advertencia permanecerá visible hasta realinear, por decisión de transparencia.
+4. **README con "Inicio rápido"** justo tras §1 (requisitos, los tres `.bat`, URLs y enlace a la guía) para que un evaluador no recorra 600 líneas, y §20 ahora dice explícitamente que `docker compose up` **nunca se ha ejecutado en una máquina real** y que no es la vía principal de instalación.
+5. **Pruebas nuevas/ampliadas:** `test_scoring` cubre huella igual (coherente), huella distinta con mismo conteo (desalineado), y run sin huella (verificación limitada); `test_clustering` verifica que la huella es determinista (mismos datos → misma huella; datos movidos → huella distinta).
+
+**Decisiones tomadas:**  
+- La huella se guarda en `params` del run (JSONB) y no en una tabla nueva: sin cambios de esquema, y cada run queda auto-descriptivo.
+- No redeployé el artefacto a Azure en esta ronda: la advertencia visible es el comportamiento correcto pedido por el tutor; la realineación se ofrecerá al usuario como paso siguiente (requiere despliegue en su suscripción).
+- Restauré la coherencia local tras las ingestas de las suites con un recálculo (run #10, mismos 498 clientes), que además estrenó el guardado automático de huella.
+
+**Resultado:**  
+- Suites `clustering`, `scoring`, `segmentation`, `sources` y `api` en verde + ruff limpio; verificación en vivo del ciclo: advertencia por huella presente con datos movidos y advertencia de ingesta pendiente desaparecida tras recalcular.
+
+**Archivos o componentes afectados:**  
+- Modificados: `instalar_proyecto.bat`, `src/ml/clustering.py`, `src/ml/segmentation.py`, `src/persistence/queries.py`, `src/services/scoring.py`, `src/api/routes/customers.py`, `models/artefacto_desplegado.json`, `tests/test_scoring.py`, `tests/test_clustering.py`, `README.md` (inicio rápido tras §1 + §20), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Pendiente de esta ronda: la instalación en limpio real (clon + los tres `.bat`) y, si aparece una máquina con Docker, probar `docker-compose.yml`.
+
+**Siguiente paso:**  
+Commit + push + CI; después la instalación en limpio en una carpeta nueva y su entrada de bitácora.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

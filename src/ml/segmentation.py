@@ -22,7 +22,7 @@ from psycopg.types.json import Jsonb
 from sklearn.metrics import davies_bouldin_score, silhouette_score
 
 from src.features.rfm import build_features, load_from_postgres
-from src.ml.clustering import FINAL_K, SEED, cluster_profiles, prepare_matrix, train_kmeans
+from src.ml.clustering import FINAL_K, SEED, centroids_fingerprint, cluster_profiles, prepare_matrix, train_kmeans
 from src.persistence.db import connect
 
 CLUSTER_DESCRIPTIONS = {
@@ -189,6 +189,7 @@ def run_segmentation() -> int:
 
     model = train_kmeans(xs, FINAL_K)
     labels = model.labels_
+    huella_centroides = centroids_fingerprint(model)
     metrics = {
         "silhouette": round(float(silhouette_score(xs, labels)), 4),
         "inertia": round(float(model.inertia_), 1),
@@ -214,7 +215,7 @@ def run_segmentation() -> int:
                         (
                             datetime.now(timezone.utc),
                             Jsonb(metrics),
-                            Jsonb({k: v for k, v in prep.items()}),
+                            Jsonb({**{k: v for k, v in prep.items()}, "centroids_sha256": huella_centroides}),
                             len(features),
                             run_id,
                         ),

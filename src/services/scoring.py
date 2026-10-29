@@ -33,6 +33,7 @@ def scoring_available() -> bool:
 def artifact_coherence(
     latest_run_id: int | None,
     latest_n_customers: int | None,
+    latest_fingerprint: str | None = None,
     meta_path: Path | None = None,
 ) -> dict:
     """Compara el run vigente con el run que entreno el artefacto desplegado.
@@ -40,7 +41,10 @@ def artifact_coherence(
     El artefacto remoto NO se reentrena al pulsar "Recalcular segmentos" (que
     reentrena en local): si los datos cambian, el cluster devuelto por Azure
     puede dejar de corresponder con los segmentos vigentes. Esta funcion lo
-    detecta para que la API pueda advertirlo en la respuesta (nunca ocultarlo).
+    detecta por dos vias (nunca ocultarlo):
+    - conteo de clientes distinto al de la linea base declarada, y
+    - huella de centroides (sha256 corto) distinta a la del artefacto, que
+      captura cambios en los datos aunque el conteo no se mueva.
     """
     ruta = meta_path or ARTIFACT_META_PATH
     if not ruta.exists():
@@ -54,6 +58,7 @@ def artifact_coherence(
     meta = json.loads(ruta.read_text(encoding="utf-8"))
     base_run = meta.get("run_id")
     base_n = meta.get("n_customers")
+    base_fp = meta.get("centroids_sha256")
     if latest_run_id is None:
         return {"stale": None, "note": "Sin segmentacion vigente con la que comparar."}
     if base_n is not None and latest_n_customers is not None and int(base_n) != int(latest_n_customers):
@@ -64,6 +69,24 @@ def artifact_coherence(
                 f"vigente es el #{latest_run_id} ({latest_n_customers} clientes): el cluster puede no "
                 "corresponder con los segmentos vigentes. Realinea re-exportando el artefacto y "
                 "redesplegando (README seccion 7)."
+            ),
+        }
+    if base_fp and latest_fingerprint and base_fp != latest_fingerprint:
+        return {
+            "stale": True,
+            "note": (
+                f"La huella de centroides del run vigente #{latest_run_id} ({latest_fingerprint}) difiere de la "
+                f"del artefacto desplegado ({base_fp}, entrenado con el run #{base_run}): los datos cambiaron "
+                "aunque el numero de clientes sea el mismo, y el cluster de Azure puede no corresponder. "
+                "Realinea re-exportando el artefacto y redesplegando (README seccion 7)."
+            ),
+        }
+    if base_fp and not latest_fingerprint:
+        return {
+            "stale": None,
+            "note": (
+                f"El run vigente #{latest_run_id} no registro huella de centroides: la coherencia con el "
+                "artefacto de Azure solo pudo compararse por conteo de clientes."
             ),
         }
     return {

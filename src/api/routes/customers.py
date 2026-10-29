@@ -74,9 +74,11 @@ def predict_customer(customer_id: str) -> dict:
             "clusters y etiquetas reflejen los datos vigentes."
         )
     run_info = queries.latest_run_info()
+    params_vigentes = run_info.get("params") if run_info else None
     coherencia = scoring_service.artifact_coherence(
         run_info.get("run_id") if run_info else None,
         run_info.get("n_customers") if run_info else None,
+        latest_fingerprint=(params_vigentes or {}).get("centroids_sha256"),
     )
     if coherencia["stale"] is True or coherencia["stale"] is None:
         warnings.append(coherencia["note"])

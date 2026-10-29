@@ -8,6 +8,14 @@ Construir una aplicación web que reciba datos de clientes, los normalice, calcu
 
 El proyecto se desarrolla para **PluriOne S.A. de C.V. (Develop Talent & Technology)** y se implementará inicialmente con **datos simulados**, porque no se contará con acceso a los sistemas reales de la empresa.
 
+### Inicio rápido (para revisar el proyecto sin leer todo el documento)
+
+1. **Requisitos:** Windows, Python 3.14, Node 24 y PostgreSQL 18 corriendo; copia `.env.example` a `.env` y pon tu `DATABASE_URL` (las claves de Azure son opcionales, ver §25).
+2. **Instalar (solo la primera vez):** doble clic en `instalar_proyecto.bat` (crea el entorno, instala dependencias, genera el dataset del simulador y aplica el esquema; se detiene con mensaje claro si algo falla).
+3. **Levantar y cargar:** doble clic en `levantar_proyecto.bat` y después en `cargar_datos.bat` (ingesta + segmentación).
+4. **Entrar:** se abre `http://localhost:5173` (web); la API documentada (Swagger) vive en `http://127.0.0.1:8000/docs`.
+5. **Guía completa y solución de problemas:** `manuales/Guia_de_Instalacion.md`; detalle de los scripts en §23 y arranque paso a paso en §22.
+
 ## Capturas
 
 | Dashboard (tema claro) | Dashboard (tema oscuro) |
@@ -494,7 +502,7 @@ docker compose up --build
 # frontend: http://localhost:5173 · backend: http://localhost:8000 · simulador: 8001 · postgres: 5432
 ```
 
-Archivos: `docker-compose.yml` (postgres 18 + simulador + backend + frontend nginx) y `Dockerfile` por servicio. Nota: verificado por diseño y CI; la máquina de desarrollo del proyecto no tiene Docker Desktop, por lo que la ejecución local de estos archivos queda a discreción del usuario.
+Archivos: `docker-compose.yml` (postgres 18 + simulador + backend + frontend nginx) y `Dockerfile` por servicio. Nota: verificado por diseño y CI; la máquina de desarrollo del proyecto no tiene Docker Desktop, por lo que la ejecución local de estos archivos queda a discreción del usuario. **`docker compose up` NO se ha ejecutado nunca en una máquina real (ninguna disponible con Docker): estos archivos no deben tomarse como la vía principal de instalación; la vía soportada y probada de extremo a extremo son los scripts `.bat` (§23) o el paso a paso (§22 / `manuales/Guia_de_Instalacion.md`).**
 
 ---
 

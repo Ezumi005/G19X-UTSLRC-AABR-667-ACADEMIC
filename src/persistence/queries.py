@@ -17,10 +17,10 @@ def latest_ok_run_id(conn: psycopg.Connection) -> int | None:
 
 
 def latest_run_info() -> dict | None:
-    """Run exitoso vigente: run_id y n_customers (para verificar coherencia del artefacto remoto)."""
+    """Run exitoso vigente: run_id, n_customers y params (incluye la huella de centroides)."""
     with connect() as conn, conn.cursor(row_factory=dict_row) as cur:
         cur.execute(
-            "SELECT run_id, n_customers FROM segmentation_runs WHERE status = 'ok' ORDER BY run_id DESC LIMIT 1"
+            "SELECT run_id, n_customers, params FROM segmentation_runs WHERE status = 'ok' ORDER BY run_id DESC LIMIT 1"
         )
         row = cur.fetchone()
     return dict(row) if row else None

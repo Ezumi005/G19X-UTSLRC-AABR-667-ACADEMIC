@@ -71,7 +71,7 @@ def prueba_coherencia_artefacto(tmp_path=None):
     sin_meta = artifact_coherence(8, 498, meta_path=vacio)
     assert sin_meta["stale"] is None and "no se puede verificar" in sin_meta["note"]
 
-    # Misma linea base (n_customers igual) -> coherente
+    # Misma linea base (n_customers igual, sin huella declarada) -> coherente por conteo
     meta_dir = Path(tempfile.mkdtemp())
     meta_ok = meta_dir / "meta.json"
     meta_ok.write_text(json.dumps({"run_id": 4, "n_customers": 498}), encoding="utf-8")
@@ -83,6 +83,21 @@ def prueba_coherencia_artefacto(tmp_path=None):
     meta_bad.write_text(json.dumps({"run_id": 4, "n_customers": 498}), encoding="utf-8")
     desalineado = artifact_coherence(9, 500, meta_path=meta_bad)
     assert desalineado["stale"] is True and "#9" in desalineado["note"]
+
+    # Huella de centroides: mismo conteo pero huella distinta -> desalineado (el caso que el conteo no ve)
+    meta_fp = meta_dir / "meta3.json"
+    meta_fp.write_text(
+        json.dumps({"run_id": 4, "n_customers": 498, "centroids_sha256": "aaaa111122223333"}),
+        encoding="utf-8",
+    )
+    por_huella = artifact_coherence(9, 498, latest_fingerprint="bbbb444455556666", meta_path=meta_fp)
+    assert por_huella["stale"] is True and "huella" in por_huella["note"]
+    igual_huella = artifact_coherence(9, 498, latest_fingerprint="aaaa111122223333", meta_path=meta_fp)
+    assert igual_huella["stale"] is False
+
+    # Meta con huella pero run vigente sin huella registrada -> verificacion limitada (stale None)
+    sin_huella = artifact_coherence(9, 498, latest_fingerprint=None, meta_path=meta_fp)
+    assert sin_huella["stale"] is None and "solo pudo compararse por conteo" in sin_huella["note"]
 
     # El endpoint incluye warnings en la respuesta (mock del scoring)
     _configurar_entorno(True)

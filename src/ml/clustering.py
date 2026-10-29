@@ -21,6 +21,7 @@ Uso (desde la raiz, requiere .env y base con datos):
 
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -110,6 +111,17 @@ def choose_k(metrics: pd.DataFrame) -> int:
 
 def train_kmeans(xs: np.ndarray, k: int, seed: int = SEED) -> KMeans:
     return KMeans(n_clusters=k, random_state=seed, n_init=10).fit(xs)
+
+
+def centroids_fingerprint(model: KMeans) -> str:
+    """Huella estable (sha256 corto) de los centroides del modelo.
+
+    Sirve para detectar que el artefacto desplegado en Azure ya no corresponde
+    con el run vigente aunque el numero de clientes no cambie: si los datos se
+    mueven, los centroides se mueven y la huella con ellos (README seccion 7).
+    """
+    blob = np.round(np.asarray(model.cluster_centers_, dtype=float), 6).tobytes()
+    return hashlib.sha256(blob).hexdigest()[:16]
 
 
 def stability(xs: np.ndarray, k: int, seeds: tuple[int, ...] = (0, 1, 2, 3, 4)) -> float:
