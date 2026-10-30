@@ -25,6 +25,11 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
 
   backend:
     build:
@@ -49,18 +54,19 @@ services:
       postgres:
         condition: service_healthy
       simulador:
-        condition: service_started
+        condition: service_healthy
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: ../docker/Dockerfile.frontend
+      context: .
+      dockerfile: docker/Dockerfile.frontend
       args:
         VITE_API_BASE: http://localhost:8000
     ports:
       - "5173:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_started
 
 volumes:
   pgdata:

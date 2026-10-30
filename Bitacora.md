@@ -1772,6 +1772,35 @@ Commit + push + CI de esta entrada; sin pendientes obligatorios de las rondas de
 
 ---
 
+## 29/10/2026 — 18:35
+**Tipo:** Técnico / Arquitectura (dockerización pedida por el usuario)
+
+**Actividad realizada:**  
+Dockericé el proyecto a nivel de configuración lista para usar, y documenté con honestidad hasta dónde se pudo probar:
+
+1. **`.dockerignore` nuevo (hallazgo de seguridad):** no existía, y `COPY . .` de los Dockerfiles metía a las imágenes el `.env` real (credenciales), `.venv`, `node_modules`, `data/` y el artefacto del modelo. Ahora las imágenes solo llevan código y dependencias declaradas; la plantilla `.env.example` sí viaja (es pública).
+2. **`docker/nginx.conf` nuevo:** el frontend servido por nginx quedaba sin fallback SPA (recargar `/customers` daba 404); ahora `try_files $uri /index.html` deja el enrutado a react-router, con gzip activado.
+3. **`docker-compose.yml` endurecido:** el simulador ganó healthcheck HTTP propio y el backend ya no arranca hasta que base Y simulador estén sanos (antes la ingesta podía ganarle la carrera al simulador); el build del frontend pasó a contexto raíz con su Dockerfile y nginx.conf incluidos. El pipeline completo con un solo comando: base con healthcheck → simulador sano → backend que encadena `init_db` + ingesta + segmentación + API → frontend nginx en 5173. Las variables de Azure siguen opcionales (modo sin Azure, §25).
+4. **Intento de prueba real y su bloqueo:** la máquina no tiene Docker Desktop, pero sí WSL2 con Ubuntu; intenté instalar el motor Docker dentro de WSL para probar compose sin tocar Windows y el arranque de WSL falló con `HCS_E_SERVICE_NOT_AVAILABLE`: falta el servicio de virtualización (`vmcompute`), que exige privilegios de administrador y reinicio. Decisión: no hacer cambios de sistema por mi cuenta; el estado de prueba queda declarado tal cual en README §20 (verificado por diseño/revisión/CI, nunca ejecutado; Docker no es la vía principal).
+
+**Decisiones tomadas:**  
+- No instalar Docker Desktop ni habilitar virtualización sin petición explícita del usuario con sesión elevada: es un cambio de sistema con reinicio.
+- El compose declara explícitamente `DATABASE_URL` y `SIMULATOR_URL` internos (red de compose), independiente del `.env` local: el stack es autosuficiente.
+
+**Resultado:**  
+- YAML del compose validado por parseo; Dockerfiles y nginx.conf revisados; `.dockerignore` verificado contra el contenido del zip/imagen esperada. README §20 reescrito con el pipeline, el comando de validación y el estado de prueba exacto.
+
+**Archivos o componentes afectados:**  
+- Nuevos: `.dockerignore`, `docker/nginx.conf`. Modificados: `docker/Dockerfile.frontend`, `docker-compose.yml`, `README.md` (§20), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Prueba en vivo de compose imposible en esta máquina sin admin + reinicio (vmcompute/HCS ausente); queda abierta para cualquier máquina con Docker.
+
+**Siguiente paso:**  
+Commit + push + CI; si el usuario consigue una máquina con Docker (o eleva esta con reinicio), ejecutar `docker compose up --build` y registrar el resultado.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

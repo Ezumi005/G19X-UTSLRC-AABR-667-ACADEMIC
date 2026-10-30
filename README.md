@@ -502,7 +502,11 @@ docker compose up --build
 # frontend: http://localhost:5173 · backend: http://localhost:8000 · simulador: 8001 · postgres: 5432
 ```
 
-Archivos: `docker-compose.yml` (postgres 18 + simulador + backend + frontend nginx) y `Dockerfile` por servicio. Nota: verificado por diseño y CI; la máquina de desarrollo del proyecto no tiene Docker Desktop, por lo que la ejecución local de estos archivos queda a discreción del usuario. **`docker compose up` NO se ha ejecutado nunca en una máquina real (ninguna disponible con Docker): estos archivos no deben tomarse como la vía principal de instalación; la vía soportada y probada de extremo a extremo son los scripts `.bat` (§23) o el paso a paso (§22 / `manuales/Guia_de_Instalacion.md`).**
+Archivos: `docker-compose.yml` (postgres 18 + simulador + backend + frontend nginx) y `Dockerfile` por servicio, más `docker/nginx.conf` (fallback SPA para react-router) y `.dockerignore` (deja fuera `.env`, `.venv`, `node_modules`, `data/`, artefactos y PDFs de las imágenes: ningún secreto entra a una imagen).
+
+Qué hace `docker compose up --build` en una máquina con Docker: levanta PostgreSQL con healthcheck → simulador (con healthcheck propio) → backend que encadena `init_db` + ingesta + segmentación y sirve la API (no arranca hasta que base y simulador estén sanos) → frontend compilado y servido por nginx en `http://localhost:5173`. Las variables de Azure son opcionales (`${VAR:-}`): sin ellas, el stack corre en modo sin Azure (§25).
+
+**Estado de prueba (honesto):** estos archivos están verificados por diseño, por revisión y por CI (el código que ejecutan tiene las 10 suites detrás), pero `docker compose up` **no se ha ejecutado nunca**: la máquina de desarrollo no tiene Docker Desktop y el intento de probarlo con el motor Docker dentro de WSL2 falló por falta del servicio de virtualización de Windows (`vmcompute`/HCS) que requiere privilegios de administrador y reinicio. Por tanto: **Docker NO es la vía principal de instalación**; la vía soportada y probada de extremo a extremo son los scripts `.bat` (§23) o el paso a paso (§22 / `manuales/Guia_de_Instalacion.md`). Quien disponga de una máquina con Docker puede validar el stack con el comando de arriba y reportar el resultado.
 
 ---
 
