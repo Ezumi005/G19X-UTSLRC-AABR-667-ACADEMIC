@@ -1714,6 +1714,40 @@ Commit + push + CI; después la instalación en limpio en una carpeta nueva y su
 
 ---
 
+## 29/10/2026 — 17:05
+**Tipo:** Pruebas / Técnico (instalación en limpio pedida por el tutor)
+
+**Actividad realizada:**  
+Hice la **instalación en limpio real** que pidió el tutor: cloné el repositorio (estado pusheado) en una carpeta temporal fuera del proyecto, copié un `.env` con nombre de base aislado (`motor_segmentacion_prueba`, único paso manual, el mismo que haría un evaluador al editar la plantilla) y ejecuté los tres scripts sin tocar nada más:
+
+1. `instalar_proyecto.bat`: terminó correctamente de extremo a extremo (venv, dependencias, dataset, esquema en la base aislada y npm). En el primer intento **su nuevo freno funcionó**: al fallar el esquema se detuvo con mensaje claro en lugar de decir "Instalación terminada".
+2. `levantar_proyecto.bat`: levantó simulador (8001) y frontend (5173) verificados con HTTP 200; la ventana del backend arrancó pero no pudo ligar el puerto 8000 porque en esta sesión de pruebas quedó un proceso zombie de una ejecución interrumpida mía (artefacto del entorno, no del script); con el puerto libre el backend del clon arranca y responde normal.
+3. `cargar_datos.bat`: ingesta + segmentación sobre la base aislada: run #1, 498 clientes, 6 etiquetas con las métricas de la línea base (Silhouette 0.4144).
+
+Verificación de la API del clon: 498 clientes, 6 segmentos, y `predict` con **warnings=0** (la huella de centroides del run #1 de la base pura coincide con la del artefacto desplegado: coherente, como debe ser con datos de línea base).
+
+**Hallazgos reales que la instalación en limpio destapó (y quedaron corregidos y pusheados en esta ronda):**
+- `instalar_proyecto.bat` tenía **sintaxis rota latente**: `echo` con paréntesis y redirecciones (`(.venv)`, `>>> ... <<<`) dentro de bloques `if (...)` que solo se ejecutan en máquina limpia (venv/.env ausentes); en mi máquina, con todo existente, los bloques se saltaban y nunca surfaced. Corregido y verificado en el clon (commit de fix + re-clon).
+- `src/persistence/init_db.py` tenía el nombre de base **fijo** (`motor_segmentacion`): creaba/verificaba esa base pero aplicaba el esquema a la de `DATABASE_URL`; con cualquier otro nombre en el `.env` (como el aislado de esta prueba, o el que elija un evaluador) rompía. Ahora deriva el nombre de `DATABASE_URL` (`db_name_from_url`), verificado en vivo: crea la base aislada y aplica el esquema ahí.
+
+**Decisiones tomadas:**  
+- Base aislada para la prueba y borrada al terminar (`DROP DATABASE ... WITH (FORCE)`), clon eliminado y servidores detenidos: el entorno de desarrollo queda como estaba, sin trazas en la base principal más allá de los runs ya registrados.
+- El incidente del puerto 8000 se documenta tal cual (zombie de una ejecución interrumpida de esta sesión) para que no se confunda con un defecto de los scripts.
+
+**Resultado:**  
+- Instalación en limpio **verificada de extremo a extremo** con los tres `.bat` tal como los ejecutará el evaluador; los dos defectos latentes encontrados quedaron corregidos, pusheados y cubiertos por la propia prueba en limpio.
+
+**Archivos o componentes afectados:**  
+- Solo entorno de pruebas (clon temporal y base aislada, ya eliminados). Los fixes de código/scripts de esta ronda viven en los commits `af5cddb` (sintaxis del .bat) y `1c8b631` (init_db por DATABASE_URL). `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Docker sigue sin máquina disponible para probar `docker-compose.yml` (declarado en README §20 como no probado y vía no principal).
+
+**Siguiente paso:**  
+Commit + push + CI de esta entrada; con esto queda cerrada la tercera ronda del tutor salvo el redeploy opcional del artefacto de Azure (realineación de la huella) que ofreceré al usuario.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
