@@ -1748,6 +1748,30 @@ Commit + push + CI de esta entrada; con esto queda cerrada la tercera ronda del 
 
 ---
 
+## 29/10/2026 — 18:24
+**Tipo:** Gestión / Entregables
+
+**Actividad realizada:**  
+Regeneré el **zip del código fuente** (`Motor_Segmentacion_Codigo_Fuente_v2.0.zip`, 1.66 MB, 138 archivos) con `git archive` desde `main` ya puesto al día con las tres rondas de correcciones del tutor (estaba desactualizado desde el 17/10). Verifiqué el contenido: incluye `demos/`, `manuales/`, los tres `.bat`, `models/artefacto_desplegado.json` y la plantilla `.env.example`; **no** incluye el `.env` real, `.venv`, `node_modules`, PDFs ni el artefacto binario del modelo.
+
+**Decisiones tomadas:**  
+- El zip se genera desde Git (no del sistema de archivos) para que contenga exactamente el estado versionado y sin secretos; el binario sigue ignorado por `.gitignore` y no se commitea.
+- Por indicación del usuario, los asuntos de la memoria de estadías quedan fuera del alcance del proyecto: no se toca nada relacionado en el repositorio.
+
+**Resultado:**  
+- Entregable de código fuente actualizado al estado `85c285e` (instalación en limpio verificada, huella de centroides, scripts con freno ante errores, README con inicio rápido).
+
+**Archivos o componentes afectados:**  
+- `Motor_Segmentacion_Codigo_Fuente_v2.0.zip` (regenerado, no versionado). `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno.
+
+**Siguiente paso:**  
+Commit + push + CI de esta entrada; sin pendientes obligatorios de las rondas del tutor.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
