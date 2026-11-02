@@ -52,6 +52,12 @@ def score(payload: dict, x_api_key: str | None = Header(default=None)) -> dict:
     rows = payload.get("customers") or []
     if not rows:
         raise HTTPException(status_code=400, detail="'customers' vacio")
+    for row in rows:
+        if not isinstance(row, dict) or any(c not in row for c in FEATURES[1:]):
+            raise HTTPException(
+                status_code=400,
+                detail="Cada cliente debe ser un objeto con las features del contrato de scoring.",
+            )
 
     prep = ARTIFACT["preparation"]
     cap = float(prep.get("recency_cap_dias") or 0.0)

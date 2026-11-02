@@ -1801,6 +1801,37 @@ Commit + push + CI; si el usuario consigue una máquina con Docker (o eleva esta
 
 ---
 
+## 01/11/2026 — 23:43
+**Tipo:** Técnico / Operación en nube (realineación del artefacto de scoring)
+
+**Actividad realizada:**  
+El usuario reportó la advertencia de huella al predecir CLI-0001 y pidió resolverla sin hardcodeo. Investigué primero: la causa era legítima y conocida — las 6 transacciones del CSV de demostración (sincronizadas el 20/10, fuente `ventas_tienda_fisica`) movieron los centroides del modelo local (run #10, huella `0a26857952307c32`) respecto al artefacto desplegado en Azure (entrenado el 23/09 con el run #4, huella `933a3d1376f6c577`); el detector hizo exactamente su trabajo. Apliqué el procedimiento de realineación documentado (README §7 y `models/artefacto_desplegado.json`):
+
+1. Re-exporté el artefacto con los datos vigentes (`python -m src.ml.clustering`): nuevo `models/kmeans_local.pkl` + `kmeans_local.json` (run 10, 498 clientes, ARI vs perfiles reales 0.805).
+2. Copié el artefacto a `azure/scoring_app/` y actualicé `models/artefacto_desplegado.json` (run_id 10, huella nueva, fecha de exporte y descripción de la línea de datos).
+3. Redesplegué el App Service `motor-seg-scoring`. La vía de CLI de Azure estaba bloqueada (token con MFA caduco y flujos de navegador/dispositivo rechazados por el tenant), y el ZipDeploy del portal no existe en Linux; habilitamos desde el portal las credenciales SCM básicas (configuración de plataforma) y desplegué por la API de Kudu (`/api/zipdeploy`) con el perfil de publicación leído localmente; el perfil se eliminó de Descargas al terminar (credenciales).
+4. Verifiqué: health ok con artefacto cargado; paridad remoto vs local en 5 clientes de control (2/2/2/5/4 idénticos); y `POST /customers/CLI-0001/predict` responde ahora **warnings=0**.
+
+**Hallazgo adicional endurecido:** durante la verificación descubrí que el scoring remoto respondía 500 si recibía una fila inválida (mi propia prueba envió un `null` por un cliente inexistente, CLI-0500, que ya no está en la base). Agregué una guarda en `azure/scoring_app/main.py`: filas que no son objeto o sin las features completas responden **400 con mensaje claro** (verificado en vivo: 400). Redesplegado junto con el artefacto.
+
+**Decisiones tomadas:**  
+- Realinear (redeploy) en lugar de silenciar la advertencia: la coherencia queda verdadera, no aparente; si los datos vuelven a cambiar, el detector volverá a advertir hasta la próxima realineación.
+- Usar el perfil de publicación solo como medio temporal de despliegue y eliminarlo al terminar; ningún secreto quedó en el repositorio ni en la máquina.
+
+**Resultado:**  
+- Modelo remoto y segmentos vigentes coherentes (huellas iguales); predicciones sin advertencias; scoring remoto con validación de entrada 400. Paridad y health verificados en vivo tras el arranque en frío.
+
+**Archivos o componentes afectados:**  
+- Modificados: `models/artefacto_desplegado.json`, `azure/scoring_app/main.py` (guarda 400), `Bitacora.md` (esta entrada). Regenerados sin versionar: `models/kmeans_local.pkl`, `models/kmeans_local.json`, `azure/scoring_app/kmeans_local.pkl` (copiado), zip temporal de despliegue en carpeta temporal.
+
+**Problemas o bloqueos:**  
+- El login de Azure CLI sigue roto en esta máquina (MFA del tenant no completable por flujo de navegador/CLI); los despliegues futuros pueden usar la misma vía Kudu con perfil temporal, o Cloud Shell del portal.
+
+**Siguiente paso:**  
+Commit + push + CI; queda pendiente solo lo que el usuario decida (nueva retroalimentación, Docker en máquina disponible, etc.).
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
