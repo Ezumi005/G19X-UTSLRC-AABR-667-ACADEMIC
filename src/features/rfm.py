@@ -106,6 +106,11 @@ def build_features(
 
     if reference_date is None:
         reference_date = tx["purchased_at"].max()
+        if pd.isna(reference_date):
+            # Sin transacciones no hay ancla de compra: se usa el registro mas
+            # reciente para que tenure/recency sigan siendo calculables (NaN en
+            # recency permanece: significa "sin compras", no "dato roto").
+            reference_date = customers["registered_at"].max()
     reference_date = pd.Timestamp(reference_date)
 
     base = customers.set_index("customer_id")

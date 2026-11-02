@@ -8,6 +8,7 @@ import requests
 from fastapi import APIRouter, HTTPException, Query
 
 from src.api.schemas import IngestionRunsResponse
+from src.ml.segmentation import run_segmentation_si_hay_datos
 from src.persistence import queries
 from src.persistence.ingest import run_ingestion
 
@@ -37,4 +38,11 @@ def sync_ingestion() -> dict:
             status_code=502,
             detail=f"Fuente CRM simulada no disponible en {base_url}: {exc}",
         ) from exc
-    return queries.ingestion_run_summary(run_id)
+    resumen = queries.ingestion_run_summary(run_id)
+    # Segmentos siempre vigentes: se regeneran con los datos que acaban de entrar.
+    try:
+        resumen["segmentation_run"] = run_segmentation_si_hay_datos()
+    except Exception as exc:
+        resumen["segmentation_run"] = None
+        resumen["segmentation_error"] = str(exc)[:200]
+    return resumen

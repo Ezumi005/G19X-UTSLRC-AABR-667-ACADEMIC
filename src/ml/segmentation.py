@@ -67,6 +67,21 @@ ETIQUETAS_GENERALES = (
 )
 
 
+def run_segmentation_si_hay_datos(min_clientes: int | None = None) -> int | None:
+    """Re-segmenta solo si la base tiene datos suficientes (k clientes como minimo).
+
+    Es el gancho que mantiene segmentos y graficas sincronizados con los datos
+    vigentes: lo llaman las sincronizaciones y los borrados de fuentes. Sin
+    datos suficientes devuelve None y no toca el historial.
+    """
+    from src.persistence.queries import count_customers
+
+    umbral = FINAL_K if min_clientes is None else min_clientes
+    if count_customers() < umbral:
+        return None
+    return run_segmentation()
+
+
 def label_clusters(profiles: pd.DataFrame) -> dict[int, dict]:
     """Asigna etiqueta comercial y descripcion a cada cluster segun su perfil.
 

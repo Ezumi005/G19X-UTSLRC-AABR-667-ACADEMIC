@@ -1945,6 +1945,37 @@ Commit + push + CI.
 
 ---
 
+## 02/11/2026 — 15:41
+**Tipo:** Técnico / UX (segmentos y toda la web reactivos a los datos vigentes)
+
+**Actividad realizada:**  
+El usuario reportó que, tras eliminar todas las fuentes desde la web, la vista Segmentos seguía mostrando los grupos del último run como si fueran vigentes, y pidió que todo el sistema reaccione: sin datos no se muestra nada, y con una entrada de datos los segmentos se regeneran desde cero. Investigué y encontré tres causas encadenadas:
+
+1. **Los segmentos vivían en sus tablas históricas sin puerta de validez:** `latest_segments()` devolvía el último run exitoso sin mirar si la base actual todavía lo respalda. Agregué `queries.hay_datos_segmentables()` (clientes vigentes >= k=6) y con ella se gobiernan `latest_segments`, `get_segment` y el bloque de distribución del dashboard: sin datos suficientes, la API responde vacío y la web cae en sus estados vacíos (entrada anterior de hoy).
+2. **Nada re-segmentaba al cambiar los datos:** creé `run_segmentation_si_hay_datos()` en `src/ml/segmentation.py` y lo cableé en los tres puntos donde los datos cambian: `POST /sources/{id}/sync`, `POST /ingestion/sync` y `DELETE /sources/{id}` (borrado con datos, incluida la fuente simulada). Cada entrada o salida de datos regenera los segmentos con lo vigente; si no alcanza para k=6, no toca el historial y devuelve None. La respuesta de sync/ingesta ahora incluye `segmentation_run` para trazabilidad.
+3. **`build_features` rompía con clientes sin transacciones** (fecha de referencia NaT → cast a entero con NaN): añadí el respaldo `max(registered_at)` cuando no hay ninguna compra (hallazgo destapado por el estado real de la base tras los borrados del usuario). Y `POST /segmentation/run` con datos insuficientes ahora responde **409 con explicación** en lugar de un 500 crudo.
+
+**Verificación en vivo del ciclo completo sobre la base real del usuario** (que él había dejado vacía): vacía → `/segments` 0, dashboard 0 y recálculo 409 con capturas; ingesta del simulador → segmentación automática (run 13) y 6 segmentos con capturas; retiro de la fuente simulada → 498/6,509/18,004/9,131 filas retiradas, re-segmentación None y vuelta a segmentos 0 / dashboard 0 con capturas. La base quedó vacía, como el usuario la dejó. Las 10 suites se corrieron contra una base temporal aislada (`motor_segmentacion_pruebas`, creada, usada y eliminada) para no repoblar la base del usuario; ruff y build en verde.
+
+**Decisiones tomadas:**  
+- La validez de los segmentos se define por **datos vigentes suficientes**, no por borrar historial: los runs antiguos permanecen en Ejecuciones como evidencia; lo que cambia es lo que las vistas presentan como vigente.
+- Re-segmentación automática en sync/ingesta/borrado (y botón manual conservado): el usuario nunca ve grupos desfasados ni necesita acordarse de recalcular.
+- Limpieza de un residuo QA hallado en el camino: la fuente de prueba 27 y sus 2 clientes (restos de una suite interrumpida) se retiraron con la misma semántica del producto; la base quedó 0/0/0 antes de la verificación.
+
+**Resultado:**  
+- Toda la web reacciona a los datos: sin datos, estados vacíos con acción sugerida en Dashboard, Segmentos, Clientes y Ejecuciones; con datos nuevos, segmentos y gráficas regenerados desde cero; con datos retirados, vuelta a vacío sin fantasmas históricos.
+
+**Archivos o componentes afectados:**  
+- Backend: `src/persistence/queries.py` (count_customers, hay_datos_segmentables, puertas), `src/ml/segmentation.py` (run_segmentation_si_hay_datos), `src/api/routes/sources.py` y `ingestion.py` (re-segmentación automática + segmentation_run), `src/api/routes/segments.py` (409 con datos insuficientes), `src/features/rfm.py` (ancla de referencia sin transacciones). Pruebas: `tests/test_segmentation.py`, `tests/test_sources.py`. Docs: `README.md` (§6-bis), `manuales/Manual_de_Usuario.md` (§4 reescrito sin lista hardcodeada), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno funcional. Nota operativa: un script de verificación anidó dos contextos de Playwright (no soportado) y dejó servidores sueltos; se corrigió dividiendo la verificación en dos fases con un solo contexto y limpiando procesos al cierre.
+
+**Siguiente paso:**  
+Commit + push + CI.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

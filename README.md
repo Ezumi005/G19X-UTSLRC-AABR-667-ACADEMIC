@@ -157,7 +157,7 @@ Nadie define los grupos: el algoritmo los encuentra a partir del comportamiento.
 4. **K-Means (k=6)**: agrupa clientes similares entre sí y distintos de los demás; validado con Silhouette, estabilidad y contraste contra el ground truth del simulador.
 5. **Etiquetas comerciales** (`src/ml/segmentation.py`): reglas sobre el PERFIL de cada grupo (no sobre su número) asignan "Clientes frecuentes de alto valor", "En riesgo de inactividad", etc.
 
-Se generan cada vez que se ejecuta una segmentación (`POST /segmentation/run` o `.venv\Scripts\python.exe -m src.ml.segmentation`); cada corrida conserva su historial completo (tablas `segmentation_runs`, `segments`, `customer_segments`).
+Se generan cada vez que se ejecuta una segmentación (`POST /segmentation/run` o `.venv\Scripts\python.exe -m src.ml.segmentation`); cada corrida conserva su historial completo (tablas `segmentation_runs`, `segments`, `customer_segments`). **Desde el 02/11/2026 la segmentación se recalcula sola en cada entrada o salida de datos** (toda sincronización de fuente, ingesta del simulador y borrado con datos lanzan `run_segmentation_si_hay_datos()`), y las vistas solo muestran segmentos **vigentes**: si la base no tiene clientes suficientes para k=6 (p. ej. tras eliminar todas las fuentes), `/segments` y el dashboard responden vacío y la web muestra sus estados vacíos con la acción sugerida, en lugar de runs históricos desfasados. `POST /segmentation/run` con datos insuficientes responde 409 explicándolo.
 
 ### Audiencias dinámicas: las define el usuario (reglas)
 

@@ -13,7 +13,8 @@ from src.api.schemas import (
     SegmentDetailResponse,
     SegmentsResponse,
 )
-from src.ml.segmentation import run_segmentation
+from src.ml.clustering import FINAL_K
+from src.ml.segmentation import run_segmentation_si_hay_datos
 from src.persistence import queries
 from src.services import recommendations as reco_service
 
@@ -22,8 +23,20 @@ router = APIRouter(tags=["segmentation"])
 
 @router.post("/segmentation/run")
 def run_segmentation_endpoint() -> dict:
-    """Ejecuta una segmentacion completa (features -> K-Means k=6 -> etiquetas -> PostgreSQL)."""
-    run_id = run_segmentation()
+    """Ejecuta una segmentacion completa (features -> K-Means k=6 -> etiquetas -> PostgreSQL).
+
+    Si la base vigente no tiene clientes suficientes para k=6, responde 409 con
+    una explicacion en lugar de fallar: no hay segmentos que calcular todavia.
+    """
+    run_id = run_segmentation_si_hay_datos()
+    if run_id is None:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Datos insuficientes para segmentar: se necesitan al menos "
+                f"{FINAL_K} clientes vigentes. Sincroniza una fuente desde la vista Fuentes."
+            ),
+        )
     return queries.segmentation_run_summary(run_id)
 
 

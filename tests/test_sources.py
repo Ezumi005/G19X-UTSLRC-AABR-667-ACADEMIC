@@ -55,6 +55,7 @@ def prueba_listado_y_sync():
     assert sync.status_code == 200, sync.text
     cuerpo = sync.json()
     assert cuerpo["customers_read"] == 3 and cuerpo["customers_saved"] == 2
+    assert "segmentation_run" in cuerpo, "sincronizar debe intentar re-segmentar con los datos vigentes"
 
     with connect() as conn:
         with conn.cursor() as cur:
@@ -172,6 +173,7 @@ def prueba_ciclo_de_vida_completo():
     borrado = client.delete(f"/sources/{sid}")
     assert borrado.status_code == 200, borrado.text
     assert borrado.json()["rows_removed"]["customers"] == 3, "eliminar debe retirar tambien los datos de la fuente"
+    assert "segmentation_run" in borrado.json(), "tras retirar datos, los segmentos se regeneran con lo que queda"
     with connect() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT COUNT(*) FROM customers WHERE customer_id IN ('R-1','R-2','R-3')")

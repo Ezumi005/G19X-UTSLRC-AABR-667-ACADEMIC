@@ -2,7 +2,7 @@
 
 import pandas as pd
 
-from src.ml.segmentation import _row_to_json, label_clusters
+from src.ml.segmentation import _row_to_json, label_clusters, run_segmentation_si_hay_datos
 
 
 def perfiles_prueba() -> pd.DataFrame:
@@ -141,6 +141,16 @@ def prueba_exceso_general_falla():
         assert "variantes" in str(exc)
 
 
+def prueba_resegmentacion_condicional():
+    """El gancho de re-segmentacion no toca el historial si no hay datos suficientes."""
+    from src.persistence.queries import count_customers
+
+    n = count_customers()
+    assert run_segmentation_si_hay_datos(min_clientes=n + 1) is None
+    if n >= 6:
+        assert isinstance(run_segmentation_si_hay_datos(), int)
+
+
 def prueba_row_to_json():
     serie = pd.Series({"recency_days": float("nan"), "monetary": 123.456, "label": "x"})
     resultado = _row_to_json(serie)
@@ -157,4 +167,5 @@ if __name__ == "__main__":
     prueba_variante_general_determinista()
     prueba_exceso_general_falla()
     prueba_row_to_json()
+    prueba_resegmentacion_condicional()
     print("OK: interpretacion verificada (etiquetas, prioridad, desempate, variantes, guardas, serializacion)")

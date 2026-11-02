@@ -6,6 +6,7 @@ import psycopg
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
+from src.ml.clustering import FINAL_K
 from src.persistence.db import connect
 
 
@@ -136,7 +137,25 @@ def get_customer(customer_id: str) -> dict | None:
     return out
 
 
+def count_customers() -> int:
+    """Cuantos clientes hay vigentes en la base (la segmentacion solo tiene sentido con datos)."""
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute("SELECT count(*) FROM customers")
+        return int(cur.fetchone()[0])
+
+
+def hay_datos_segmentables() -> bool:
+    """True si la base vigente alcanza para un run de k=6.
+
+    Con menos clientes que k no existen segmentos validos: las vistas deben
+    mostrar sus estados vacios en lugar de runs historicos desfasados.
+    """
+    return count_customers() >= FINAL_K
+
+
 def latest_segments() -> tuple[int | None, list[dict]]:
+    if not hay_datos_segmentables():
+        return None, []
     with connect() as conn, conn.cursor(row_factory=dict_row) as cur:
         run_id = latest_ok_run_id(conn)
         if run_id is None:
@@ -151,6 +170,8 @@ def latest_segments() -> tuple[int | None, list[dict]]:
 
 
 def get_segment(segment_id: int) -> dict | None:
+    if not hay_datos_segmentables():
+        return None
     with connect() as conn, conn.cursor(row_factory=dict_row) as cur:
         cur.execute(
             """
@@ -428,7 +449,7 @@ def dashboard_summary() -> dict:
         distribution: list[dict] = []
         last_seg: dict | None = None
         segments_profile: list[dict] = []
-        if run_id is not None:
+        if run_id is not None and total_customers >= FINAL_K:
             cur.execute(
                 "SELECT run_id, k, n_customers, started_at FROM segmentation_runs WHERE run_id = %s",
                 (run_id,),

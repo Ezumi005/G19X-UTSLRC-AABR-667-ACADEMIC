@@ -29,12 +29,13 @@ Uso típico: apertura de presentación — responde "¿cuántos clientes, cuánt
 
 ## 4. Segmentos (el núcleo del producto)
 
-1. La vista muestra los **6 segmentos** con su color, descripción comercial y número de clientes:
-   frecuentes de alto valor · navegadores sin compra · compradores ocasionales · clientes nuevos · navegadores con compra esporádica · clientes en riesgo de inactividad.
+1. La vista muestra los segmentos **que el modelo descubrió con tus datos vigentes** (típicamente 6 con la línea base: frecuentes de alto valor · navegadores sin compra · compradores ocasionales · clientes nuevos · navegadores con compra esporádica · clientes en riesgo de inactividad), con su color, descripción comercial y número de clientes. Si conectas un CSV con comportamiento distinto, las etiquetas y las gráficas cambian con él.
 2. Clic en un segmento → **detalle**: perfil medio del grupo (gasto, frecuencia, navegación, carritos abandonados…) con gráficas.
 3. **"Generar/Regenerar recomendación (IA)":** la IA comercial recibe el perfil real del segmento y devuelve estrategia, tácticas y canales sugeridos. Se guarda y puede regenerarse cuando cambien los datos.
 4. En la pestaña de segmento también puedes **crear una audiencia a partir de este segmento** y continuar en la sección 5.
-5. **"Repasar presentación"** (en la sección de segmentos): checklist preparado para la proyección de la demo.
+5. **"Recalcular segmentos":** normalmente no lo necesitas — el sistema recalcula solo cada vez que sincronizas una fuente, ingresas datos o retiras una fuente; el botón queda para relanzarlo a mano.
+
+Si no hay datos suficientes (por ejemplo, tras eliminar todas las fuentes), la vista muestra un aviso de "aún no hay segmentos" con el paso que falta, en lugar de grupos viejos: lo que ves siempre corresponde a lo que hay hoy en la base.
 
 Si aparece "… de baja actividad": es una **variante válida** de compradores ocasionales que el sistema asigna cuando hay dos grupos parecidos: significa clientes poco activos con historial.
 

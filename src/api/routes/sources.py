@@ -22,6 +22,7 @@ from src.adapters.csv_adapter import (
     leer_columnas_y_muestra,
     validar_mapeo,
 )
+from src.ml.segmentation import run_segmentation_si_hay_datos
 from src.persistence.db import connect
 from src.persistence.ingest import SIMULATED_SOURCE_ID, persist_result
 from src.persistence.queries import ingestion_run_summary
@@ -204,7 +205,15 @@ def sync_source(source_id: int) -> dict:
                 "UPDATE data_sources SET last_sync_at = %s WHERE source_id = %s",
                 (datetime.now(timezone.utc), source_id),
             )
-    return ingestion_run_summary(run_id)
+    resumen = ingestion_run_summary(run_id)
+    # Los segmentos se regeneran con los datos vigentes: la web nunca muestra
+    # grupos desfasados respecto a lo que hay en la base.
+    try:
+        resumen["segmentation_run"] = run_segmentation_si_hay_datos()
+    except Exception as exc:  # la ingesta ya quedo trazada; el recalculo se puede relanzar a mano
+        resumen["segmentation_run"] = None
+        resumen["segmentation_error"] = str(exc)[:200]
+    return resumen
 
 
 @router.get("/{source_id}/impact")
@@ -261,7 +270,11 @@ def delete_source(source_id: int) -> dict:
     """
     borrados = _borrar_datos_de(source_id)
     if source_id == SIMULATED_SOURCE_ID:
-        return {"deleted": source_id, "rows_removed": borrados}
+        return {
+            "deleted": source_id,
+            "rows_removed": borrados,
+            "segmentation_run": _resegmentar_con_lo_que_quede(),
+        }
     with connect() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT filename FROM data_sources WHERE source_id = %s", (source_id,))
@@ -271,7 +284,19 @@ def delete_source(source_id: int) -> dict:
             filename = fila[0]
             cur.execute("DELETE FROM data_sources WHERE source_id = %s", (source_id,))
     (UPLOADS_DIR / filename).unlink(missing_ok=True)
-    return {"deleted": source_id, "rows_removed": borrados}
+    return {
+        "deleted": source_id,
+        "rows_removed": borrados,
+        "segmentation_run": _resegmentar_con_lo_que_quede(),
+    }
+
+
+def _resegmentar_con_lo_que_quede() -> int | None:
+    """Tras retirar datos, los segmentos se regeneran con lo que queda (o ninguno si no queda nada)."""
+    try:
+        return run_segmentation_si_hay_datos()
+    except Exception:
+        return None
 
 
 def _borrar_datos_de(source_id: int) -> dict[str, int]:
