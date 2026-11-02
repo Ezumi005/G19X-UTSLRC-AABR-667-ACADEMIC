@@ -214,6 +214,12 @@ button:disabled { opacity: 0.6; cursor: default; }
 .predict-box { margin-top: 8px; }
 .modal-opcion { display: flex; gap: 8px; align-items: flex-start; margin: 10px 0 4px; font-size: 14px; color: var(--texto); }
 .modal-opcion input { margin-top: 2px; }
+.empty-state { text-align: center; padding: 48px 24px; color: var(--texto-suave); background: var(--panel); border: 1px dashed var(--borde); border-radius: 12px; margin: 16px 0; }
+.empty-state h3 { color: var(--texto); margin: 12px 0 6px; font-size: 18px; }
+.empty-state .actions-bar { justify-content: center; margin-top: 14px; }
+.empty-state a.btn-secondary { display: inline-flex; align-items: center; gap: 6px; }
+.chart-vacio { padding: 36px 12px; text-align: center; }
+.chart-ancho { grid-column: 1 / -1; }
 .warn-box { background: var(--aviso-bg); border: 1px solid var(--aviso-borde); border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; }
 .warn-box p { margin: 4px 0; font-size: 13.5px; color: #7a5b00; }
 

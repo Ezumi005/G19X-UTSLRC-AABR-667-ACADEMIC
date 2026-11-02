@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Bar,
   BarChart,
@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { fetchDashboard, fmtNumber } from "../api.ts";
+import EmptyState from "../EmptyState.tsx";
 import InfoTip from "../InfoTip.tsx";
 import { SkeletonBlocks, SkeletonCards } from "../Skeleton.tsx";
 import { useSettings } from "../settings.tsx";
@@ -107,6 +108,25 @@ export default function Dashboard() {
     );
   }
 
+  if (data.total_customers === 0 && data.total_transactions === 0) {
+    return (
+      <section>
+        <h1>Dashboard</h1>
+        <EmptyState
+          titulo="Sin datos todavía"
+          accion={
+            <Link to="/sources" className="btn-secondary">
+              Conectar una fuente
+            </Link>
+          }
+        >
+          Este panel se dibuja solo con lo que haya en la base: en cuanto sincronices un CSV o el
+          CRM simulado desde la vista Fuentes, aquí aparecen clientes, segmentos y compras.
+        </EmptyState>
+      </section>
+    );
+  }
+
   const idPorSegmento = new Map(
     data.segments_distribution.map((s, i) => [i, s.segment_id]),
   );
@@ -171,7 +191,23 @@ export default function Dashboard() {
       </div>
 
       <div className="chart-grid">
-        <ChartCard titulo="Clientes por segmento (clic para ver el detalle)">
+        {data.segments_distribution.length === 0 ? (
+          <div className="chart-card chart-ancho">
+            <EmptyState
+              titulo="Hay datos, pero aún no hay segmentos calculados"
+              accion={
+                <Link to="/segments" className="btn-secondary">
+                  Calcular segmentos
+                </Link>
+              }
+            >
+              Pulsa "Recalcular segmentos" y estas gráficas se dibujarán con las etiquetas que
+              descubra el modelo sobre tus datos vigentes.
+            </EmptyState>
+          </div>
+        ) : (
+          <>
+            <ChartCard titulo="Clientes por segmento (clic para ver el detalle)">
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={distribucion} layout="vertical" margin={{ left: 8, right: 16 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--borde)" horizontal={false} />
@@ -243,8 +279,13 @@ export default function Dashboard() {
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
+          </>
+        )}
 
         <ChartCard titulo="Compras por categoría (top 8)">
+          {categorias.length === 0 ? (
+            <p className="muted chart-vacio">Sin compras registradas todavía: sincroniza una fuente con transacciones.</p>
+          ) : (
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={categorias} margin={{ left: 0, right: 8, bottom: 34 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--borde)" vertical={false} />
@@ -257,9 +298,10 @@ export default function Dashboard() {
                   />
                 }
               />
-              <Bar dataKey="compras" fill="#d9a44b" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+            <Bar dataKey="compras" fill="#d9a44b" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+          )}
         </ChartCard>
       </div>
     </section>

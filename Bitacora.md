@@ -1915,6 +1915,36 @@ Commit + push + CI.
 
 ---
 
+## 02/11/2026 — 13:21
+**Tipo:** Técnico / UX (sistema 100% reactivo a los datos, pedido del usuario)
+
+**Actividad realizada:**  
+El usuario pidió que **todo el sistema reaccione a los datos reales**: si no hay datos, que no se muestre nada; si los segmentos o categorías cambian con un CSV nuevo, que las gráficas cambien con ellos; nada hardcodeado. Auditoría previa: las series y colores ya derivaban de la API (paleta por módulo, etiquetas y categorías desde los datos), pero **no existían estados vacíos**: con la base sin datos el dashboard dibujaba gráficas vacías y ceros sin explicación. Implementé:
+
+1. **Componente `EmptyState`** reutilizable (icono, título, explicación y acción sugerida).
+2. **Dashboard:** sin clientes ni transacciones → estado vacío "Sin datos todavía" con botón a Fuentes (no se dibuja ninguna gráfica); con datos pero sin segmentación → tarjetas de totales + estado vacío "Hay datos, pero aún no hay segmentos" con botón a Segmentos; cada gráfica individual muestra aviso propio si su serie está vacía (p. ej. categorías sin compras). Con segmentos nuevos o etiquetas distintas, las tres gráficas de segmento y sus colores se redibujan desde la respuesta de `/dashboard` (nada fijo a 6 segmentos).
+3. **Segmentos:** sin runs → estado vacío con CTA a Fuentes (el botón Recalcular sigue arriba). **Clientes:** total 0 → estado vacío con CTA a Fuentes en lugar de tabla vacía. **Ejecuciones:** mensajes de lista vacía para segmentaciones e ingestiones. Audiencias ya tenía el suyo.
+4. **Verificación real con base vacía:** creé `motor_segmentacion_vacia` (esquema completo, cero filas), levanté backend contra ella y la web por defecto, y capturé los estados vacíos de Dashboard, Segmentos, Clientes, Ejecuciones y Fuentes; después repetí contra la base real para confirmar que con datos todo se dibuja igual que antes. Capturas en carpeta temporal de verificación. Base vacía eliminada y servidores de prueba detenidos al terminar.
+5. Backend sin cambios: `/dashboard` ya respondía seguro con base vacía (coalesce y listas vacías); la reactividad vive del contrato API → UI.
+
+**Decisiones tomadas:**  
+- Estados vacíos con **acción sugerida** (conectar fuente / calcular segmentos) en lugar de pantallas muertas: el sistema guía al usuario hacia el paso que falta.
+- No se tocó CORS ni se agregaron puertos nuevos: la verificación usó el puerto por defecto con la base vacía detrás, y luego se restauró.
+
+**Resultado:**  
+- `npm run build` en verde; verificación visual de 7 capturas (5 vacías + 2 con datos) coherente con lo esperado; sin regresiones en las suites (sin cambios de backend ni de pruebas en este avance).
+
+**Archivos o componentes afectados:**  
+- Nuevos: `frontend/src/EmptyState.tsx`. Modificados: `frontend/src/pages/{Dashboard,Segments,Customers,Runs}.tsx`, `frontend/src/styles.css` (`.empty-state`, `.chart-vacio`, `.chart-ancho`), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno. Nota operativa: los lanzamientos de procesos ocultos resultaron poco fiables en esta sesión (puertos zombie y salidas vacías); la verificación se hizo con un script que gestiona sus propios servidores y los mata al final.
+
+**Siguiente paso:**  
+Commit + push + CI.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

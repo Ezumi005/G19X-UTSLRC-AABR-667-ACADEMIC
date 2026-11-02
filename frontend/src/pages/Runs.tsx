@@ -22,6 +22,12 @@ function IngestionHistory() {
       <p className="muted">
         Qué datos entraron y con qué calidad. Se muestra guardados/leídos por tipo de registro.
       </p>
+      {runs.length === 0 && (
+        <p className="muted chart-vacio">
+          Sin ingestiones todavía: sincroniza una fuente desde la vista Fuentes.
+        </p>
+      )}
+      {runs.length > 0 && (
       <table className="table">
         <thead>
           <tr>
@@ -54,6 +60,7 @@ function IngestionHistory() {
           ))}
         </tbody>
       </table>
+      )}
     </>
   );
 }
@@ -84,6 +91,12 @@ export default function Runs() {
       <p className="muted">
         Historial de confianza: qué ejecutó el sistema, cuándo y con qué calidad. Vista de soporte.
       </p>
+      {runs.length === 0 && (
+        <p className="muted chart-vacio">
+          Sin ejecuciones de segmentación todavía: calcula segmentos desde la vista Segmentos.
+        </p>
+      )}
+      {runs.length > 0 && (
       <table className="table">
         <thead>
           <tr>
@@ -114,6 +127,7 @@ export default function Runs() {
           ))}
         </tbody>
       </table>
+      )}
       <IngestionHistory />
     </section>
   );

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchSegments, fmtNumber, runSegmentation } from "../api.ts";
 import { useFeedback } from "../Feedback.tsx";
+import EmptyState from "../EmptyState.tsx";
 import InfoTip from "../InfoTip.tsx";
 import { SkeletonCards } from "../Skeleton.tsx";
 import type { SegmentsPage } from "../types.ts";
@@ -57,21 +58,35 @@ export default function Segments() {
           {recalculando ? "Recalculando…" : "Recalcular segmentos"}
         </button>
       </div>
-      <div className="segment-grid">
-        {data.data.map((s) => (
-          <Link key={s.segment_id} to={`/segments/${s.segment_id}`} className="segment-card">
-            <div className="segment-head">
-              <span className="badge">{s.label}</span>
-              <span className="cluster-tag">Cluster {s.cluster_id}</span>
-            </div>
-            <div className="segment-n">
-              <b>{fmtNumber(s.n_customers)}</b> clientes
-              <span className="share"> · {total > 0 ? ((s.n_customers / total) * 100).toFixed(1) : 0}%</span>
-            </div>
-            <p className="segment-desc">{s.description}</p>
-          </Link>
-        ))}
-      </div>
+      {data.data.length === 0 ? (
+        <EmptyState
+          titulo="Aún no hay segmentos"
+          accion={
+            <Link to="/sources" className="btn-secondary">
+              Conectar una fuente
+            </Link>
+          }
+        >
+          Cuando existan datos (un CSV sincronizado o el CRM simulado), pulsa "Recalcular segmentos"
+          y el modelo descubrirá los grupos con sus etiquetas comerciales.
+        </EmptyState>
+      ) : (
+        <div className="segment-grid">
+          {data.data.map((s) => (
+            <Link key={s.segment_id} to={`/segments/${s.segment_id}`} className="segment-card">
+              <div className="segment-head">
+                <span className="badge">{s.label}</span>
+                <span className="cluster-tag">Cluster {s.cluster_id}</span>
+              </div>
+              <div className="segment-n">
+                <b>{fmtNumber(s.n_customers)}</b> clientes
+                <span className="share"> · {total > 0 ? ((s.n_customers / total) * 100).toFixed(1) : 0}%</span>
+              </div>
+              <p className="segment-desc">{s.description}</p>
+            </Link>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

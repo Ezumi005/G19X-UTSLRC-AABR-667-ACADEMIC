@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Search, Sparkles } from "lucide-react";
 import { useFeedback } from "../Feedback.tsx";
+import EmptyState from "../EmptyState.tsx";
 import InfoTip from "../InfoTip.tsx";
 import { SkeletonRows } from "../Skeleton.tsx";
 import {
@@ -127,7 +128,20 @@ export default function Customers() {
       </div>
 
       {!page && <SkeletonRows n={6} columnas={5} />}
-      {page && (
+      {page && page.total === 0 && (
+        <EmptyState
+          titulo="Sin clientes todavía"
+          accion={
+            <Link to="/sources" className="btn-secondary">
+              Conectar una fuente
+            </Link>
+          }
+        >
+          Sube tu CSV principal o sincroniza el CRM simulado desde la vista Fuentes; los clientes
+          aparecerán aquí en cuanto existan datos.
+        </EmptyState>
+      )}
+      {page && page.total > 0 && (
       <table className="table">
         <thead>
           <tr>
