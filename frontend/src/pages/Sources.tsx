@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   CloudUpload,
   FileSpreadsheet,
+  FileUp,
   RefreshCw,
   Sparkles,
   Trash2,
@@ -14,6 +15,8 @@ import {
   fetchEntitySchema,
   fetchSources,
   fmtDate,
+  replaceSourceFile,
+  sourceImpact,
   suggestCsvMapping,
   syncSource,
   uploadSourceCsv,
@@ -22,7 +25,7 @@ import {
 import { useFeedback } from "../Feedback.tsx";
 import InfoTip from "../InfoTip.tsx";
 import { SkeletonRows } from "../Skeleton.tsx";
-import type { DataSourceItem, Suggestion, UploadResult, ValidationSummary } from "../types.ts";
+import type { DataSourceItem, SourceImpact, Suggestion, UploadResult, ValidationSummary } from "../types.ts";
 
 const ENTIDADES: { id: string; label: string }[] = [
   { id: "customers", label: "Clientes" },
@@ -32,16 +35,28 @@ const ENTIDADES: { id: string; label: string }[] = [
 ];
 
 const etiquetaEntidad = (id: string) => ENTIDADES.find((e) => e.id === id)?.label ?? id;
-function Wizard({ onCreada }: { onCreada: () => void }) {
+
+const resumenImpacto = (i: SourceImpact) =>
+  `${i.customers} clientes, ${i.transactions} transacciones, ${i.interactions} interacciones y ${i.campaign_events} eventos`;
+
+function Wizard({
+  onCreada,
+  actualizando,
+  onCancelar,
+}: {
+  onCreada: () => void;
+  actualizando: DataSourceItem | null;
+  onCancelar: () => void;
+}) {
   const { toast } = useFeedback();
   const inputArchivo = useRef<HTMLInputElement>(null);
 
   const [paso, setPaso] = useState<1 | 2 | 3>(1);
   const [subida, setSubida] = useState<UploadResult | null>(null);
-  const [nombre, setNombre] = useState("");
-  const [entidad, setEntidad] = useState("customers");
+  const [nombre, setNombre] = useState(actualizando?.name ?? "");
+  const [entidad, setEntidad] = useState(actualizando?.entity ?? "customers");
   const [campos, setCampos] = useState<Record<string, boolean>>({});
-  const [mapeo, setMapeo] = useState<Record<string, string>>({});
+  const [mapeo, setMapeo] = useState<Record<string, string>>(actualizando?.mapping ?? {});
   const [sugerencia, setSugerencia] = useState<Suggestion | null>(null);
   const [sugiriendo, setSugiriendo] = useState(false);
   const [validacion, setValidacion] = useState<ValidationSummary | null>(null);
@@ -67,7 +82,9 @@ function Wizard({ onCreada }: { onCreada: () => void }) {
     try {
       const resultado = await uploadSourceCsv(archivo);
       setSubida(resultado);
-      setNombre(archivo.name.replace(/\.csv$/i, ""));
+      if (!actualizando) {
+        setNombre(archivo.name.replace(/\.csv$/i, ""));
+      }
       setValidacion(null);
       setSugerencia(null);
       setPaso(2);
@@ -83,7 +100,9 @@ function Wizard({ onCreada }: { onCreada: () => void }) {
     try {
       const s = await suggestCsvMapping(token);
       setSugerencia(s);
-      setEntidad(s.entity);
+      if (!actualizando) {
+        setEntidad(s.entity);
+      }
       setMapeo((prev) => {
         const nuevo: Record<string, string> = { ...prev };
         for (const [campo, columna] of Object.entries(s.mapping)) {
@@ -122,17 +141,30 @@ function Wizard({ onCreada }: { onCreada: () => void }) {
     if (!subida) return;
     setGuardando(true);
     try {
-      const creada = await createCsvSource({
-        name: nombre.trim() || subida.filename,
-        entity: entidad,
-        upload_token: subida.upload_token,
-        mapping: mapeo,
-      });
-      if (sincronizar) {
-        await syncSource(creada.source_id);
-        toast(`Fuente '${creada.name}' creada y sincronizada.`, "exito");
+      if (actualizando) {
+        await replaceSourceFile(actualizando.source_id, {
+          upload_token: subida.upload_token,
+          mapping: mapeo,
+        });
+        if (sincronizar) {
+          await syncSource(actualizando.source_id);
+          toast(`Fuente '${actualizando.name}' actualizada y sincronizada.`, "exito");
+        } else {
+          toast(`Archivo de '${actualizando.name}' reemplazado. Sincronízala cuando quieras.`, "exito");
+        }
       } else {
-        toast(`Fuente '${creada.name}' creada. Sincronízala cuando quieras.`, "exito");
+        const creada = await createCsvSource({
+          name: nombre.trim() || subida.filename,
+          entity: entidad,
+          upload_token: subida.upload_token,
+          mapping: mapeo,
+        });
+        if (sincronizar) {
+          await syncSource(creada.source_id);
+          toast(`Fuente '${creada.name}' creada y sincronizada.`, "exito");
+        } else {
+          toast(`Fuente '${creada.name}' creada. Sincronízala cuando quieras.`, "exito");
+        }
       }
       reiniciar();
       onCreada();
@@ -148,8 +180,9 @@ function Wizard({ onCreada }: { onCreada: () => void }) {
     setSubida(null);
     setSugerencia(null);
     setValidacion(null);
-    setMapeo({});
-    setEntidad("customers");
+    setMapeo(actualizando?.mapping ?? {});
+    setEntidad(actualizando?.entity ?? "customers");
+    setNombre(actualizando?.name ?? "");
     if (inputArchivo.current) {
       inputArchivo.current.value = "";
     }
@@ -157,13 +190,17 @@ function Wizard({ onCreada }: { onCreada: () => void }) {
 
   return (
     <div className="chart-card wizard">
-      <h3>Nueva fuente CSV {paso > 1 && <span className="muted">· paso {paso} de 3</span>}</h3>
+      <h3>
+        {actualizando ? `Actualizar archivo de '${actualizando.name}'` : "Nueva fuente CSV"}{" "}
+        {paso > 1 && <span className="muted">· paso {paso} de 3</span>}
+      </h3>
 
       {paso === 1 && (
         <div className="wizard-subir">
           <p className="muted">
-            Sube un archivo .csv con cualquier estructura: la IA sugerirá a qué entidad del
-            contrato corresponde y cómo mapear cada columna. Tú confirmas.
+            {actualizando
+              ? "Sube la nueva versión del CSV: se conservan el nombre y la entidad de la fuente; el mapeo viene precargado y la IA puede volver a sugerirlo."
+              : "Sube un archivo .csv con cualquier estructura: la IA sugerirá a qué entidad del contrato corresponde y cómo mapear cada columna. Tú confirmas."}
           </p>
           <input
             ref={inputArchivo}
@@ -176,6 +213,11 @@ function Wizard({ onCreada }: { onCreada: () => void }) {
               }
             }}
           />
+          {actualizando && (
+            <button className="btn-secondary" onClick={onCancelar}>
+              Cancelar actualización
+            </button>
+          )}
         </div>
       )}
 
@@ -198,11 +240,16 @@ function Wizard({ onCreada }: { onCreada: () => void }) {
           <div className="filter-bar">
             <label>
               Nombre de la fuente{" "}
-              <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Mis clientes" />
+              <input
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                placeholder="Mis clientes"
+                disabled={Boolean(actualizando)}
+              />
             </label>
             <label>
               Entidad del contrato{" "}
-              <select value={entidad} onChange={(e) => setEntidad(e.target.value)}>
+              <select value={entidad} onChange={(e) => setEntidad(e.target.value)} disabled={Boolean(actualizando)}>
                 {ENTIDADES.map((e) => (
                   <option key={e.id} value={e.id}>{e.label}</option>
                 ))}
@@ -299,10 +346,16 @@ function Wizard({ onCreada }: { onCreada: () => void }) {
           )}
           <div className="actions-bar">
             <button className="btn-secondary" onClick={() => setPaso(2)}>Ajustar mapeo</button>
-            <button onClick={() => void guardar(false)} disabled={guardando}>Guardar sin sincronizar</button>
+            <button onClick={() => void guardar(false)} disabled={guardando}>
+              {actualizando ? "Reemplazar sin sincronizar" : "Guardar sin sincronizar"}
+            </button>
             <button onClick={() => void guardar(true)} disabled={guardando}>
               <CloudUpload size={15} />
-              {guardando ? "Procesando…" : "Guardar y sincronizar"}
+              {guardando
+                ? "Procesando…"
+                : actualizando
+                  ? "Reemplazar y sincronizar"
+                  : "Guardar y sincronizar"}
             </button>
           </div>
         </div>
@@ -315,7 +368,8 @@ export default function Sources() {
   const [data, setData] = useState<DataSourceItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sincronizando, setSincronizando] = useState<number | null>(null);
-  const { toast, confirmar } = useFeedback();
+  const [actualizando, setActualizando] = useState<DataSourceItem | null>(null);
+  const { toast, confirmar, confirmarConOpcion } = useFeedback();
 
   const cargar = () => {
     fetchSources().then((r) => setData(r.data)).catch((e: unknown) => setError(String(e)));
@@ -336,17 +390,64 @@ export default function Sources() {
   };
 
   const eliminar = async (fuente: DataSourceItem) => {
-    const ok = await confirmar(
-      "Eliminar fuente",
-      `¿Eliminar la fuente '${fuente.name}'? Los datos ya sincronizados se conservan.`,
-    );
-    if (!ok) return;
+    let impacto: SourceImpact;
     try {
-      await deleteSource(fuente.source_id);
-      toast(`Fuente '${fuente.name}' eliminada.`, "exito");
+      impacto = await sourceImpact(fuente.source_id);
+    } catch (e) {
+      toast(`No se pudo calcular el impacto: ${String(e)}`, "error");
+      return;
+    }
+    const total = impacto.customers + impacto.transactions + impacto.interactions + impacto.campaign_events;
+    const respuesta = await confirmarConOpcion(
+      "Eliminar fuente",
+      total > 0
+        ? `Se eliminará la conexión '${fuente.name}'. Hoy aporta ${resumenImpacto(impacto)} a la base.`
+        : `Se eliminará la conexión '${fuente.name}' (no tiene datos vigentes atribuibles).`,
+      "Eliminar también los datos aportados por esta fuente",
+    );
+    if (!respuesta.ok) return;
+    try {
+      const r = await deleteSource(fuente.source_id, respuesta.conOpcion);
+      const quitados = Object.values(r.rows_removed).reduce((a, b) => a + b, 0);
+      toast(
+        respuesta.conOpcion
+          ? `Fuente '${fuente.name}' eliminada junto con ${quitados} filas de datos.`
+          : `Fuente '${fuente.name}' eliminada; sus datos siguen en la base.`,
+        "exito",
+      );
       cargar();
     } catch (e) {
       toast(`No se pudo eliminar: ${String(e)}`, "error");
+    }
+  };
+
+  const retirarDatosSimulados = async (fuente: DataSourceItem) => {
+    let impacto: SourceImpact;
+    try {
+      impacto = await sourceImpact(fuente.source_id);
+    } catch (e) {
+      toast(`No se pudo calcular el impacto: ${String(e)}`, "error");
+      return;
+    }
+    const total = impacto.customers + impacto.transactions + impacto.interactions + impacto.campaign_events;
+    if (total === 0) {
+      toast("El CRM simulado no tiene datos vigentes en la base.", "info");
+      return;
+    }
+    const ok = await confirmar(
+      "Retirar datos del CRM simulado",
+      `Se eliminarán ${resumenImpacto(impacto)} aportados por el CRM simulado. ` +
+        "Podrás volver a ingresarlos sincronizando esta fuente o con cargar_datos.bat. " +
+        "Si tu datos principales viven en un CSV, este es el paso para que la plataforma sea tu única fuente de verdad.",
+    );
+    if (!ok) return;
+    try {
+      const r = await deleteSource(fuente.source_id, true);
+      const quitados = Object.values(r.rows_removed).reduce((a, b) => a + b, 0);
+      toast(`Datos del CRM simulado retirados (${quitados} filas).`, "exito");
+      cargar();
+    } catch (e) {
+      toast(`No se pudieron retirar los datos: ${String(e)}`, "error");
     }
   };
 
@@ -356,12 +457,21 @@ export default function Sources() {
     <section>
       <h1>Fuentes de datos</h1>
       <p className="muted">
-        Conecta datos de cualquier origen: sube un CSV y la IA sugiere el mapeo al
-        contrato <InfoTip termino="contrato" /> interno; tú confirmas y sincronizas.
-        Cambiar de fuente nunca toca el motor.
+        Todo el ciclo de vida de tus datos vive aquí: sube un CSV (la IA sugiere el mapeo al
+        contrato <InfoTip termino="contrato" /> interno y tú confirmas), actualiza su archivo cuando
+        cambie, sincroniza y, si lo retiras, eliges si sus datos se van con él. Cambiar de fuente
+        nunca toca el motor.
       </p>
 
-      <Wizard onCreada={cargar} />
+      <Wizard
+        key={actualizando?.source_id ?? "nueva"}
+        onCreada={() => {
+          cargar();
+          setActualizando(null);
+        }}
+        actualizando={actualizando}
+        onCancelar={() => setActualizando(null)}
+      />
 
       <h2>Fuentes conectadas</h2>
       {!data && <SkeletonRows n={3} columnas={4} />}
@@ -386,7 +496,7 @@ export default function Sources() {
                 <td>{fuente.detail ?? etiquetaEntidad(fuente.entity)}</td>
                 <td>{fuente.last_sync_at ? fmtDate(fuente.last_sync_at) : "—"}</td>
                 <td>
-                  {fuente.type !== "simulada" && (
+                  {fuente.type !== "simulada" ? (
                     <>
                       <button
                         className="btn-secondary"
@@ -396,10 +506,17 @@ export default function Sources() {
                         <RefreshCw size={14} className={sincronizando === fuente.source_id ? "girando" : undefined} />
                         Sincronizar
                       </button>{" "}
+                      <button className="btn-secondary" onClick={() => setActualizando(fuente)}>
+                        <FileUp size={14} /> Actualizar archivo
+                      </button>{" "}
                       <button className="btn-secondary" onClick={() => void eliminar(fuente)}>
                         <Trash2 size={14} />
                       </button>
                     </>
+                  ) : (
+                    <button className="btn-secondary" onClick={() => void retirarDatosSimulados(fuente)}>
+                      <Trash2 size={14} /> Retirar sus datos
+                    </button>
                   )}
                 </td>
               </tr>

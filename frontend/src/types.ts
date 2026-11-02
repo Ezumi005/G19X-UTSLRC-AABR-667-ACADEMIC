@@ -155,6 +155,13 @@ export interface Prediction {
   warnings?: string[];
 }
 
+export interface SourceImpact {
+  customers: number;
+  transactions: number;
+  interactions: number;
+  campaign_events: number;
+}
+
 export interface SegmentationRun {
   run_id: number;
   model_name: string;

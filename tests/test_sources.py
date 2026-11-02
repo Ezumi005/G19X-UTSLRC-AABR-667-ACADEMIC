@@ -137,6 +137,55 @@ def prueba_token_invalido_controlado():
         assert "Token" in r.json()["detail"]
 
 
+def prueba_ciclo_de_vida_completo():
+    """Reemplazar el archivo de una fuente, sincronizar, medir impacto y borrarla con sus datos."""
+    csv_a = io.BytesIO("ident,edad,ciudad,alta\nR-1,30,Morelia,2024-01-01\nR-2,41,Toluca,2023-05-05\n".encode("utf-8"))
+    subida_a = client.post("/sources/csv/upload", files={"archivo": ("a.csv", csv_a, "text/csv")})
+    token_a = subida_a.json()["upload_token"]
+    creacion = client.post("/sources/csv", json={"name": "Ciclo vida", "entity": "customers", "upload_token": token_a, "mapping": MAPEO})
+    sid = creacion.json()["source_id"]
+    assert client.post(f"/sources/{sid}/sync").status_code == 200
+
+    with connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT city, source_id FROM customers WHERE customer_id = 'R-1'")
+            ciudad, fuente = cur.fetchone()
+    assert ciudad == "Morelia" and fuente == sid, "la fila debe quedar sellada con su fuente"
+
+    csv_b = io.BytesIO(
+        "ident,edad,ciudad,alta\nR-1,30,Morelia Norte,2024-01-01\nR-2,41,Toluca,2023-05-05\nR-3,22,Puebla,2025-02-02\n".encode("utf-8")
+    )
+    subida_b = client.post("/sources/csv/upload", files={"archivo": ("b.csv", csv_b, "text/csv")})
+    token_b = subida_b.json()["upload_token"]
+    reemplazo = client.post(f"/sources/{sid}/replace", json={"upload_token": token_b, "mapping": MAPEO})
+    assert reemplazo.status_code == 200, reemplazo.text
+    assert client.post(f"/sources/{sid}/sync").status_code == 200
+
+    impacto = client.get(f"/sources/{sid}/impact").json()
+    assert impacto["customers"] == 3, impacto
+
+    with connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT city FROM customers WHERE customer_id = 'R-1'")
+            assert cur.fetchone()[0] == "Morelia Norte", "el reemplazo debe actualizar al sincronizar"
+
+    borrado = client.delete(f"/sources/{sid}?datos=true")
+    assert borrado.status_code == 200, borrado.text
+    assert borrado.json()["rows_removed"]["customers"] == 3
+    with connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM customers WHERE customer_id IN ('R-1','R-2','R-3')")
+            assert cur.fetchone()[0] == 0, "borrar con datos debe retirar las filas de la fuente"
+    assert client.get(f"/sources/{sid}/impact").status_code == 200
+
+
+def prueba_fuente_simulada_protegida():
+    """La fuente integrada no puede 'eliminarse' como conexion: solo retirar sus datos."""
+    r = client.delete("/sources/0")
+    assert r.status_code == 400
+    assert "integrada" in r.json()["detail"]
+
+
 if __name__ == "__main__":
     prueba_mapeo_incompleto_rechazado()
     prueba_token_invalido_controlado()
@@ -145,4 +194,6 @@ if __name__ == "__main__":
     prueba_limpieza(sid)
     prueba_sugerencia_ia_con_mock()
     prueba_sugerencia_ia_no_disponible()
-    print("OK: fuentes CSV verificadas (manual + token seguro + 422 controlado + IA con mock + degradacion 503)")
+    prueba_ciclo_de_vida_completo()
+    prueba_fuente_simulada_protegida()
+    print("OK: fuentes CSV verificadas (manual + token seguro + 422 controlado + IA con mock + degradacion 503 + ciclo de vida completo)")

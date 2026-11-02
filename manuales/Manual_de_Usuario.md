@@ -56,7 +56,14 @@ Asistente de 3 pasos; en cada paso tú confirmas (la IA jamás toca la base dire
 3. **Validar:** el sistema hace una prueba en seco: cuántas filas son válidas, cuáles se descartan y por qué (se muestran las primeras incidencias) y una vista previa del resultado ya adaptado.
 4. **Guardar** (opción: guardar y sincronizar ya). Tras sincronizar, los datos entran a la base con la misma trazabilidad que cualquier fuente y están disponibles en segmentos/audiencias/dashboard.
 
-Después puedes **sincronizar** de nuevo si el archivo cambia, o **eliminar** la fuente (los datos ya sincronizados se conservan).
+Después de crearla, cada fuente tiene su ciclo de vida completo en esta misma vista:
+
+- **Sincronizar:** vuelve a leer su archivo y mete los datos nuevos o corregidos a la base.
+- **Actualizar archivo:** sube una nueva versión del CSV de esa fuente (por ejemplo, tu lista de ventas del mes); el nombre y la entidad se conservan, el mapeo viene precargado y puedes ajustarlo o pedir de nuevo la sugerencia de la IA; al reemplazar y sincronizar, los datos vigentes de esa fuente quedan actualizados.
+- **Eliminar (basura):** el sistema te dice cuántas filas aporta hoy esa fuente (clientes, transacciones, interacciones y eventos) y te pregunta con una casilla si quieres **eliminar también esos datos** o conservarles en la base sin su conexión.
+- **Retirar datos del CRM simulado:** la fuente integrada también se gestiona aquí: si decides que tus datos principales viven en un CSV, puedes retirar las filas del simulador desde la plataforma (y volver a ingresarlas cuando quieras sincronizándola de nuevo).
+
+Así, todo el ciclo —meter el CSV principal, actualizarlo, cambiarlo por otro totalmente nuevo o retirarlo— ocurre en la plataforma, sin tocar el backend ni la base a mano.
 
 > Si la IA no está disponible, el asistente manual funciona igual: elige entidad y mapea cada columna.
 

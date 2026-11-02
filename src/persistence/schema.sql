@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS customers (
     age           INT CHECK (age IS NULL OR (age >= 0 AND age <= 120)),
     city          TEXT,
     registered_at TIMESTAMPTZ NOT NULL,
+    source_id     INTEGER,
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -27,6 +28,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     category       TEXT NOT NULL CHECK (category IN
         ('electronica','hogar','moda','deportes','belleza','alimentos','juguetes','otros')),
     product_name   TEXT,
+    source_id      INTEGER,
     created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -40,6 +42,7 @@ CREATE TABLE IF NOT EXISTS interactions (
         ('web_visit','product_view','abandoned_cart')),
     occurred_at      TIMESTAMPTZ NOT NULL,
     product_name     TEXT,
+    source_id        INTEGER,
     created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -52,10 +55,23 @@ CREATE TABLE IF NOT EXISTS campaign_events (
     event_type  TEXT NOT NULL CHECK (event_type IN
         ('sent','delivered','opened','clicked')),
     occurred_at TIMESTAMPTZ NOT NULL,
+    source_id   INTEGER,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     -- CampaignEvent no tiene ID propio: identidad compuesta (contrato, seccion 3.4)
     CONSTRAINT uq_campaign_event_identity UNIQUE (campaign_id, customer_id, event_type, occurred_at)
 );
+
+-- Trazabilidad de procedencia para gestion de ciclo de vida desde la vista Fuentes:
+-- NULL = fila anterior a esta migracion; 0 = CRM simulado; N = id de fuente CSV.
+-- Los ALTER cubren bases ya existentes (CREATE TABLE IF NOT EXISTS no las modifica).
+ALTER TABLE customers       ADD COLUMN IF NOT EXISTS source_id INTEGER;
+ALTER TABLE transactions    ADD COLUMN IF NOT EXISTS source_id INTEGER;
+ALTER TABLE interactions    ADD COLUMN IF NOT EXISTS source_id INTEGER;
+ALTER TABLE campaign_events ADD COLUMN IF NOT EXISTS source_id INTEGER;
+CREATE INDEX IF NOT EXISTS idx_customers_source       ON customers (source_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_source    ON transactions (source_id);
+CREATE INDEX IF NOT EXISTS idx_interactions_source    ON interactions (source_id);
+CREATE INDEX IF NOT EXISTS idx_campaign_events_source ON campaign_events (source_id);
 CREATE INDEX IF NOT EXISTS idx_campaign_events_customer   ON campaign_events (customer_id);
 CREATE INDEX IF NOT EXISTS idx_campaign_events_occurred_at ON campaign_events (occurred_at);
 

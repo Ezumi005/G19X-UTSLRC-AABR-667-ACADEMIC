@@ -104,7 +104,15 @@ export const createCsvSource = (payload: {
 }) => postJsonBody<{ source_id: number; name: string; entity: string }>("/sources/csv", payload);
 
 export const syncSource = (id: number) => postJson<Record<string, unknown>>(`/sources/${id}/sync`);
-export const deleteSource = (id: number) => delJson<{ deleted: number }>(`/sources/${id}`);
+export const deleteSource = (id: number, datos = false) =>
+  delJson<{ deleted: number; rows_removed: Record<string, number> }>(`/sources/${id}?datos=${datos}`);
+export const sourceImpact = (id: number) =>
+  getJson<import("./types.ts").SourceImpact>(`/sources/${id}/impact`);
+export const replaceSourceFile = (id: number, payload: { upload_token: string; mapping?: Record<string, string> }) =>
+  postJsonBody<{ source_id: number; name: string; entity: string; filename: string }>(
+    `/sources/${id}/replace`,
+    payload,
+  );
 export const fetchAudience = (id: number) =>
   getJson<import("./types.ts").AudienceDetail>(`/audiences/${id}`);
 export const createAudience = (payload: {

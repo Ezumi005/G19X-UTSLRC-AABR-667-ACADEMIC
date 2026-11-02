@@ -23,7 +23,7 @@ from src.adapters.csv_adapter import (
     validar_mapeo,
 )
 from src.persistence.db import connect
-from src.persistence.ingest import persist_result
+from src.persistence.ingest import SIMULATED_SOURCE_ID, persist_result
 from src.persistence.queries import ingestion_run_summary
 from src.services.mapping_suggest import suggest_mapping
 
@@ -31,9 +31,11 @@ router = APIRouter(prefix="/sources", tags=["sources"])
 
 UPLOADS_DIR = Path(__file__).resolve().parents[2] / "data" / "uploads"
 
-# La fuente simulada es parte del sistema (no se da de alta ni se borra)
+TABLAS_DATOS = ("customers", "transactions", "interactions", "campaign_events")
+
+# La fuente simulada es parte del sistema (no se da de alta ni se borra su conexion)
 FUENTE_SIMULADA = {
-    "source_id": 0,
+    "source_id": SIMULATED_SOURCE_ID,
     "name": "CRM simulado (integrado)",
     "type": "simulada",
     "entity": "todas",
@@ -179,7 +181,7 @@ def create_csv_source(payload: MappingPayload) -> dict:
 
 @router.post("/{source_id}/sync")
 def sync_source(source_id: int) -> dict:
-    """Sincroniza la fuente: adapta el CSV y persiste con trazabilidad."""
+    """Sincroniza la fuente: adapta el CSV y persiste con trazabilidad y procedencia."""
     with connect() as conn:
         with conn.cursor() as cur:
             cur.execute(
@@ -193,7 +195,7 @@ def sync_source(source_id: int) -> dict:
     adaptador = DynamicCSVAdapter(nombre, entidad, UPLOADS_DIR / filename, mapping)
     try:
         resultado = adaptador.fetch_normalized()
-        run_id = persist_result(resultado)
+        run_id = persist_result(resultado, source_id=source_id)
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Fallo la sincronizacion: {exc}") from exc
     with connect() as conn:
@@ -205,11 +207,82 @@ def sync_source(source_id: int) -> dict:
     return ingestion_run_summary(run_id)
 
 
-@router.delete("/{source_id}")
-def delete_source(source_id: int) -> dict:
+@router.get("/{source_id}/impact")
+def source_impact(source_id: int) -> dict:
+    """Cuantas filas vigentes aportó una fuente (para confirmar borrados desde la web)."""
+    conteos = {}
     with connect() as conn:
         with conn.cursor() as cur:
-            cur.execute("DELETE FROM data_sources WHERE source_id = %s", (source_id,))
-            if cur.rowcount == 0:
+            for tabla in TABLAS_DATOS:
+                cur.execute(f"SELECT COUNT(*) FROM {tabla} WHERE source_id = %s", (source_id,))
+                conteos[tabla] = cur.fetchone()[0]
+    return conteos
+
+
+class ReplacePayload(BaseModel):
+    upload_token: str = Field(min_length=8, max_length=64)
+    mapping: dict[str, str] | None = None
+
+
+@router.post("/{source_id}/replace")
+def replace_source_file(source_id: int, payload: ReplacePayload) -> dict:
+    """Reemplaza el archivo de una fuente existente (actualizacion del CSV desde la web).
+
+    El mapeo puede ajustarse en el mismo paso; despues se sincroniza como siempre.
+    """
+    ruta = _ruta_upload(payload.upload_token)
+    with connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT name, entity, mapping FROM data_sources WHERE source_id = %s", (source_id,))
+            fila = cur.fetchone()
+            if fila is None:
                 raise HTTPException(status_code=404, detail=f"Fuente no encontrada: {source_id}")
-    return {"deleted": source_id}
+            nombre, entidad, mapping_actual = fila
+            nuevo_mapping = payload.mapping if payload.mapping is not None else mapping_actual
+            errores = validar_mapeo(entidad, nuevo_mapping)
+            if errores:
+                raise HTTPException(status_code=400, detail="; ".join(errores))
+            cur.execute(
+                "UPDATE data_sources SET filename = %s, mapping = %s WHERE source_id = %s",
+                (ruta.name, Jsonb(nuevo_mapping), source_id),
+            )
+    return {"source_id": source_id, "name": nombre, "entity": entidad, "filename": ruta.name, "mapping": nuevo_mapping}
+
+
+@router.delete("/{source_id}")
+def delete_source(source_id: int, datos: bool = False) -> dict:
+    """Elimina una fuente; con `datos=true` retira tambien las filas que aportó.
+
+    La fuente simulada (id 0) no tiene conexion que eliminar: solo admite
+    retirar sus datos, para que la plataforma pueda gestionar todo el ciclo.
+    """
+    if source_id == SIMULATED_SOURCE_ID:
+        if not datos:
+            raise HTTPException(
+                status_code=400,
+                detail="La fuente simulada es integrada: solo puedes retirar sus datos (datos=true).",
+            )
+        borrados = _borrar_datos_de(source_id)
+        return {"deleted": source_id, "rows_removed": borrados}
+    with connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT filename FROM data_sources WHERE source_id = %s", (source_id,))
+            fila = cur.fetchone()
+            if fila is None:
+                raise HTTPException(status_code=404, detail=f"Fuente no encontrada: {source_id}")
+            filename = fila[0]
+            borrados = _borrar_datos_de(source_id) if datos else {t: 0 for t in TABLAS_DATOS}
+            cur.execute("DELETE FROM data_sources WHERE source_id = %s", (source_id,))
+    (UPLOADS_DIR / filename).unlink(missing_ok=True)
+    return {"deleted": source_id, "rows_removed": borrados}
+
+
+def _borrar_datos_de(source_id: int) -> dict[str, int]:
+    borrados: dict[str, int] = {}
+    with connect() as conn:
+        with conn.cursor() as cur:
+            for tabla in TABLAS_DATOS:
+                cur.execute(f"DELETE FROM {tabla} WHERE source_id = %s", (source_id,))
+                borrados[tabla] = cur.rowcount
+        conn.commit()
+    return borrados

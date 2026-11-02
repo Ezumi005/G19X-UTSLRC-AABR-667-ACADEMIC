@@ -16,6 +16,10 @@ from src.adapters.base import AdapterResult
 from src.persistence.db import connect
 from src.persistence.repository import save_dataset
 
+# Identificador de procedencia del CRM simulado (la fuente "integrada" de la
+# vista Fuentes). Las fuentes CSV usan su source_id de la tabla data_sources.
+SIMULATED_SOURCE_ID = 0
+
 
 def _start_run(conn, source: str) -> int:
     with conn.cursor() as cur:
@@ -63,14 +67,18 @@ def _finish_error(conn, run_id: int, error: str) -> None:
         )
 
 
-def persist_result(result: AdapterResult) -> int:
-    """Persiste el resultado de CUALQUIER adaptador con trazabilidad completa."""
+def persist_result(result: AdapterResult, source_id: int | None = None) -> int:
+    """Persiste el resultado de CUALQUIER adaptador con trazabilidad completa.
+
+    `source_id` sella la procedencia de cada fila (0 simulado, N fuente CSV)
+    para poder reemplazar o eliminar una fuente junto con sus datos.
+    """
     report = result.report
     with connect() as conn:
         run_id = _start_run(conn, report.source)
         conn.commit()
         try:
-            saved = save_dataset(conn, result.dataset)
+            saved = save_dataset(conn, result.dataset, source_id=source_id)
             _finish_ok(conn, run_id, result, saved)
             conn.commit()
         except Exception as exc:
@@ -89,7 +97,7 @@ def run_ingestion(base_url: str = "http://127.0.0.1:8001") -> int:
     adapter = SimulatedCRMAdapter(base_url)
     result = adapter.fetch_normalized()
     print(f"Ingestion [{result.report.source}]")
-    return persist_result(result)
+    return persist_result(result, source_id=SIMULATED_SOURCE_ID)
 
 
 if __name__ == "__main__":

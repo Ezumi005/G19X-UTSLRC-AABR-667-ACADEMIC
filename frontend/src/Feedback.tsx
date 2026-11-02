@@ -7,14 +7,21 @@ interface Toast {
 }
 
 interface Confirmacion {
+  id: number;
   titulo: string;
   mensaje: string;
-  resolver: (valor: boolean) => void;
+  opcionTexto?: string;
+  resolver: (valor: { ok: boolean; conOpcion: boolean }) => void;
 }
 
 interface Feedback {
   toast: (mensaje: string, tipo?: Toast["tipo"]) => void;
   confirmar: (titulo: string, mensaje: string) => Promise<boolean>;
+  confirmarConOpcion: (
+    titulo: string,
+    mensaje: string,
+    textoOpcion: string,
+  ) => Promise<{ ok: boolean; conOpcion: boolean }>;
 }
 
 const Ctx = createContext<Feedback | null>(null);
@@ -32,21 +39,31 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
     }, 4000);
   }, []);
 
-  const confirmar = useCallback(
-    (titulo: string, mensaje: string) =>
-      new Promise<boolean>((resolver) => {
-        setConfirmacion({ titulo, mensaje, resolver });
+  const abrir = useCallback(
+    (titulo: string, mensaje: string, opcionTexto?: string) =>
+      new Promise<{ ok: boolean; conOpcion: boolean }>((resolver) => {
+        setConfirmacion({ id: ++contador.current, titulo, mensaje, opcionTexto, resolver });
       }),
     [],
   );
 
-  const cerrarConfirmacion = (valor: boolean) => {
+  const confirmar = useCallback(
+    async (titulo: string, mensaje: string) => (await abrir(titulo, mensaje)).ok,
+    [abrir],
+  );
+
+  const confirmarConOpcion = useCallback(
+    (titulo: string, mensaje: string, textoOpcion: string) => abrir(titulo, mensaje, textoOpcion),
+    [abrir],
+  );
+
+  const cerrarConfirmacion = (valor: { ok: boolean; conOpcion: boolean }) => {
     confirmacion?.resolver(valor);
     setConfirmacion(null);
   };
 
   return (
-    <Ctx.Provider value={{ toast, confirmar }}>
+    <Ctx.Provider value={{ toast, confirmar, confirmarConOpcion }}>
       {children}
       <div className="toast-stack">
         {toasts.map((t) => (
@@ -56,20 +73,47 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
         ))}
       </div>
       {confirmacion && (
-        <div className="modal-fondo" onClick={() => cerrarConfirmacion(false)}>
+        <div className="modal-fondo" onClick={() => cerrarConfirmacion({ ok: false, conOpcion: false })}>
           <div className="modal-caja" onClick={(e) => e.stopPropagation()}>
             <h3>{confirmacion.titulo}</h3>
             <p>{confirmacion.mensaje}</p>
-            <div className="modal-acciones">
-              <button className="btn-secondary" onClick={() => cerrarConfirmacion(false)}>
-                Cancelar
-              </button>
-              <button onClick={() => cerrarConfirmacion(true)}>Confirmar</button>
-            </div>
+            {confirmacion.opcionTexto && <OpcionModal key={confirmacion.id} texto={confirmacion.opcionTexto} onCerrar={cerrarConfirmacion} />}
+            {!confirmacion.opcionTexto && (
+              <div className="modal-acciones">
+                <button className="btn-secondary" onClick={() => cerrarConfirmacion({ ok: false, conOpcion: false })}>
+                  Cancelar
+                </button>
+                <button onClick={() => cerrarConfirmacion({ ok: true, conOpcion: false })}>Confirmar</button>
+              </div>
+            )}
           </div>
         </div>
       )}
     </Ctx.Provider>
+  );
+}
+
+function OpcionModal({
+  texto,
+  onCerrar,
+}: {
+  texto: string;
+  onCerrar: (v: { ok: boolean; conOpcion: boolean }) => void;
+}) {
+  const [marcada, setMarcada] = useState(false);
+  return (
+    <>
+      <label className="modal-opcion">
+        <input type="checkbox" checked={marcada} onChange={(e) => setMarcada(e.target.checked)} />
+        {texto}
+      </label>
+      <div className="modal-acciones">
+        <button className="btn-secondary" onClick={() => onCerrar({ ok: false, conOpcion: false })}>
+          Cancelar
+        </button>
+        <button onClick={() => onCerrar({ ok: true, conOpcion: marcada })}>Confirmar</button>
+      </div>
+    </>
   );
 }
 

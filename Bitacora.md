@@ -1832,6 +1832,37 @@ Commit + push + CI; queda pendiente solo lo que el usuario decida (nueva retroal
 
 ---
 
+## 02/11/2026 — 10:32
+**Tipo:** Técnico / Arquitectura (ciclo de vida de datos gestionado desde la plataforma)
+
+**Actividad realizada:**  
+Atendí el pedido del usuario de que **toda la gestión de datos viva en la plataforma** (vista Fuentes), no repartida entre backend y frontend: "meter el CSV principal, actualizar, eliminar el que queramos". Implementé el ciclo de vida completo:
+
+1. **Procedencia por fila (`source_id`)** en las cuatro tablas de datos (`customers`, `transactions`, `interactions`, `campaign_events`): 0 = CRM simulado, N = fuente CSV, NULL = dato anterior a la migración. Columna en `schema.sql` (CREATE + ALTER idempotentes para bases existentes) con índices; el repositorio sella el valor en cada upsert (`save_dataset(..., source_id=...)`) y `persist_result` lo propaga; la ingesta simulada sella 0 (`SIMULATED_SOURCE_ID`).
+2. **Migración única de la base vigente:** las 6 transacciones del CSV demo se re-atribuyeron a su fuente (id 19) y el resto se selló como simulado (498/6,509/18,004/9,131 → source 0). Verificado con conteos agrupados.
+3. **Endpoints nuevos:** `GET /sources/{id}/impact` (filas vigentes por tabla, para confirmar borrados), `POST /sources/{id}/replace` (reemplaza el archivo de una fuente conservando nombre/entidad, con mapeo ajustable), y `DELETE /sources/{id}?datos=true` (retira también las filas selladas con ese source_id y borra el archivo subido). La fuente simulada (id 0) no tiene conexión que eliminar: responde 400 si se intenta y admite `datos=true` para **retirar sus datos desde la web**, que es lo que permite que un despliegue real opere 100% con CSVs de la plataforma.
+4. **Frontend Fuentes:** el asistente ahora tiene modo "Actualizar archivo de '<fuente>'" (nombre y entidad fijos, mapeo precargado, IA re-sugiere, botones "Reemplazar [y sincronizar]"); el borrado muestra el impacto real (clientes/transacciones/interacciones/eventos) y una casilla "eliminar también los datos aportados"; la fila integrada ganó el botón "Retirar sus datos" con confirmación que explica cómo re-ingresarlos. Modal de confirmación extendido con casilla opcional (`confirmarConOpcion` en `Feedback.tsx`) sin romper los usos existentes.
+5. **Verificación:** pruebas nuevas en `test_sources` (ciclo completo: sellado de procedencia, reemplazo + resincronización que actualiza filas, impacto=3, borrado con datos que deja 0 filas; y la guarda 400 de la fuente simulada) en verde junto con el resto de la suite y ruff; `npm run build` verde; verificación en vivo de `/impact` (fuente demo: 6 transacciones; simulado: 498/6,509/18,004/9,131) y del 400 protegido.
+
+**Decisiones tomadas:**  
+- El CRM simulado **no se elimina**: conserva su papel de demostración del patrón de adaptadores (RF-07) y de los scripts de arranque; lo que cambia es que ya no es la vía obligatoria de los datos principales — la plataforma puede retirarlo y operar solo con CSVs. Justificado en README §3.
+- Borrado con datos **opt-in con impacto visible**: borrar una conexión por defecto no destruye historia (regla de trazabilidad); retirar datos es una decisión explícita del usuario con conteos delante.
+- `source_id` en upserts con "último escritor gana" para la procedencia: si dos fuentes tocan la misma fila, la procedencia refleja la última sincronización (documentado en el docstring del repositorio).
+
+**Resultado:**  
+- Ciclo de vida completo desde la web: subir → sugerencia IA → validar → sincronizar → **actualizar archivo** → **eliminar con o sin datos** → **retirar datos del simulador**. Suites, ruff y build en verde; endpoints verificados en vivo.
+
+**Archivos o componentes afectados:**  
+- Backend: `src/persistence/schema.sql`, `repository.py`, `ingest.py`, `src/api/routes/sources.py`. Frontend: `pages/Sources.tsx`, `Feedback.tsx`, `api.ts`, `types.ts`, `styles.css`. Pruebas: `tests/test_sources.py`. Docs: `README.md` (§3 justificación, §9 endpoints, §10 source_id), `manuales/Manual_de_Usuario.md` (§6), `manuales/Manual_Tecnico.md` (tabla y lista de endpoints), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno. Nota operativa: había backends viejos de la sesión anterior aferrados al puerto 8000; se limpiaron antes de verificar.
+
+**Siguiente paso:**  
+Commit + push + CI; el usuario puede probar el flujo completo en la vista Fuentes (actualizar el CSV demo, ver impacto, eliminar con datos).
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

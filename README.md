@@ -64,6 +64,8 @@ La API simulada NO debe devolver directamente las features finales del modelo. D
 
 Implementación actual: `crm_simulator/` — generador de dataset con semilla fija (6 perfiles de comportamiento, ~500 clientes, 18 meses de historia) + API FastAPI en el puerto 8001. Su formato externo (`clientId`, `totalAmount` como texto, `productLine`, etc.) es deliberadamente distinto del contrato interno. El perfil real de cada cliente se guarda como ground truth en `data/meta.json` y NO se sirve por la API.
 
+**Gestión del ciclo de vida de los datos desde la plataforma (decisión del 02/11/2026, pedida por el usuario y justificada aquí):** el CRM simulado conserva su papel de *fuente externa de demostración del patrón de adaptadores*, pero deja de ser la vía obligatoria de los datos principales: **toda la gestión de datos vive en la vista Fuentes** — subir el CSV principal, actualizar su archivo cuando cambie, reemplazarlo por otro totalmente nuevo, sincronizar, y eliminar cualquier fuente eligiendo si sus datos se retiran con ella (con conteo de impacto previo). La fuente integrada también puede retirarse desde la web ("Retirar sus datos"), de modo que un despliegue real puede operar 100% con CSVs gestionados en la plataforma, sin comandos de backend. La procedencia de cada fila se sella con `source_id` (0 = simulado, N = fuente CSV) en las cuatro tablas de datos, lo que hace posibles el reemplazo y el borrado con datos sin romper la trazabilidad de Ejecuciones.
+
 **Fuentes adicionales sin código (asistidas por IA):** la vista **Fuentes** de la web permite subir cualquier CSV y conectarlo al sistema: Azure OpenAI sugiere la entidad y el mapeo de columnas (sinónimos en español/inglés, formatos de fecha diversos), el usuario revisa y confirma, se valida en seco contra el contrato y se sincroniza al pipeline normal con la misma trazabilidad (`DynamicCSVAdapter`, misma interfaz `BaseAdapter`). Los campos disponibles se derivan por introspección del contrato (`src/contracts`), sin duplicación. Las API externas (HubSpot, Salesforce…) siguen integrándose con un adaptador en código.
 
 ## 4. Contrato interno de datos
@@ -233,7 +235,7 @@ Endpoints iniciales de la aplicación:
 - `GET /segments/{id}/recommendation`
 - `POST /segments/{id}/recommendation`
 - `GET/POST/DELETE /audiences[/{id}]` (audiencias dinámicas) + `GET /audiences/{id}/export` (CSV)
-- `GET /sources` · `POST /sources/csv/upload` · `POST /sources/csv/suggest` · `POST /sources/csv/validate` · `POST /sources/csv` · `POST /sources/{id}/sync` · `DELETE /sources/{id}` (fuentes CSV con mapeo asistido por IA; `/schema/{entidad}` expone los campos del contrato por introspección)
+- `GET /sources` · `POST /sources/csv/upload` · `POST /sources/csv/suggest` · `POST /sources/csv/validate` · `POST /sources/csv` · `POST /sources/{id}/sync` · `POST /sources/{id}/replace` · `GET /sources/{id}/impact` · `DELETE /sources/{id}[?datos=true]` (fuentes CSV con mapeo asistido por IA y ciclo de vida completo: crear, actualizar archivo, sincronizar, eliminar con o sin sus datos; `/schema/{entidad}` expone los campos del contrato por introspección)
 
 Los nombres pueden cambiar, pero las responsabilidades deben mantenerse separadas.
 
@@ -256,7 +258,7 @@ Entidades mínimas esperadas:
 
 No guardar el payload externo como si fuera el modelo interno definitivo. Primero debe pasar por su adaptador y validación.
 
-Implementación actual: `src/persistence/schema.sql` — tablas `customers`, `transactions`, `interactions`, `campaign_events` (espejo del contrato V1, con CHECKs de enums), `ingestion_runs`/`ingestion_incidents` (trazabilidad de ingestiones), `segmentation_runs`/`segments`/`customer_segments` (trazabilidad de segmentaciones), `audiences` (audiencias dinámicas PRD §16: condiciones JSONB, membresía recalculada en cada consulta), `recommendations` (recomendaciones de Azure OpenAI persistidas por segmento) y `data_sources` (fuentes externas conectadas: entidad, mapeo columna→campo, última sincronización). Sin FKs en las tablas de datos: la integridad referencial corresponde al procesamiento (contrato, sección 2); las tablas de segmentación sí llevan FKs estructurales.
+Implementación actual: `src/persistence/schema.sql` — tablas `customers`, `transactions`, `interactions`, `campaign_events` (espejo del contrato V1, con CHECKs de enums), `ingestion_runs`/`ingestion_incidents` (trazabilidad de ingestiones), `segmentation_runs`/`segments`/`customer_segments` (trazabilidad de segmentaciones), `audiences` (audiencias dinámicas PRD §16: condiciones JSONB, membresía recalculada en cada consulta), `recommendations` (recomendaciones de Azure OpenAI persistidas por segmento) y `data_sources` (fuentes externas conectadas: entidad, mapeo columna→campo, última sincronización). Sin FKs en las tablas de datos: la integridad referencial corresponde al procesamiento (contrato, sección 2); las tablas de segmentación sí llevan FKs estructurales. Desde el 02/11/2026 las cuatro tablas de datos llevan además `source_id` (procedencia: 0 = CRM simulado, N = fuente CSV, NULL = dato anterior a la migración), que es lo que permite reemplazar y eliminar fuentes junto con sus datos desde la vista Fuentes (§3).
 
 ## 11. Frontend
 

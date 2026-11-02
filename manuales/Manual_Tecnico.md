@@ -26,7 +26,7 @@ Servicios de nube (opcionales; el sistema degrada sin ellos):
 | Segmentación | `python -m src.ml.segmentation` o `POST /segmentation/run` | Features → K-Means k=6 → etiquetas → `segmentation_runs`/`segments`/`customer_segments` |
 | Predicción | `POST /customers/{id}/predict` | Features del cliente → scoring Azure → cluster + etiqueta del último run |
 | Recomendación | `POST /segments/{id}/recommendation` | Perfil del segmento → Azure OpenAI → JSON comercial persistido |
-| Fuente CSV | `POST /sources/csv/upload → /suggest → /validate → POST /sources/csv → POST /sources/{id}/sync` | Subida → sugerencia IA → dry-run → creación → sincronización |
+| Fuente CSV | `POST /sources/csv/upload → /suggest → /validate → POST /sources/csv → POST /sources/{id}/sync → POST /sources/{id}/replace → GET /sources/{id}/impact → DELETE /sources/{id}?datos=true` | Subida → sugerencia IA → dry-run → creación → sincronización → actualización de archivo → impacto → borrado con o sin datos |
 
 ## 3. API — referencia operativa
 
@@ -37,7 +37,7 @@ Base `http://127.0.0.1:8000` · Swagger: `/docs`.
 **Segmentación:** `POST /segmentation/run`, `GET /segmentation/runs`, `GET /segments`, `GET /segments/{id}`, `GET|POST /segments/{id}/recommendation`
 **Dashboard:** `GET /dashboard` (KPIs, distribución, perfiles, top categorías)
 **Audiencias:** `POST /audiences`, `GET /audiences`, `GET /audiences/{id}` (membresía recalculada en vivo), `DELETE /audiences/{id}`, `GET /audiences/{id}/export` (CSV)
-**Fuentes:** `GET /sources`, `GET /sources/schema/{entidad}`, `POST /sources/csv/upload`, `POST /sources/csv/suggest`, `POST /sources/csv/validate`, `POST /sources/csv`, `POST /sources/{id}/sync`, `DELETE /sources/{id}`
+**Fuentes:** `GET /sources`, `GET /sources/schema/{entidad}`, `POST /sources/csv/upload`, `POST /sources/csv/suggest`, `POST /sources/csv/validate`, `POST /sources/csv`, `POST /sources/{id}/sync`, `GET /sources/{id}/impact`, `POST /sources/{id}/replace`, `DELETE /sources/{id}?datos=true` (sin `datos` solo quita la conexión; con `datos=true` retira también las filas selladas con ese `source_id`; la fuente simulada id 0 solo admite retirar datos)
 
 Códigos: `404` inexistente · `409` nombre duplicado (audiencia/fuente) · `422` validación (con detalle del campo) · `500` error interno controlado · `501` dependencia IA/scoring no configurada · `502` dependencia nube caída · `503` IA no disponible (sugerencias).
 
