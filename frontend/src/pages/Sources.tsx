@@ -18,6 +18,7 @@ import {
   replaceSourceFile,
   sourceImpact,
   suggestCsvMapping,
+  syncSimulatedSource,
   syncSource,
   uploadSourceCsv,
   validateCsvMapping,
@@ -421,6 +422,19 @@ export default function Sources() {
     }
   };
 
+  const sincronizarSimulado = async (fuente: DataSourceItem) => {
+    setSincronizando(fuente.source_id);
+    try {
+      await syncSimulatedSource();
+      toast("CRM simulado sincronizado: datos vigentes restablecidos desde la fuente integrada.", "exito");
+      cargar();
+    } catch (e) {
+      toast(`No se pudo sincronizar el simulador: ${String(e)}`, "error");
+    } finally {
+      setSincronizando(null);
+    }
+  };
+
   const retirarDatosSimulados = async (fuente: DataSourceItem) => {
     let impacto: SourceImpact;
     try {
@@ -514,9 +528,19 @@ export default function Sources() {
                       </button>
                     </>
                   ) : (
-                    <button className="btn-secondary" onClick={() => void retirarDatosSimulados(fuente)}>
-                      <Trash2 size={14} /> Retirar sus datos
-                    </button>
+                    <>
+                      <button
+                        className="btn-secondary"
+                        disabled={sincronizando === fuente.source_id}
+                        onClick={() => void sincronizarSimulado(fuente)}
+                      >
+                        <RefreshCw size={14} className={sincronizando === fuente.source_id ? "girando" : undefined} />
+                        Sincronizar
+                      </button>{" "}
+                      <button className="btn-secondary" onClick={() => void retirarDatosSimulados(fuente)}>
+                        <Trash2 size={14} /> Retirar sus datos
+                      </button>
+                    </>
                   )}
                 </td>
               </tr>

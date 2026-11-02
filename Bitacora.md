@@ -1863,6 +1863,29 @@ Commit + push + CI; el usuario puede probar el flujo completo en la vista Fuente
 
 ---
 
+## 02/11/2026 — 10:57
+**Tipo:** Técnico (cierre del hueco detectado por la pregunta del usuario)
+
+**Actividad realizada:**  
+El usuario preguntó dónde vive el CRM simulado y qué pasa al retirarlo desde la web. Además de responderle (vive en `crm_simulator/` + `data/*.json` + API 8001; "Retirar sus datos" solo borra las filas de PostgreSQL selladas con `source_id=0`, nunca el generador ni sus archivos ni el historial de Ejecuciones), detecté un hueco coherente con su pedido de "todo desde la plataforma": tras retirar los datos del simulador, la única vía de re-ingreso era `cargar_datos.bat` o la API, porque la fila integrada no tenía botón de sincronizar en la web. Agregué el botón **Sincronizar** a la fuente integrada (`POST /ingestion/sync` vía `syncSimulatedSource()` en `api.ts`), con su estado de carga y toast, junto al de "Retirar sus datos". Con esto el ciclo retirar → volver a ingresar también ocurre 100% en la vista Fuentes, y el texto del Manual de Usuario ("sincronizándola de nuevo") queda literalmente cierto.
+
+**Decisiones tomadas:**  
+- Reutilizar el endpoint existente `POST /ingestion/sync` (ya cubierto por `test_api`) en lugar de crear uno nuevo: la fila integrada sincroniza con el mismo adaptador de siempre.
+
+**Resultado:**  
+- `npm run build` en verde; sin cambios de backend ni de esquema en este avance.
+
+**Archivos o componentes afectados:**  
+- `frontend/src/api.ts` (`syncSimulatedSource`), `frontend/src/pages/Sources.tsx` (botón Sincronizar en la fila integrada), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno.
+
+**Siguiente paso:**  
+Commit + push + CI.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

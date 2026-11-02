@@ -104,6 +104,7 @@ export const createCsvSource = (payload: {
 }) => postJsonBody<{ source_id: number; name: string; entity: string }>("/sources/csv", payload);
 
 export const syncSource = (id: number) => postJson<Record<string, unknown>>(`/sources/${id}/sync`);
+export const syncSimulatedSource = () => postJson<Record<string, unknown>>("/ingestion/sync");
 export const deleteSource = (id: number, datos = false) =>
   delJson<{ deleted: number; rows_removed: Record<string, number> }>(`/sources/${id}?datos=${datos}`);
 export const sourceImpact = (id: number) =>
