@@ -105,8 +105,8 @@ export const createCsvSource = (payload: {
 
 export const syncSource = (id: number) => postJson<Record<string, unknown>>(`/sources/${id}/sync`);
 export const syncSimulatedSource = () => postJson<Record<string, unknown>>("/ingestion/sync");
-export const deleteSource = (id: number, datos = false) =>
-  delJson<{ deleted: number; rows_removed: Record<string, number> }>(`/sources/${id}?datos=${datos}`);
+export const deleteSource = (id: number) =>
+  delJson<{ deleted: number; rows_removed: Record<string, number> }>(`/sources/${id}`);
 export const sourceImpact = (id: number) =>
   getJson<import("./types.ts").SourceImpact>(`/sources/${id}/impact`);
 export const replaceSourceFile = (id: number, payload: { upload_token: string; mapping?: Record<string, string> }) =>

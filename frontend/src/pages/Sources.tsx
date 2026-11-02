@@ -370,7 +370,7 @@ export default function Sources() {
   const [error, setError] = useState<string | null>(null);
   const [sincronizando, setSincronizando] = useState<number | null>(null);
   const [actualizando, setActualizando] = useState<DataSourceItem | null>(null);
-  const { toast, confirmar, confirmarConOpcion } = useFeedback();
+  const { toast, confirmar } = useFeedback();
 
   const cargar = () => {
     fetchSources().then((r) => setData(r.data)).catch((e: unknown) => setError(String(e)));
@@ -399,23 +399,18 @@ export default function Sources() {
       return;
     }
     const total = impacto.customers + impacto.transactions + impacto.interactions + impacto.campaign_events;
-    const respuesta = await confirmarConOpcion(
-      "Eliminar fuente",
+    const ok = await confirmar(
+      "Eliminar fuente por completo",
       total > 0
-        ? `Se eliminará la conexión '${fuente.name}'. Hoy aporta ${resumenImpacto(impacto)} a la base.`
+        ? `Se eliminarán la conexión '${fuente.name}' y TODOS sus datos vigentes en el sistema: ${resumenImpacto(impacto)}. ` +
+            "Tu archivo original no se toca (vive en tu disco); para volver a tener estos datos, sube o sincroniza el CSV de nuevo."
         : `Se eliminará la conexión '${fuente.name}' (no tiene datos vigentes atribuibles).`,
-      "Eliminar también los datos aportados por esta fuente",
     );
-    if (!respuesta.ok) return;
+    if (!ok) return;
     try {
-      const r = await deleteSource(fuente.source_id, respuesta.conOpcion);
+      const r = await deleteSource(fuente.source_id);
       const quitados = Object.values(r.rows_removed).reduce((a, b) => a + b, 0);
-      toast(
-        respuesta.conOpcion
-          ? `Fuente '${fuente.name}' eliminada junto con ${quitados} filas de datos.`
-          : `Fuente '${fuente.name}' eliminada; sus datos siguen en la base.`,
-        "exito",
-      );
+      toast(`Fuente '${fuente.name}' eliminada por completo (${quitados} filas retiradas de la base).`, "exito");
       cargar();
     } catch (e) {
       toast(`No se pudo eliminar: ${String(e)}`, "error");
@@ -450,15 +445,15 @@ export default function Sources() {
     }
     const ok = await confirmar(
       "Retirar datos del CRM simulado",
-      `Se eliminarán ${resumenImpacto(impacto)} aportados por el CRM simulado. ` +
-        "Podrás volver a ingresarlos sincronizando esta fuente o con cargar_datos.bat. " +
-        "Si tu datos principales viven en un CSV, este es el paso para que la plataforma sea tu única fuente de verdad.",
+      `Se eliminarán de la base ${resumenImpacto(impacto)} aportados por el CRM simulado. ` +
+        "El simulador y sus archivos en disco no se tocan: puedes volver a ingresarlos con Sincronizar, " +
+        "o subir tu propio CSV para que sea tu fuente principal.",
     );
     if (!ok) return;
     try {
-      const r = await deleteSource(fuente.source_id, true);
+      const r = await deleteSource(fuente.source_id);
       const quitados = Object.values(r.rows_removed).reduce((a, b) => a + b, 0);
-      toast(`Datos del CRM simulado retirados (${quitados} filas).`, "exito");
+      toast(`Datos del CRM simulado retirados de la base (${quitados} filas).`, "exito");
       cargar();
     } catch (e) {
       toast(`No se pudieron retirar los datos: ${String(e)}`, "error");

@@ -169,9 +169,9 @@ def prueba_ciclo_de_vida_completo():
             cur.execute("SELECT city FROM customers WHERE customer_id = 'R-1'")
             assert cur.fetchone()[0] == "Morelia Norte", "el reemplazo debe actualizar al sincronizar"
 
-    borrado = client.delete(f"/sources/{sid}?datos=true")
+    borrado = client.delete(f"/sources/{sid}")
     assert borrado.status_code == 200, borrado.text
-    assert borrado.json()["rows_removed"]["customers"] == 3
+    assert borrado.json()["rows_removed"]["customers"] == 3, "eliminar debe retirar tambien los datos de la fuente"
     with connect() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT COUNT(*) FROM customers WHERE customer_id IN ('R-1','R-2','R-3')")
@@ -179,11 +179,17 @@ def prueba_ciclo_de_vida_completo():
     assert client.get(f"/sources/{sid}/impact").status_code == 200
 
 
-def prueba_fuente_simulada_protegida():
-    """La fuente integrada no puede 'eliminarse' como conexion: solo retirar sus datos."""
-    r = client.delete("/sources/0")
-    assert r.status_code == 400
-    assert "integrada" in r.json()["detail"]
+def prueba_impacto_y_fuente_inexistente():
+    """El impacto de la fuente integrada es de solo lectura; una fuente inexistente da 404."""
+    impacto = client.get("/sources/0/impact").json()
+    assert set(impacto) == {"customers", "transactions", "interactions", "campaign_events"}
+    assert client.get("/sources/999999/impact").json() == {
+        "customers": 0,
+        "transactions": 0,
+        "interactions": 0,
+        "campaign_events": 0,
+    }
+    assert client.delete("/sources/999999").status_code == 404
 
 
 if __name__ == "__main__":
@@ -195,5 +201,5 @@ if __name__ == "__main__":
     prueba_sugerencia_ia_con_mock()
     prueba_sugerencia_ia_no_disponible()
     prueba_ciclo_de_vida_completo()
-    prueba_fuente_simulada_protegida()
-    print("OK: fuentes CSV verificadas (manual + token seguro + 422 controlado + IA con mock + degradacion 503 + ciclo de vida completo)")
+    prueba_impacto_y_fuente_inexistente()
+    print("OK: fuentes CSV verificadas (manual + token seguro + 422 controlado + IA con mock + degradacion 503 + ciclo de vida completo con borrado total)")

@@ -250,19 +250,17 @@ def replace_source_file(source_id: int, payload: ReplacePayload) -> dict:
 
 
 @router.delete("/{source_id}")
-def delete_source(source_id: int, datos: bool = False) -> dict:
-    """Elimina una fuente; con `datos=true` retira tambien las filas que aportó.
+def delete_source(source_id: int) -> dict:
+    """Elimina una fuente POR COMPLETO: conexion y todas las filas que aporto.
 
-    La fuente simulada (id 0) no tiene conexion que eliminar: solo admite
-    retirar sus datos, para que la plataforma pueda gestionar todo el ciclo.
+    El archivo original del usuario vive en su disco; aqui solo se retira lo
+    que entro al sistema (filas selladas con su source_id, la conexion y la
+    copia subida). La fuente simulada (id 0) no tiene conexion: retirar sus
+    datos es exactamente esto mismo. Para volver a tener los datos, se sube o
+    sincroniza de nuevo desde la vista Fuentes.
     """
+    borrados = _borrar_datos_de(source_id)
     if source_id == SIMULATED_SOURCE_ID:
-        if not datos:
-            raise HTTPException(
-                status_code=400,
-                detail="La fuente simulada es integrada: solo puedes retirar sus datos (datos=true).",
-            )
-        borrados = _borrar_datos_de(source_id)
         return {"deleted": source_id, "rows_removed": borrados}
     with connect() as conn:
         with conn.cursor() as cur:
@@ -271,7 +269,6 @@ def delete_source(source_id: int, datos: bool = False) -> dict:
             if fila is None:
                 raise HTTPException(status_code=404, detail=f"Fuente no encontrada: {source_id}")
             filename = fila[0]
-            borrados = _borrar_datos_de(source_id) if datos else {t: 0 for t in TABLAS_DATOS}
             cur.execute("DELETE FROM data_sources WHERE source_id = %s", (source_id,))
     (UPLOADS_DIR / filename).unlink(missing_ok=True)
     return {"deleted": source_id, "rows_removed": borrados}

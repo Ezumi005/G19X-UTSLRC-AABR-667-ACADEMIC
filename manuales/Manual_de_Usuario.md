@@ -60,8 +60,8 @@ Después de crearla, cada fuente tiene su ciclo de vida completo en esta misma v
 
 - **Sincronizar:** vuelve a leer su archivo y mete los datos nuevos o corregidos a la base.
 - **Actualizar archivo:** sube una nueva versión del CSV de esa fuente (por ejemplo, tu lista de ventas del mes); el nombre y la entidad se conservan, el mapeo viene precargado y puedes ajustarlo o pedir de nuevo la sugerencia de la IA; al reemplazar y sincronizar, los datos vigentes de esa fuente quedan actualizados.
-- **Eliminar (basura):** el sistema te dice cuántas filas aporta hoy esa fuente (clientes, transacciones, interacciones y eventos) y te pregunta con una casilla si quieres **eliminar también esos datos** o conservarles en la base sin su conexión.
-- **Retirar datos del CRM simulado:** la fuente integrada también se gestiona aquí: si decides que tus datos principales viven en un CSV, puedes retirar las filas del simulador desde la plataforma (y volver a ingresarlas cuando quieras sincronizándola de nuevo).
+- **Eliminar (basura):** el sistema te muestra cuántas filas aporta hoy esa fuente (clientes, transacciones, interacciones y eventos) y, al confirmar, **se retira todo: la conexión y sus datos de la base**. Tu archivo original no se toca (vive en tu disco); si más adelante quieres volver a tener esos datos, sube o sincroniza el CSV de nuevo. Así puedes quitar un CSV por completo y meter otro desde cero que pasa a ser tu fuente principal, y seguir metiéndole actualizaciones desde esta misma vista.
+- **Retirar datos del CRM simulado:** la fuente integrada también se gestiona aquí: si decides que tus datos principales viven en un CSV, puedes retirar las filas del simulador de la base desde la plataforma (el simulador y sus archivos en disco no se tocan) y volver a ingresarlas con **Sincronizar** cuando quieras.
 
 Así, todo el ciclo —meter el CSV principal, actualizarlo, cambiarlo por otro totalmente nuevo o retirarlo— ocurre en la plataforma, sin tocar el backend ni la base a mano.
 

@@ -1886,6 +1886,35 @@ Commit + push + CI.
 
 ---
 
+## 02/11/2026 — 11:09
+**Tipo:** Técnico (ajuste de comportamiento pedido por el usuario: eliminar = retiro total)
+
+**Actividad realizada:**  
+El usuario precisó su modelo mental: **al eliminar una fuente, sus datos deben irse por completo del sistema** (quedan en su disco, no en la base), y al meter otro CSV desde cero ese pasa a ser el principal, con sus actualizaciones por la misma vista Fuentes. Ajusté el comportamiento que ayer dejé opt-in:
+
+1. `DELETE /sources/{id}` ahora **siempre** retira conexión + copia subida + todas las filas selladas con ese `source_id`; se eliminó el parámetro `datos` y la casilla del frontend. Para la fuente simulada (id 0), eliminar = retirar sus datos de la base (el simulador y sus archivos en disco no se tocan; se re-ingresan con Sincronizar).
+2. Frontend: el diálogo de borrado muestra el impacto (filas por entidad) y avisa que el archivo original no se toca y que puede volver a subirse o sincronizarse; desaparece la opción de "conservar datos".
+3. Pruebas ajustadas: el ciclo de vida ahora afirma que el borrado simple retira las 3 filas de prueba; la prueba que verificaba el 400 de la fuente simulada se sustituyó por una de solo lectura (impacto de la fuente 0 + 404 en fuente inexistente), para que ninguna prueba retire los datos reales del simulador de la base.
+4. Documentación alineada: README §3 (justificación: eliminar siempre retira todo; el nuevo CSV pasa a ser el principal), README §9 (firma del DELETE), Manual de Usuario §6 (viñetas de eliminar y retirar datos).
+
+**Decisiones tomadas:**  
+- Borrado total por defecto y sin casillas: coincide con el modelo mental del usuario ("que se quede en mi disco, pero no en la base"); la reversibilidad existe por diseño (re-subir o sincronizar el archivo), no por conservar huérfanos.
+- El historial de Ejecuciones NO se borra: la trazabilidad de que esa ingesta ocurrió permanece (es evidencia de calidad, no datos operativos).
+
+**Resultado:**  
+- `test_sources` (con el ciclo completo de borrado total), ruff y `npm run build` en verde.
+
+**Archivos o componentes afectados:**  
+- `src/api/routes/sources.py` (DELETE sin parámetro, siempre con datos), `frontend/src/api.ts`, `frontend/src/pages/Sources.tsx`, `tests/test_sources.py`, `README.md` (§3, §9), `manuales/Manual_de_Usuario.md` (§6), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno.
+
+**Siguiente paso:**  
+Commit + push + CI.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
