@@ -2037,6 +2037,35 @@ Commit + push + CI.
 
 ---
 
+## 03/11/2026 — 15:51
+**Tipo:** Gestión / Seguridad (plan de mejora del tutor, punto 1 de 13: cerrar las credenciales básicas de Azure)
+
+**Actividad realizada:**  
+Cerré el punto 1 del plan ("Apaga en Azure las credenciales básicas que activaste para desplegar"), con el usuario operando el portal y yo verificando desde aquí:
+
+1. **Credenciales básicas apagadas:** en App Service `motor-seg-scoring` → Configuración → Configuración de plataforma, quedaron **desmarcadas** "Credenciales de publicación de autenticación básica de SCM" y "…de FTP", y "Estado FTP" en Deshabilitado, aplicado con el botón Aplicar de esa hoja (evidencia: captura del usuario en `prueba-azure.pdf` de sus Descargas, fuera del repositorio).
+2. **Perfil de publicación restablecido** desde Información general; el propio diálogo del portal confirmó: "La autenticación básica está deshabilitada". El archivo `.publishsettings` que se descargó el 01/11 ya había sido eliminado del disco ese mismo día y nunca existió en el repositorio.
+3. **Verificaciones mías:** el endpoint FTP del App Service ya no responde (sonda curl termina sin conexión), `GET /health` sigue 200 (el scoring vivo no se tocó), y `git grep` sobre archivos versionados no encuentra ni perfiles de publicación ni sus valores (tampoco quedan en Descargas).
+4. **Nota técnica honesta:** mi sonda externa a Kudu (`/api/settings` con y sin credenciales) sigue mostrando `401 + WWW-Authenticate: Basic` aun con la política aplicada; ese encabezado anuncia el esquema pero la política rechaza las credenciales de publicación vigentes al validarlas, por lo que esa sonda **no distingue** el estado de la política y no se usó como evidencia. La evidencia válida es la del portal + la muerte del FTP + el health vivo.
+
+**Decisiones tomadas:**  
+- **Próximo despliegue del scoring:** por **Cloud Shell del portal** (sesión con MFA ya superada) con `az webapp deployment source config-zip` o `az webapp deploy`, o reactivando temporalmente las credenciales básicas solo durante el despliegue y apagándolas inmediatamente después, dejándolo registrado en bitácora. El `az` local de esta máquina queda descartado para operaciones de gestión: su tenant exige MFA que el flujo de navegador/CLI de esta sesión no completa.
+- No se copia ningún valor de credenciales a ningún archivo ni a esta bitácora.
+
+**Resultado:**  
+- Punto 1 del plan cumplido con sus dos criterios: entrada de bitácora que documenta el apagado y el restablecimiento, y cero perfiles/valores en el repositorio. El riesgo queda cerrado: nadie puede subir código al App Service con el perfil antiguo.
+
+**Archivos o componentes afectados:**  
+- Azure: configuración de plataforma y perfil de publicación de `motor-seg-scoring`. Repositorio: solo `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno. Pendiente del plan: puntos 2 a 13 cuando el usuario los comparta.
+
+**Siguiente paso:**  
+Commit + push + CI; continuar con el punto 2 del plan cuando el usuario lo pegue.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
