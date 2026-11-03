@@ -105,8 +105,28 @@ def _random_dt_between(rng: random.Random, start: datetime, end: datetime) -> da
     return start + timedelta(seconds=rng.random() * span)
 
 
-def main() -> None:
-    rng = random.Random(SEED)
+def main(
+    seed: int = SEED,
+    total: int = TOTAL_CUSTOMERS,
+    prefix: str = "CLI",
+    prefix_tx: str = "TRX",
+    prefix_evt: str = "EVT",
+    excluir_perfiles: tuple[str, ...] = (),
+    out_dir: Path = DATA_DIR,
+    con_corruptos: bool = True,
+) -> None:
+    """Genera un dataset de CRM simulado reproducible.
+
+    Los parametros permiten crear CRMs simulados ALTERNOS con poblaciones
+    distintas (otra semilla, otro tamano, otros perfiles, otros prefijos de ID)
+    para probar que el motor reacciona a datos diferentes sin tocar el codigo.
+    """
+    rng = random.Random(seed)
+
+    perfiles = {k: v for k, v in PROFILES.items() if k not in excluir_perfiles}
+    if not perfiles:
+        raise ValueError("No se pueden excluir todos los perfiles.")
+    suma_shares = sum(p["share"] for p in perfiles.values())
 
     customers: list[dict] = []
     transactions: list[dict] = []
@@ -117,12 +137,12 @@ def main() -> None:
 
     cseq = 0
     cust_profile: dict[str, tuple[str, datetime]] = {}
-    for name, p in PROFILES.items():
-        n_clients = max(1, round(TOTAL_CUSTOMERS * p["share"]))
+    for name, p in perfiles.items():
+        n_clients = max(1, round(total * p["share"] / suma_shares))
         profile_counts[name] = n_clients
         for _ in range(n_clients):
             cseq += 1
-            cid = f"CLI-{cseq:04d}"
+            cid = f"{prefix}-{cseq:04d}"
             reg_dt = ANCHOR - timedelta(days=rng.randint(*p["reg_days"]), seconds=rng.randint(0, 86400))
             customers.append({
                 "clientId": cid,
@@ -134,7 +154,7 @@ def main() -> None:
 
     tseq = 0
     for cid, (pname, reg_dt) in cust_profile.items():
-        p = PROFILES[pname]
+        p = perfiles[pname]
         last_dt = ANCHOR - timedelta(days=rng.randint(*p["last_days"]), seconds=rng.randint(0, 86400))
         start = max(reg_dt, ANCHOR - timedelta(days=HISTORY_DAYS))
         if last_dt <= start:
@@ -154,7 +174,7 @@ def main() -> None:
             tseq += 1
             cat = _weighted(rng, p["cats"])
             transactions.append({
-                "opId": f"TRX-{tseq:05d}",
+                "opId": f"{prefix_tx}-{tseq:05d}",
                 "clientId": cid,
                 "ts": _iso(t),
                 "totalAmount": f"{rng.uniform(*p['ticket']):.2f}",
@@ -165,7 +185,7 @@ def main() -> None:
     iseq = 0
     web_start = ANCHOR - timedelta(days=90)
     for cid, (pname, _) in cust_profile.items():
-        p = PROFILES[pname]
+        p = perfiles[pname]
         for _ in range(rng.randint(*p["web_90d"])):
             iseq += 1
             r = rng.random()
@@ -176,7 +196,7 @@ def main() -> None:
             else:
                 kind, item = "CART_LEFT", rng.choice(PRODUCTS[_weighted(rng, p["cats"])])
             event = {
-                "eventId": f"EVT-{iseq:06d}",
+                "eventId": f"{prefix_evt}-{iseq:06d}",
                 "clientId": cid,
                 "kind": kind,
                 "eventTs": _iso(_random_dt_between(rng, web_start, ANCHOR)),
@@ -190,7 +210,7 @@ def main() -> None:
         dt = ANCHOR - timedelta(days=30 * m + 5)
         campaigns.append((f"CAMP-{dt.year}-{dt.month:02d}", dt))
     for cid, (pname, reg_dt) in cust_profile.items():
-        p = PROFILES[pname]
+        p = perfiles[pname]
         for camp_id, camp_dt in campaigns:
             if camp_dt < reg_dt:
                 continue
@@ -209,21 +229,23 @@ def main() -> None:
             clicked = opened + timedelta(minutes=rng.randint(5, 1440))
             campaign_events.append({"campId": camp_id, "clientId": cid, "action": "CLICK", "actionTs": _iso(clicked)})
 
-    corrupt_tx = [
-        {"opId": f"TRX-{tseq + 1:05d}", "clientId": "CLI-0001", "ts": _iso(ANCHOR - timedelta(days=3)), "totalAmount": "-50.00", "productLine": "FASHION", "itemName": "Monto negativo"},
-        {"opId": f"TRX-{tseq + 2:05d}", "clientId": "CLI-0002", "ts": _iso(ANCHOR - timedelta(days=4)), "totalAmount": "120.00", "productLine": "BOOKS", "itemName": "Sin clientId"},
-        {"opId": f"TRX-{tseq + 3:05d}", "clientId": "CLI-0003", "ts": "fecha-invalida", "totalAmount": "999.90", "productLine": "TOYS", "itemName": "Fecha invalida"},
-    ]
-    corrupt_tx[1].pop("clientId")
-    transactions.extend(corrupt_tx)
+    if con_corruptos:
+        corrupt_tx = [
+            {"opId": f"{prefix_tx}-{tseq + 1:05d}", "clientId": f"{prefix}-0001", "ts": _iso(ANCHOR - timedelta(days=3)), "totalAmount": "-50.00", "productLine": "FASHION", "itemName": "Monto negativo"},
+            {"opId": f"{prefix_tx}-{tseq + 2:05d}", "clientId": f"{prefix}-0002", "ts": _iso(ANCHOR - timedelta(days=4)), "totalAmount": "120.00", "productLine": "BOOKS", "itemName": "Sin clientId"},
+            {"opId": f"{prefix_tx}-{tseq + 3:05d}", "clientId": f"{prefix}-0003", "ts": "fecha-invalida", "totalAmount": "999.90", "productLine": "TOYS", "itemName": "Fecha invalida"},
+        ]
+        corrupt_tx[1].pop("clientId")
+        transactions.extend(corrupt_tx)
+        customers[-1]["demographics"]["age"] = 999
+        customers[-2]["memberSince"] = "2025-02-31"
 
-    customers[-1]["demographics"]["age"] = 999
-    customers[-2]["memberSince"] = "2025-02-31"
-
-    DATA_DIR.mkdir(exist_ok=True)
+    out_dir.mkdir(parents=True, exist_ok=True)
     meta = {
         "anchor": _iso(ANCHOR),
-        "seed": SEED,
+        "seed": seed,
+        "prefix": prefix,
+        "excluded_profiles": list(excluir_perfiles),
         "total_customers": len(customers),
         "profile_distribution": profile_counts,
         "totals": {
@@ -232,10 +254,14 @@ def main() -> None:
             "interactions": len(interactions),
             "campaign_events": len(campaign_events),
         },
-        "invalid_records_injected": {
-            "transactions": ["monto negativo", "clientId ausente", "fecha invalida"],
-            "customers": ["edad fuera de rango", "memberSince invalido"],
-        },
+        "invalid_records_injected": (
+            {
+                "transactions": ["monto negativo", "clientId ausente", "fecha invalida"],
+                "customers": ["edad fuera de rango", "memberSince invalido"],
+            }
+            if con_corruptos
+            else {}
+        ),
         "ground_truth": ground_truth,
     }
     for name, payload in [
@@ -245,16 +271,37 @@ def main() -> None:
         ("campaign_events.json", campaign_events),
         ("meta.json", meta),
     ]:
-        (DATA_DIR / name).write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        (out_dir / name).write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
     tx_dates = sorted(t["ts"] for t in transactions if t["ts"].endswith("Z"))
-    print("Dataset del CRM simulado generado en", DATA_DIR)
+    print("Dataset del CRM simulado generado en", out_dir)
     print("Clientes por perfil:", profile_counts)
     print("Totales:", meta["totals"])
     print("Rango transacciones:", tx_dates[0], "->", tx_dates[-1])
-    print("Registros corruptos inyectados: 3 transacciones + 2 clientes")
+    print("Registros corruptos inyectados:", "3 transacciones + 2 clientes" if con_corruptos else "ninguno")
     print("Ground truth (perfil real por cliente) guardado en meta.json")
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Generador del dataset del CRM simulado")
+    parser.add_argument("--semilla", type=int, default=SEED)
+    parser.add_argument("--total", type=int, default=TOTAL_CUSTOMERS)
+    parser.add_argument("--prefijo", default="CLI")
+    parser.add_argument("--prefijo-trx", default="TRX")
+    parser.add_argument("--prefijo-evt", default="EVT")
+    parser.add_argument("--excluir-perfiles", default="", help="lista separada por comas, p. ej. vip,frecuente")
+    parser.add_argument("--out", type=Path, default=DATA_DIR)
+    parser.add_argument("--sin-corruptos", action="store_true")
+    args = parser.parse_args()
+    main(
+        seed=args.semilla,
+        total=args.total,
+        prefix=args.prefijo,
+        prefix_tx=args.prefijo_trx,
+        prefix_evt=args.prefijo_evt,
+        excluir_perfiles=tuple(x for x in (p.strip() for p in args.excluir_perfiles.split(",")) if x),
+        out_dir=args.out,
+        con_corruptos=not args.sin_corruptos,
+    )

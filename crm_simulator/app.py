@@ -12,11 +12,14 @@ Ejecutar desde la raiz del proyecto:
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
 
-DATA_DIR = Path(__file__).resolve().parents[1] / "data"
+# Carpeta del dataset a servir: por defecto data/; con CRM_DATA_DIR se puede
+# levantar un CRM simulado ALTERNO (otro dataset generado con generate_data).
+DATA_DIR = Path(os.environ.get("CRM_DATA_DIR", str(Path(__file__).resolve().parents[1] / "data")))
 
 app = FastAPI(
     title="CRM Simulado (PluriOne)",

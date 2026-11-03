@@ -1976,6 +1976,39 @@ Commit + push + CI.
 
 ---
 
+## 02/11/2026 — 17:20
+**Tipo:** Pruebas / Técnico (CRM simulado alterno para probar la reactividad de los segmentos)
+
+**Actividad realizada:**  
+El usuario pidió "otro CRM simulado con diferentes datos" para comprobar que los segmentos se muestran nuevos y actualizados al meterlo y sacar el actual. Lo construí y verifiqué de extremo a extremo:
+
+1. **Generador parametrizado** (`crm_simulator/generate_data.py`): ahora acepta `--semilla`, `--total`, `--prefijo`, `--prefijo-trx`, `--prefijo-evt`, `--excluir-perfiles`, `--out` y `--sin-corruptos`; los shares se renormalizan entre los perfiles restantes y los IDs/resumen/meta reflejan los parámetros. La API del simulador (`crm_simulator/app.py`) sirve la carpeta que indique `CRM_DATA_DIR` (por defecto `data/`), así que pueden coexistir varios CRMs simulados sin tocar código.
+2. **CRM B generado y versionado en disco** (`data/sim_b`, ignorado por Git como todo `data/`): semilla 7, 239 clientes, perfiles ocasional/riesgo/nuevo/navegador (sin vip ni frecuente), IDs `CLB-`/`CLBTX-`/`CLBEVT-`, sin corruptos. Exporté además sus datos a CSVs con formato del contrato (carpeta temporal) para ejercer la vía de la plataforma.
+3. **Verificación del ciclo reactivo sobre la base real (que el usuario había dejado vacía), por fases con aserciones y capturas:**
+   - Fase 1 — entra el CRM simulado actual (A) por ingesta: 6 segmentos clásicos, 498 clientes.
+   - Fase 2 — entra el CRM B por la vista Fuentes (dos fuentes CSV: clientes y ventas): segmentación automática sobre 737 clientes y redistribución de segmentos.
+   - Fase 3 — se **saca el actual** (A, retiro total de sus 498/6,509/18,004/9,131 filas): los segmentos se regeneran solo con B y **cambian de identidad**: desaparecen "Clientes frecuentes de alto valor" y "Navegadores con compra esporádica", aparecen "Compradores ocasionales de baja actividad" y "…de actividad mínima" (coherente con una población sin vip/frecuentes).
+   - Fase 4 — se saca B: segmentos 0 y dashboard 0, estados vacíos visibles.
+   La base terminó vacía, como el usuario la dejó; los servidores de verificación se detuvieron al cierre.
+
+**Decisiones tomadas:**  
+- El CRM B entra por la **plataforma** (fuentes CSV) y no por un segundo backend: es exactamente el flujo que el usuario quiere ejercer (meter/sacar desde Fuentes), y deja cada población con su propio `source_id` para retirarla sin arrastrar a la otra.
+- Los datasets alternos viven en `data/` (no versionados) pero el comando que los reproduce queda documentado en README §3: cualquiera puede regenerar el CRM B o crear otros.
+
+**Resultado:**  
+- Queda demostrado con datos reales y capturas que los segmentos son función de los datos vigentes: etiquetas, tamaños y gráficas cambian al meter y sacar fuentes, y el vacío se muestra como vacío.
+
+**Archivos o componentes afectados:**  
+- Modificados: `crm_simulator/generate_data.py` (parametrización), `crm_simulator/app.py` (`CRM_DATA_DIR`), `README.md` (§3 CRMs alternos), `Bitacora.md` (esta entrada). Generados sin versionar: `data/sim_b/*`, CSVs temporales del CRM B y capturas de verificación en carpeta temporal.
+
+**Problemas o bloqueos:**  
+- Ninguno.
+
+**Siguiente paso:**  
+Commit + push + CI.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
