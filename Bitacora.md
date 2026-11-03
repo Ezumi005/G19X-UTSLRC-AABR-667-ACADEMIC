@@ -2094,6 +2094,30 @@ Commit + push + CI; puntos restantes del plan del profesor cuando el usuario los
 
 ---
 
+## 03/11/2026 — 16:56
+**Tipo:** Técnico / Entrega (plan del profesor, punto 2 de 13: datos del simulador dentro de Docker)
+
+**Actividad realizada:**  
+Atendí el punto 2 del plan: en `docker-compose.yml` el servicio simulador solo arrancaba uvicorn y, como `.dockerignore` excluye `data/`, la imagen no llevaba `customers.json` ni demás archivos y nadie los generaba dentro del contenedor (el simulador respondería 503 "Dataset no generado" y la cadena `&&` del backend se cortaría en la ingesta). Cambié el `command` del simulador a `sh -c "python -m crm_simulator.generate_data && python -m uvicorn crm_simulator.app:app --host 0.0.0.0 --port 8001"`: el dataset se genera dentro del contenedor antes de servir, y como el healthcheck solo pasa cuando uvicorn responde, el backend (que depende de `service_healthy`) nunca ingesta contra un simulador sin datos.
+
+**Decisiones tomadas:**  
+- `data/` **permanece en `.dockerignore`** (indicación del plan): los datos no viajan en la imagen, se generan al arrancar; el dataset es reproducible por semilla fija, así que cada contenedor obtiene el mismo.
+- README §20 actualizado: el flujo dockerizado ahora describe que el simulador genera su dataset dentro del contenedor al arrancar.
+
+**Resultado:**  
+- Criterios del plan verificados por parseo del YAML (`generate_data` aparece antes que `uvicorn` en el command del simulador) y por grep del README (§20 lo describe); `data/` sigue excluido de la imagen. Sin cambios de código Python ni de pruebas: el generador ya existía y es idempotente.
+
+**Archivos o componentes afectados:**  
+- `docker-compose.yml` (command del simulador), `README.md` (§20), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Sigue sin existir máquina con Docker para ejecutar `docker compose up` y comprobarlo en vivo (declarado en README §20); la verificación fue por inspección del compose y del flujo de healthchecks.
+
+**Siguiente paso:**  
+Commit + push + CI; punto 3 del plan cuando el usuario lo comparta.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
