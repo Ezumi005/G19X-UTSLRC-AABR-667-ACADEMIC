@@ -72,6 +72,8 @@ CI (`.github/workflows/ci.yml`): en cada push levanta PostgreSQL 18 como servici
 
 Reglas inviolables (README §13): no acoplar el motor al formato del CRM, no usar IA generativa para decidir clusters, no llamar a Azure desde el frontend, no subir secretos al repo.
 
+Procedencia y errores de IA: los servicios de IA se consumen por endpoint configurable (variables de entorno); si una prueba de QA los apunta a un simulador local, el backend deja un aviso en el log del servidor (host no Azure) y las recomendaciones persistidas reflejarán al simulador — regenérelas desde la web antes de una demo real. Hacia el usuario, los errores de IA nunca exponen el texto técnico del fallo upstream: se registran en el log del servidor y la API responde mensajes accionables (501 sin configurar, 502 servicio caído, 503 IA no disponible).
+
 ## 7. Solución de problemas frecuentes
 
 | Síntoma | Causa | Acción |

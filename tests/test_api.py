@@ -101,7 +101,8 @@ def prueba_ingestion_sin_simulador():
     try:
         r = client.post("/ingestion/sync")
         assert r.status_code == 502
-        assert "no disponible" in r.json()["detail"].lower()
+        detalle = r.json()["detail"].lower()
+        assert "log del servidor" in detalle and "simulada" in detalle
     finally:
         if anterior is None:
             os.environ.pop("SIMULATOR_URL", None)

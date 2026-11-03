@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 
 import requests
@@ -11,6 +12,8 @@ from src.api.schemas import IngestionRunsResponse
 from src.ml.segmentation import run_segmentation_si_hay_datos
 from src.persistence import queries
 from src.persistence.ingest import run_ingestion
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/ingestion", tags=["ingestion"])
 
@@ -34,9 +37,13 @@ def sync_ingestion() -> dict:
     try:
         run_id = run_ingestion(base_url)
     except requests.RequestException as exc:
+        logger.exception("CRM simulado no alcanzable en %s", base_url)
         raise HTTPException(
             status_code=502,
-            detail=f"Fuente CRM simulada no disponible en {base_url}: {exc}",
+            detail=(
+                f"La fuente CRM simulada no esta disponible en {base_url} (no responde). "
+                "Levantala o revisa SIMULATOR_URL; el detalle tecnico quedo en el log del servidor."
+            ),
         ) from exc
     resumen = queries.ingestion_run_summary(run_id)
     # Segmentos siempre vigentes: se regeneran con los datos que acaban de entrar.

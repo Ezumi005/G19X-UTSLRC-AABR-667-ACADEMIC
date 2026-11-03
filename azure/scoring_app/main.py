@@ -7,6 +7,7 @@ el backend del Motor de Segmentacion, autenticado con X-API-Key.
 
 from __future__ import annotations
 
+import hashlib
 import os
 from pathlib import Path
 
@@ -26,13 +27,22 @@ FEATURES = [
 ]
 
 ARTIFACT: dict | None = None
-app = FastAPI(title="Scoring Motor de Segmentacion", version="1.0.0")
+HUELLA: str | None = None
+app = FastAPI(title="Scoring Motor de Segmentacion", version="1.1.0")
+
+
+def huella_centroides(centros) -> str:
+    """Misma definicion que src.ml.clustering.centroids_fingerprint: sha256 corto
+    de los centroides redondeados. Debe mantenerse sincronizada con ella."""
+    blob = np.round(np.asarray(centros, dtype=float), 6).tobytes()
+    return hashlib.sha256(blob).hexdigest()[:16]
 
 
 @app.on_event("startup")
 def cargar_artefacto() -> None:
-    global ARTIFACT
+    global ARTIFACT, HUELLA
     ARTIFACT = joblib.load(ARTIFACT_PATH)
+    HUELLA = huella_centroides(ARTIFACT["model"].cluster_centers_)
 
 
 def _verificar_llave(x_api_key: str | None) -> None:
@@ -43,7 +53,9 @@ def _verificar_llave(x_api_key: str | None) -> None:
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok", "artefacto": ARTIFACT is not None}
+    """El servicio se autodescribe: reporta la huella del modelo que REALMENTE
+    sirve, para que el backend detecte desfases sin depender de metadatos fijos."""
+    return {"status": "ok", "artefacto": ARTIFACT is not None, "huella": HUELLA}
 
 
 @app.post("/score")

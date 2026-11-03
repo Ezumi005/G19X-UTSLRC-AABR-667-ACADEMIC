@@ -12,10 +12,16 @@ del backend responde 501 informativo.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
+from urllib.parse import urlparse
 
 from openai import AzureOpenAI
+
+logger = logging.getLogger(__name__)
+
+HOSTS_AZURE_OPENAI = (".openai.azure.com", ".services.ai.azure.com", ".openai.azure.us", ".openai.azure.cn")
 
 PROFILE_LABELS = {
     "recency_days": "dias desde la ultima compra",
@@ -81,9 +87,20 @@ def generate_recommendation(
     """Llama a Azure OpenAI y devuelve {'descripcion': str, 'recomendaciones': [str]}."""
     if not azure_openai_available():
         raise RuntimeError("Azure OpenAI no configurado: faltan AZURE_OPENAI_* en el entorno.")
+    endpoint = os.environ["AZURE_OPENAI_ENDPOINT"]
+    host = (urlparse(endpoint).hostname or "").lower()
+    if not host.endswith(HOSTS_AZURE_OPENAI):
+        # Transparencia de procedencia: el endpoint es configurable (12-factor) y
+        # en pruebas de QA puede apuntar a un simulador local; queda avisado en el
+        # log del servidor para que ningun simulador pase por modelo real.
+        logger.warning(
+            "AZURE_OPENAI_ENDPOINT apunta a '%s', que no es un host de Azure OpenAI: "
+            "las recomendaciones provendran de un simulador o proxy externo.",
+            host,
+        )
     client = AzureOpenAI(
         api_key=os.environ["AZURE_OPENAI_API_KEY"],
-        azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+        azure_endpoint=endpoint,
         api_version="2024-10-21",
     )
     response = client.chat.completions.create(

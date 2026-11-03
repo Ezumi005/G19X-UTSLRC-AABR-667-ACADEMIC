@@ -61,8 +61,39 @@ def prueba_disponibilidad_configuracion():
                 os.environ[var] = valor
 
 
+def prueba_error_502_sin_fuga_tecnica():
+    """Con la IA caida, el 502 muestra un mensaje amigable sin el texto tecnico raw."""
+    from unittest.mock import patch
+
+    from fastapi.testclient import TestClient
+
+    from src.api.app import create_app
+
+    client = TestClient(create_app())
+    clave, endpoint = os.environ.get("AZURE_OPENAI_API_KEY"), os.environ.get("AZURE_OPENAI_ENDPOINT")
+    os.environ["AZURE_OPENAI_API_KEY"] = "dummy"
+    os.environ["AZURE_OPENAI_ENDPOINT"] = "https://dummy.openai.azure.com/"
+    try:
+        with patch(
+            "src.api.routes.segments.reco_service.generate_recommendation",
+            side_effect=RuntimeError("Error code: 503 - upstream explosion XYZ"),
+        ):
+            r = client.post("/segments/1/recommendation")
+        assert r.status_code == 502, r.text
+        detalle = r.json()["detail"]
+        assert "Error code" not in detalle and "upstream explosion" not in detalle
+        assert "log del servidor" in detalle
+    finally:
+        for var, valor in (("AZURE_OPENAI_API_KEY", clave), ("AZURE_OPENAI_ENDPOINT", endpoint)):
+            if valor is None:
+                os.environ.pop(var, None)
+            else:
+                os.environ[var] = valor
+
+
 if __name__ == "__main__":
     prueba_build_messages()
     prueba_parse_json_loose()
     prueba_disponibilidad_configuracion()
-    print("OK: recomendaciones verificadas (prompt, parseo tolerante y disponibilidad)")
+    prueba_error_502_sin_fuga_tecnica()
+    print("OK: recomendaciones verificadas (prompt, parseo tolerante, disponibilidad y 502 sin fuga tecnica)")

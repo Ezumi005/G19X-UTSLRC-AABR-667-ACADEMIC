@@ -6,6 +6,7 @@ validar en seco -> guardar fuente -> sincronizar al pipeline normal.
 
 from __future__ import annotations
 
+import logging
 import re
 import uuid
 from datetime import datetime, timezone
@@ -27,6 +28,8 @@ from src.persistence.db import connect
 from src.persistence.ingest import SIMULATED_SOURCE_ID, persist_result
 from src.persistence.queries import ingestion_run_summary
 from src.services.mapping_suggest import suggest_mapping
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/sources", tags=["sources"])
 
@@ -144,7 +147,14 @@ def suggest_csv_mapping(payload: SuggestPayload) -> dict:
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=503, detail=f"Sugerencia IA no disponible: {exc}") from exc
+        logger.exception("Fallo inesperado de la sugerencia de mapeo con IA")
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "La sugerencia de mapeo con IA no esta disponible en este momento; el asistente "
+                "manual sigue operativo. El detalle tecnico quedo en el log del servidor."
+            ),
+        ) from exc
     sugerencia["mapping"] = {
         campo: columna for campo, columna in (sugerencia.get("mapping") or {}).items() if columna in columnas
     }
@@ -215,7 +225,14 @@ def sync_source(source_id: int) -> dict:
         resultado = adaptador.fetch_normalized()
         run_id = persist_result(resultado, source_id=source_id)
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Fallo la sincronizacion: {exc}") from exc
+        logger.exception("Fallo al sincronizar la fuente %s", source_id)
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                "No se pudo sincronizar la fuente: revisa que su archivo siga disponible y que el "
+                "mapeo corresponda a sus columnas. El detalle tecnico quedo en el log del servidor."
+            ),
+        ) from exc
     with connect() as conn:
         with conn.cursor() as cur:
             cur.execute(

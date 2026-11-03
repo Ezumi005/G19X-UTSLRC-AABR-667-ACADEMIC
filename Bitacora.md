@@ -2066,6 +2066,34 @@ Commit + push + CI; continuar con el punto 2 del plan cuando el usuario lo pegue
 
 ---
 
+## 03/11/2026 — 16:47
+**Tipo:** Técnico / UX / Transparencia (comentarios del profesor sobre errores visibles y coherencia)
+
+**Actividad realizada:**  
+Atendí los tres comentarios del profesor sobre cosas que se veían mal o estaban construidas de forma mejorable:
+
+1. **Errores que filtraban texto técnico al usuario.** `POST /segments/{id}/recommendation` con la IA caída respondía 502 pegando la excepción raw ("Error code: 503 - …") y la web la pintaba tal cual. Ahora todos los 502/503 de servicios externos (recomendación, predicción, sincronización de fuentes, sugerencia de mapeo e ingesta del simulador) responden **mensajes accionables sin texto técnico** ("…reintenta en unos minutos; el detalle técnico quedó en el log del servidor"), y el detalle real se registra con `logger.exception` en el servidor. Los 422 de validación del contrato se conservan con su detalle, porque esa información sí es para el usuario. Prueba nueva en `test_recommendations`: con la IA explotando, el 502 no contiene el texto raw y sí la referencia al log; `test_api` ajustado al nuevo contrato del mensaje de ingesta.
+2. **Advertencia de huella con falso positivo en instalaciones limpias / scoring local.** El profesor, probando sin Azure con su propio scoring local y su base limpia, veía la advertencia de coherencia aunque todo correspondía: la comparación dependía de `models/artefacto_desplegado.json`, que declara la huella de los datos de esta máquina. Ahora **el servicio de scoring se autodescribe**: `azure/scoring_app/main.py` calcula al arrancar la huella de centroides del artefacto que carga y la expone en `/health` (`huella`); `scoring.remote_fingerprint()` la consulta con caché de 60 s y `artifact_coherence` la prioriza sobre el JSON estático (que queda como respaldo para despliegues viejos, como el actual en Azure hasta su próximo redespliegue). Con esto la advertencia solo aparece cuando el modelo que realmente sirve difiere del run vigente, en cualquier máquina. Pruebas nuevas: huella remota igual (coherente), distinta (desalineado) y run sin huella (verificación limitada).
+3. **Transparencia de procedencia de las recomendaciones.** El profesor señaló que en su prueba sin llave el texto lo escribió su simulador local de Azure OpenAI. Aclarado y documentado: el backend no contiene ningún simulador (grep sobre `src/`); consume el endpoint que digan las variables de entorno (diseño 12-factor), y con las credenciales reales del proyecto llama al deployment verdadero. Añadí una **guarda de procedencia**: si el host de `AZURE_OPENAI_ENDPOINT` no coincide con los dominios de Azure OpenAI, el servidor deja un `logger.warning` ("las recomendaciones provendrán de un simulador o proxy externo"), y README §8 + Manual Técnico documentan que lo persistido refleja el endpoint configurado y que tras pruebas con simulador hay que regenerar las recomendaciones antes de una demo real.
+
+**Verificación:** 10/10 suites en verde contra una base temporal sembrada (`motor_segmentacion_pruebas2`, creada y eliminada en la sesión, porque la base del usuario hoy vive con los datos del CRM B que él mismo cargó); ruff limpio; `npm run build` verde.
+
+**Decisiones tomadas:**  
+- Sanear en el backend (no en la web): cualquier cliente de la API recibe mensajes limpios, y el detalle técnico vive donde debe (log del servidor).
+- La autodescripción por `/health` deja al JSON estático como respaldo, no como fuente primaria: la verdad la dice el proceso que sirve el modelo, no un archivo que puede quedar viejo.
+- No se toca el despliegue de Azure en esta ronda: el App Service actual no reporta huella aún y cae en el respaldo documentado; el próximo redespliegue (por Cloud Shell, según la entrada de hoy 15:51) lo activará.
+
+**Archivos o componentes afectados:**  
+- Backend: `src/api/routes/{segments,customers,sources,ingestion}.py` (mensajes saneados + loggers), `src/services/{scoring,recommendations}.py` (remote_fingerprint, prioridad de huella remota, aviso de host no Azure), `azure/scoring_app/main.py` (huella en /health, versión 1.1.0). Pruebas: `tests/test_recommendations.py`, `tests/test_scoring.py`, `tests/test_api.py`. Docs: `README.md` (§7 y §8), `manuales/Manual_Tecnico.md` (nota de procedencia y errores), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno.
+
+**Siguiente paso:**  
+Commit + push + CI; puntos restantes del plan del profesor cuando el usuario los comparta.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

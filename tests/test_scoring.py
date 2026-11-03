@@ -99,6 +99,14 @@ def prueba_coherencia_artefacto(tmp_path=None):
     sin_huella = artifact_coherence(9, 498, latest_fingerprint=None, meta_path=meta_fp)
     assert sin_huella["stale"] is None and "solo pudo compararse por conteo" in sin_huella["note"]
 
+    # Autodescripcion del servicio: su /health manda sobre los metadatos fijos
+    remoto_ok = artifact_coherence(9, 498, latest_fingerprint="aaaa111122223333", remote_huella="aaaa111122223333")
+    assert remoto_ok["stale"] is False
+    remoto_mal = artifact_coherence(9, 498, latest_fingerprint="aaaa111122223333", remote_huella="bbbb444455556666")
+    assert remoto_mal["stale"] is True and "huella" in remoto_mal["note"]
+    remoto_sin_run = artifact_coherence(9, 498, latest_fingerprint=None, remote_huella="aaaa111122223333")
+    assert remoto_sin_run["stale"] is None
+
     # El endpoint incluye warnings en la respuesta (mock del scoring)
     _configurar_entorno(True)
     try:

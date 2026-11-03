@@ -190,8 +190,9 @@ Responsabilidades cumplidas:
 
 **Coherencia artefacto remoto ↔ segmentos vigentes (hallazgo de revisión, corregido).** El artefacto servido en Azure NO se reentrena cuando se pulsa "Recalcular segmentos" (que reentrena en local): si los datos cambian (p. ej. tras sincronizar un CSV), el cluster devuelto por Azure puede dejar de corresponder con los segmentos vigentes. Mitigación implementada (visible, no oculta):
 
-- `models/artefacto_desplegado.json` (versionado) declara con qué run/línea de datos se entrenó el artefacto desplegado (hoy: run #4, 498 clientes, línea base del CRM simulado).
-- `POST /customers/{id}/predict` responde además `warnings: []`: (a) si hubo una ingesta exitosa después de la última segmentación exitosa (`queries.data_changed_since_segmentation`), avisa "recalcula segmentos"; (b) si el run vigente difiere de la línea base declarada del artefacto (`scoring.artifact_coherence`), avisa que el cluster puede no corresponder. La web muestra ambas advertencias en la predicción.
+- `models/artefacto_desplegado.json` (versionado) declara con qué run/línea de datos se entrenó el artefacto desplegado, como respaldo para despliegues que no reporten huella.
+- **El servicio de scoring se autodescribe:** su `/health` reporta la huella de centroides del modelo que realmente sirve (`azure/scoring_app/main.py`), y `scoring.remote_fingerprint()` la consulta con caché de 60 s. La comparación prioriza esa huella viva contra la del run vigente, así la advertencia es correcta tanto contra el App Service de Azure como contra una instancia local del mismo servicio (instalaciones limpias o pruebas del evaluador con su propio modelo exportado).
+- `POST /customers/{id}/predict` responde además `warnings: []`: (a) si hubo una ingesta exitosa después de la última segmentación exitosa (`queries.data_changed_since_segmentation`), avisa "recalcula segmentos"; (b) si la huella del modelo que sirve difiere de la del run vigente (`scoring.artifact_coherence`), avisa que el cluster puede no corresponder. La web muestra ambas advertencias en la predicción.
 - `save_artifact` escribe junto al `.pkl` un `models/kmeans_local.json` con el run vigente al exportar, para saber qué copiar al realinear.
 - Procedimiento de realineación (documentado en el propio JSON): re-exportar artefacto → actualizar `artefacto_desplegado.json` → redesplegar el App Service → confirmar `/health`.
 
@@ -206,6 +207,8 @@ Su función en este proyecto es recibir un resumen de las características de un
 - acciones sugeridas por segmento.
 
 Las recomendaciones son apoyo para decisión humana, no acciones automáticas obligatorias.
+
+**Procedencia transparente de las recomendaciones:** el backend consume el endpoint que indiquen `AZURE_OPENAI_ENDPOINT`/`AZURE_OPENAI_API_KEY` (configuración 12-factor); con las credenciales reales del proyecto, las recomendaciones las genera el deployment `gpt-5-4-mini-dz` de Azure OpenAI. Como el endpoint es configurable, una prueba de QA puede apuntarlo a un simulador local de la API sin cambiar código: en ese caso el servidor deja un **aviso en su log** (el host no coincide con los dominios de Azure OpenAI) y el texto persistido reflejará al simulador, no a un modelo real. Por eso: tras cualquier prueba con simulador, **regenera las recomendaciones** desde la web antes de una demostración real; cada recomendación guardada indica el deployment con el que se produjo.
 
 ## 9. Backend
 

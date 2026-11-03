@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 
 from fastapi import APIRouter, HTTPException, Query
@@ -17,6 +18,8 @@ from src.ml.clustering import FINAL_K
 from src.ml.segmentation import run_segmentation_si_hay_datos
 from src.persistence import queries
 from src.services import recommendations as reco_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["segmentation"])
 
@@ -95,7 +98,14 @@ def create_recommendation(segment_id: int) -> dict:
             profile=segment.get("profile") or {},
         )
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Azure OpenAI no disponible: {exc}") from exc
+        logger.exception("Fallo al generar la recomendacion del segmento %s", segment_id)
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                "El servicio de recomendaciones con IA no esta operativo en este momento. "
+                "Reintenta en unos minutos; el detalle tecnico quedo registrado en el log del servidor."
+            ),
+        ) from exc
     recommendation_id = queries.save_recommendation(segment_id, model, resultado)
     return {
         "recommendation_id": recommendation_id,

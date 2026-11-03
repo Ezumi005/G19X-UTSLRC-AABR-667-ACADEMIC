@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, HTTPException, Query
 
 from src.api.schemas import CustomerDetailResponse, CustomersResponse, PredictionResponse
 from src.persistence import queries
 from src.services import scoring as scoring_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["customers"])
 
@@ -53,7 +57,14 @@ def predict_customer(customer_id: str) -> dict:
     try:
         clusters = scoring_service.predict_clusters([features])
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Servicio de scoring no disponible: {exc}") from exc
+        logger.exception("Fallo del servicio de scoring al predecir %s", customer_id)
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                "El servicio de prediccion en la nube no esta operativo en este momento. "
+                "Reintenta en unos minutos; el detalle tecnico quedo registrado en el log del servidor."
+            ),
+        ) from exc
     cluster = int(clusters[0])
     _, segments = queries.latest_segments()
     segment = next(
@@ -79,6 +90,7 @@ def predict_customer(customer_id: str) -> dict:
         run_info.get("run_id") if run_info else None,
         run_info.get("n_customers") if run_info else None,
         latest_fingerprint=(params_vigentes or {}).get("centroids_sha256"),
+        remote_huella=scoring_service.remote_fingerprint(),
     )
     if coherencia["stale"] is True or coherencia["stale"] is None:
         warnings.append(coherencia["note"])
