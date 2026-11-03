@@ -201,12 +201,12 @@ function Wizard({
           <p className="muted">
             {actualizando
               ? "Sube la nueva versión del CSV: se conservan el nombre y la entidad de la fuente; el mapeo viene precargado y la IA puede volver a sugerirlo."
-              : "Sube un archivo .csv con cualquier estructura: la IA sugerirá a qué entidad del contrato corresponde y cómo mapear cada columna. Tú confirmas."}
+              : "Sube un archivo .csv o .xlsx con cualquier estructura: la IA sugerirá a qué entidad del contrato corresponde y cómo mapear cada columna. Tú confirmas."}
           </p>
           <input
             ref={inputArchivo}
             type="file"
-            accept=".csv"
+            accept=".csv,.xlsx"
             onChange={(e) => {
               const archivo = e.target.files?.[0];
               if (archivo) {
@@ -466,7 +466,7 @@ export default function Sources() {
     <section>
       <h1>Fuentes de datos</h1>
       <p className="muted">
-        Todo el ciclo de vida de tus datos vive aquí: sube un CSV (la IA sugiere el mapeo al
+        Todo el ciclo de vida de tus datos vive aquí: sube un CSV o un Excel (la IA sugiere el mapeo al
         contrato <InfoTip termino="contrato" /> interno y tú confirmas), actualiza su archivo cuando
         cambie, sincroniza y, si lo retiras, eliges si sus datos se van con él. Cambiar de fuente
         nunca toca el motor.

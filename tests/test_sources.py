@@ -194,6 +194,56 @@ def prueba_impacto_y_fuente_inexistente():
     assert client.delete("/sources/999999").status_code == 404
 
 
+def prueba_excel_subida_y_flujo():
+    """Un .xlsx sube, se convierte y recorre el mismo flujo que un CSV (validar, crear, sincronizar, borrar)."""
+    import io as _io
+
+    import pandas as pd
+
+    df = pd.DataFrame(
+        [
+            {"ident": "C-XLSX-1", "edad": 30, "ciudad": "Guadalajara", "alta": "2025-05-10"},
+            {"ident": "C-XLSX-2", "edad": None, "ciudad": "Merida", "alta": "2024-01-15"},
+            {"ident": "BAD", "edad": 999, "ciudad": "CDMX", "alta": "fecha-mala"},
+        ]
+    )
+    buffer = _io.BytesIO()
+    df.to_excel(buffer, index=False, engine="openpyxl")
+    buffer.seek(0)
+
+    subida = client.post(
+        "/sources/csv/upload",
+        files={"archivo": ("clientes.xlsx", buffer, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
+    )
+    assert subida.status_code == 200, subida.text
+    cuerpo = subida.json()
+    assert cuerpo["filename"] == "clientes.xlsx"
+    assert set(MAPEO.values()) <= set(cuerpo["columns"])
+
+    validacion = client.post(
+        "/sources/csv/validate",
+        json={"name": "QA excel", "entity": "customers", "upload_token": cuerpo["upload_token"], "mapping": MAPEO},
+    )
+    assert validacion.status_code == 200, validacion.text
+    assert validacion.json()["read"] == 3 and validacion.json()["accepted"] == 2
+
+    creacion = client.post(
+        "/sources/csv",
+        json={"name": "QA excel", "entity": "customers", "upload_token": cuerpo["upload_token"], "mapping": MAPEO},
+    )
+    sid = creacion.json()["source_id"]
+    assert client.post(f"/sources/{sid}/sync").status_code == 200
+    borrado = client.delete(f"/sources/{sid}")
+    assert borrado.status_code == 200
+    assert borrado.json()["rows_removed"]["customers"] == 2
+
+
+def prueba_extension_rechazada():
+    r = client.post("/sources/csv/upload", files={"archivo": ("datos.txt", io.BytesIO(b"a,b\n1,2\n"), "text/plain")})
+    assert r.status_code == 400
+    assert ".csv o .xlsx" in r.json()["detail"]
+
+
 if __name__ == "__main__":
     prueba_mapeo_incompleto_rechazado()
     prueba_token_invalido_controlado()
@@ -204,4 +254,6 @@ if __name__ == "__main__":
     prueba_sugerencia_ia_no_disponible()
     prueba_ciclo_de_vida_completo()
     prueba_impacto_y_fuente_inexistente()
-    print("OK: fuentes CSV verificadas (manual + token seguro + 422 controlado + IA con mock + degradacion 503 + ciclo de vida completo con borrado total)")
+    prueba_excel_subida_y_flujo()
+    prueba_extension_rechazada()
+    print("OK: fuentes CSV verificadas (manual + token seguro + 422 controlado + IA con mock + degradacion 503 + ciclo de vida completo con borrado total + Excel xlsx)")

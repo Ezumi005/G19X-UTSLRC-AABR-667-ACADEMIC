@@ -95,21 +95,38 @@ def entity_schema(entity: str) -> dict:
 
 @router.post("/csv/upload")
 async def upload_csv(archivo: UploadFile) -> dict:
-    """Sube un CSV y devuelve token, columnas detectadas y filas de muestra."""
-    if not archivo.filename or not archivo.filename.lower().endswith(".csv"):
-        raise HTTPException(status_code=400, detail="El archivo debe tener extension .csv")
+    """Sube un CSV o un Excel (.xlsx) y devuelve token, columnas detectadas y filas de muestra.
+
+    Los .xlsx se convierten a CSV al vuelo (pandas/openpyxl) y desde ahi siguen
+    exactamente el mismo flujo: el asistente, la IA y la validacion no distinguen
+    el origen.
+    """
+    if not archivo.filename or not archivo.filename.lower().endswith((".csv", ".xlsx")):
+        raise HTTPException(status_code=400, detail="El archivo debe tener extension .csv o .xlsx")
     contenido = await archivo.read()
     if len(contenido) > 15_000_000:
         raise HTTPException(status_code=413, detail="Archivo demasiado grande (max 15 MB)")
     UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
     token = uuid.uuid4().hex[:16]
-    (UPLOADS_DIR / f"{token}.csv").write_bytes(contenido)
+    ruta_destino = UPLOADS_DIR / f"{token}.csv"
+    if archivo.filename.lower().endswith(".xlsx"):
+        import io as _io
+
+        import pandas as pd
+
+        try:
+            hoja = pd.read_excel(_io.BytesIO(contenido), engine="openpyxl")
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=f"No se pudo leer el Excel: {exc}") from exc
+        hoja.to_csv(ruta_destino, index=False, encoding="utf-8")
+    else:
+        ruta_destino.write_bytes(contenido)
     try:
-        columnas, muestra = leer_columnas_y_muestra(UPLOADS_DIR / f"{token}.csv")
+        columnas, muestra = leer_columnas_y_muestra(ruta_destino)
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"No se pudo leer el CSV: {exc}") from exc
     if not columnas or len(columnas) < 1:
-        raise HTTPException(status_code=400, detail="El CSV no tiene columnas legibles")
+        raise HTTPException(status_code=400, detail="El archivo no tiene columnas legibles")
     return {"upload_token": token, "filename": archivo.filename, "columns": columnas, "sample_rows": muestra}
 
 

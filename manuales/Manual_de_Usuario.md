@@ -52,7 +52,7 @@ Los números pueden variar entre consultas: es correcto — la audiencia refleja
 
 Asistente de 3 pasos; en cada paso tú confirmas (la IA jamás toca la base directamente):
 
-1. **Subir CSV:** elige el archivo. El sistema detecta las columnas y muestra las primeras filas.
+1. **Subir CSV o Excel:** elige el archivo (.csv o .xlsx; el Excel se convierte solo). El sistema detecta las columnas y muestra las primeras filas.
 2. **Revisar mapeo sugerido:** la IA propone a qué entidad corresponde el archivo (clientes/transacciones/interacciones/eventos) y mapea cada columna al campo correcto aunque esté en español crudo (`poblacion` → ciudad, `anios` → edad…). Verás el **badge "Sugerido por IA"** con su % de confianza. Todo editable: cambia la entidad, reasigna columnas con los desplegables.
 3. **Validar:** el sistema hace una prueba en seco: cuántas filas son válidas, cuáles se descartan y por qué (se muestran las primeras incidencias) y una vista previa del resultado ya adaptado.
 4. **Guardar** (opción: guardar y sincronizar ya). Tras sincronizar, los datos entran a la base con la misma trazabilidad que cualquier fuente y están disponibles en segmentos/audiencias/dashboard.

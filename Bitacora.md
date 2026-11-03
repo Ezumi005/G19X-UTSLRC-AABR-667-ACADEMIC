@@ -2009,6 +2009,34 @@ Commit + push + CI.
 
 ---
 
+## 02/11/2026 — 18:06
+**Tipo:** Técnico / Documentación (soporte de Excel en Fuentes)
+
+**Actividad realizada:**  
+A pedido del usuario ("agrega ese soporte y documenta"), la vista Fuentes ahora acepta **Excel `.xlsx`** además de CSV: `POST /sources/csv/upload` valida la extensión (.csv o .xlsx), lee el libro con pandas/openpyxl y lo convierte a CSV en el mismo paso de subida; desde ahí el flujo es idéntico (detección de columnas, sugerencia de IA, validación en seco, creación, sincronización, actualización y borrado). El frontend acepta `.csv,.xlsx` en el selector y lo explica en sus textos. `openpyxl>=3.1` quedó en `requirements.txt` (ya estaba en el venv, faltaba declararlo).
+
+Pruebas nuevas en `test_sources`: `prueba_excel_subida_y_flujo` (un .xlsx real generado con pandas recorre subir → validar 3/2 → crear → sincronizar → borrar con retiro de filas) y `prueba_extension_rechazada` (un .txt responde 400 mencionando .csv o .xlsx). Suite de fuentes, ruff y build del frontend en verde.
+
+**Hallazgo agradable durante la verificación:** al correr las suites descubrí que el usuario ya había metido el CRM B él mismo desde la web (fuentes 31 y 32 con sus 239 clientes y 1,179 transacciones vigentes): la plataforma funcionó en sus manos exactamente como se diseñó, y las segmentaciones automáticas de las suites corrieron sobre esa población. No se tocó nada suyo: las pruebas solo crean y retiran sus propias filas.
+
+**Decisiones tomadas:**  
+- Conversión en el upload (no un adaptador nuevo): el Excel es solo un formato de transporte; el contrato y el mapeo asistido siguen siendo la única puerta de entrada.
+- Documentado en README §9, Manual de Usuario §6 y Manual Técnico §3 (de paso se corrigió ahí una firma vieja de `DELETE /sources/{id}?datos=true` que ya no existe: el borrado siempre retira conexión y datos).
+
+**Resultado:**  
+- Un CRM nuevo puede entrar a la plataforma como archivo de Excel sin tocar el backend; ciclos de pruebas y build en verde.
+
+**Archivos o componentes afectados:**  
+- Modificados: `src/api/routes/sources.py` (upload .xlsx), `requirements.txt` (+openpyxl), `frontend/src/pages/Sources.tsx` (accept y textos), `tests/test_sources.py` (2 pruebas), `README.md` (§9), `manuales/Manual_de_Usuario.md` (§6), `manuales/Manual_Tecnico.md` (§3), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno.
+
+**Siguiente paso:**  
+Commit + push + CI.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

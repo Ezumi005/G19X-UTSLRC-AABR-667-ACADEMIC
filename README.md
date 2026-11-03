@@ -237,7 +237,7 @@ Endpoints iniciales de la aplicación:
 - `GET /segments/{id}/recommendation`
 - `POST /segments/{id}/recommendation`
 - `GET/POST/DELETE /audiences[/{id}]` (audiencias dinámicas) + `GET /audiences/{id}/export` (CSV)
-- `GET /sources` · `POST /sources/csv/upload` · `POST /sources/csv/suggest` · `POST /sources/csv/validate` · `POST /sources/csv` · `POST /sources/{id}/sync` · `POST /sources/{id}/replace` · `GET /sources/{id}/impact` · `DELETE /sources/{id}` (fuentes CSV con mapeo asistido por IA y ciclo de vida completo: crear, actualizar archivo, sincronizar y eliminar retirando siempre sus datos de la base; `/schema/{entidad}` expone los campos del contrato por introspección)
+- `GET /sources` · `POST /sources/csv/upload` (acepta `.csv` y `.xlsx`: el Excel se convierte al vuelo con pandas/openpyxl y sigue el mismo flujo) · `POST /sources/csv/suggest` · `POST /sources/csv/validate` · `POST /sources/csv` · `POST /sources/{id}/sync` · `POST /sources/{id}/replace` · `GET /sources/{id}/impact` · `DELETE /sources/{id}` (fuentes CSV/Excel con mapeo asistido por IA y ciclo de vida completo: crear, actualizar archivo, sincronizar y eliminar retirando siempre sus datos de la base; `/schema/{entidad}` expone los campos del contrato por introspección)
 
 Los nombres pueden cambiar, pero las responsabilidades deben mantenerse separadas.
 
