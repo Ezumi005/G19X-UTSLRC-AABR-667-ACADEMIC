@@ -9,6 +9,7 @@ Uso (desde la raiz, con la API CRM simulada encendida en 8001):
 
 from __future__ import annotations
 
+import os
 from datetime import datetime, timezone
 
 from src.adapters import SimulatedCRMAdapter
@@ -92,8 +93,15 @@ def persist_result(result: AdapterResult, source_id: int | None = None) -> int:
     return run_id
 
 
-def run_ingestion(base_url: str = "http://127.0.0.1:8001") -> int:
-    """Ejecuta una sincronizacion completa del CRM simulado. Devuelve el run_id."""
+def run_ingestion(base_url: str | None = None) -> int:
+    """Ejecuta una sincronizacion completa del CRM simulado. Devuelve el run_id.
+
+    Sin argumento, respeta SIMULATOR_URL del entorno (imprescindible dentro de
+    Docker, donde el simulador vive en otro contenedor); fuera de contenedores
+    cae al localhost de siempre.
+    """
+    if base_url is None:
+        base_url = os.environ.get("SIMULATOR_URL", "http://127.0.0.1:8001")
     adapter = SimulatedCRMAdapter(base_url)
     result = adapter.fetch_normalized()
     print(f"Ingestion [{result.report.source}]")
