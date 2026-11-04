@@ -2118,6 +2118,34 @@ Commit + push + CI; punto 3 del plan cuando el usuario lo comparta.
 
 ---
 
+## 03/11/2026 — 17:42
+**Tipo:** Técnico / Entrega (plan del profesor, punto 3 de 13: probar el compose en GitHub Actions)
+
+**Actividad realizada:**  
+Mi máquina no puede correr Docker, pero los runners de GitHub Actions sí: agregué a `.github/workflows/ci.yml` el trabajo **"Stack completo con docker compose"** que en cada push ejecuta `docker compose up -d --build`, espera con un ciclo de curl (hasta 7.5 min) el `/health` del backend y el frontend en 5173, comprueba que el stack trae datos vigentes (498 clientes y 6 segmentos) y, si algo falla, vuelca `docker compose logs`.
+
+**Hallazgos que el job destapó en su primera ejecución (para eso existe):**
+1. **Bug real de ingesta en contenedores:** `run_ingestion()` tenía `http://127.0.0.1:8001` como default hardcodeado y no leía `SIMULATOR_URL`; dentro del contenedor del backend, 127.0.0.1 es él mismo, así que la ingesta fallaba y la cadena `&&` cortaba antes de levantar uvicorn (el health nunca respondía). Corregido: sin argumento, respeta `SIMULATOR_URL` del entorno y cae a localhost solo fuera de contenedores (commit `9fa1793`).
+2. **Volumen de PostgreSQL 18 desactualizado:** la imagen 18 movió su `VOLUME` a `/var/lib/postgresql` (PGDATA `/var/lib/postgresql/18/docker`, confirmado en la documentación oficial de la imagen); nuestro compose montaba la ruta vieja `/var/lib/postgresql/data`, que dejaba el volumen nombrado sin uso. Corregido en el compose.
+
+**Resultado:**  
+- CI completa en verde con el job docker incluido (run del 03/11/2026): el compose **ya no es una promesa**, se ejecuta en cada push. README §20 actualizado: donde decía "no se ha ejecutado nunca" ahora dice cómo y cuándo se probó (CI, 03/11/2026, qué verifica), manteniendo la aclaración de que la vía principal de instalación en escritorio siguen siendo los `.bat` porque esta máquina no tiene Docker Desktop.
+
+**Decisiones tomadas:**  
+- El job verifica además del health que el stack tenga datos y segmentos (no solo que los puertos respondan): un compose que levanta pero no procesa no pasa.
+- Se conservó `timeout-minutes: 30` y el volcado de logs en fallo para que cualquier regresión del stack sea diagnosticable sin repro local.
+
+**Archivos o componentes afectados:**  
+- `.github/workflows/ci.yml` (job docker), `docker-compose.yml` (volumen postgres 18), `src/persistence/ingest.py` (SIMULATOR_URL), `README.md` (§20 estado de prueba), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno pendiente: el primer run falló por el bug de SIMULATOR_URL (esperado y deseable: el job cumplió su función) y el segundo run pasó completo.
+
+**Siguiente paso:**  
+Commit + push + CI; punto 4 del plan cuando el usuario lo comparta.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
