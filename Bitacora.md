@@ -2195,6 +2195,32 @@ Commit + push + CI; punto 6 del plan cuando el usuario lo comparta.
 
 ---
 
+## 04/11/2026 — 16:29
+**Tipo:** Gestión / Evidencias (capturas del frontend para la retroalimentación)
+
+**Actividad realizada:**  
+El profesor pidió capturas de la aplicación funcionando, una por menú y funcionalidad. Generé **20 capturas reales** con Playwright (Chromium, 1440×900 @2x) sobre el sistema vivo con los datos vigentes del usuario (CRM B, 239 clientes, segmentos del run vigente), recorriendo la web de punta a punta y dejando los archivos en `C:\Users\Lenovo\Downloads\capturas_frontend\` (fuera del repositorio, como pidió el usuario):
+
+01 dashboard claro (tarjetas + 4 gráficas) · 02 glosario InfoTip abierto · 03 dashboard tema oscuro · 04 clientes con paginación · 05 clientes filtrados por segmento · 06 fila expandida con detalle · 07 predicción Azure en la lista (con el indicador "desalineado" de coherencia visible, funcionando) · 08 página de detalle del cliente con perfil RFM · 09 grid de segmentos · 10 detalle de segmento (perfil + clientes) · 11 recomendación generada con Azure OpenAI real · 12 audiencias con creación por interfaz · 13 detalle de audiencia con miembros · 14 modal propio de confirmación de borrado · 15 toast de confirmación · 16 listado de Fuentes con ciclo de vida (sincronizar/actualizar/retirar) · 17 asistente de Fuentes paso 2 con badge "Sugerido por IA" real · 18 validación en seco con incidencias del CSV demo · 19 Ejecuciones (runs de segmentación e ingestión) · 20 panel de configuración (tema).
+
+**Decisiones tomadas:**  
+- Las capturas viven fuera del repositorio (Descargas) por indicación del usuario; el recorrido creó y borró su propia audiencia de prueba y limpió el CSV temporal del asistente, así que la base quedó exactamente como estaba (solo se persistió la recomendación real generada en el paso 11, que es contenido válido del segmento vigente).
+- Recorrido en dos scripts porque el primer intento clicó un encabezado en lugar del botón "Crear audiencia"; se corrigió el selector y se retomó desde la captura 12 sin repetir las anteriores.
+
+**Resultado:**  
+- 20 evidencias visuales de cada menú y funcionalidad, incluidas las que la retroalimentación pide demostrar (tema oscuro, degradación y advertencias visibles, ciclo de Fuentes, reactividad de segmentos y gráficas).
+
+**Archivos o componentes afectados:**  
+- Solo archivos externos: `C:\Users\Lenovo\Downloads\capturas_frontend\*.png`. Repositorio: `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno.
+
+**Siguiente paso:**  
+Commit + push + CI de esta entrada; punto 6 del plan cuando el usuario lo comparta.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
