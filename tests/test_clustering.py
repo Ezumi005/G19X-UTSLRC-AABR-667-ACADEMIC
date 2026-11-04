@@ -120,6 +120,29 @@ def prueba_huella_centroides_estable():
     assert h3 != h1
 
 
+def prueba_save_artifact_escribe_su_huella(tmp_path=None):
+    """El exporte escribe models/kmeans_local.json con la huella del modelo exportado."""
+    import json
+    import tempfile
+    from pathlib import Path
+
+    import src.ml.clustering as cl
+
+    original = cl.MODELS_DIR
+    cl.MODELS_DIR = Path(tempfile.mkdtemp())
+    try:
+        xs = blobs_separados()
+        modelo = train_kmeans(xs, 2)
+        from sklearn.preprocessing import StandardScaler
+
+        cl.save_artifact(modelo, StandardScaler().fit(xs), {"clientes": len(xs)}, 2, {"silhouette": 0.5}, 0.99)
+        contexto = json.loads((cl.MODELS_DIR / "kmeans_local.json").read_text(encoding="utf-8"))
+        assert contexto["centroids_sha256"] == centroids_fingerprint(modelo)
+        assert (cl.MODELS_DIR / "kmeans_local.pkl").exists()
+    finally:
+        cl.MODELS_DIR = original
+
+
 if __name__ == "__main__":
     prueba_prepare_matrix()
     prueba_imputacion_cap()
@@ -127,4 +150,5 @@ if __name__ == "__main__":
     prueba_entrenamiento_y_estabilidad()
     prueba_cluster_profiles()
     prueba_huella_centroides_estable()
+    prueba_save_artifact_escribe_su_huella()
     print("OK: clustering verificado (preparacion, imputacion, eleccion de k, estabilidad, perfiles)")

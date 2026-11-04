@@ -14,7 +14,6 @@ from __future__ import annotations
 import json
 import os
 import time
-from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
@@ -162,12 +161,3 @@ def predict_clusters(customers: list[dict]) -> list[int]:
         except requests.RequestException as exc:
             ultimo_error = exc
     raise ultimo_error
-
-
-def export_metadata(run_id: int | None, n_customers: int | None) -> dict:
-    """Contexto que acompagna a un artefacto recien exportado (save_artifact lo escribe junto al .pkl)."""
-    return {
-        "run_id": run_id,
-        "n_customers": n_customers,
-        "exported_at": datetime.now(timezone.utc).isoformat(),
-    }

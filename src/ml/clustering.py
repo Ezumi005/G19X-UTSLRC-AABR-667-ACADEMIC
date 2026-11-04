@@ -184,12 +184,14 @@ def save_artifact(model: KMeans, scaler: StandardScaler, info: dict, k: int, met
         contexto = {
             "run_id": run_info.get("run_id") if run_info else None,
             "n_customers": run_info.get("n_customers") if run_info else info.get("clientes"),
+            "centroids_sha256": centroids_fingerprint(model),
             "exported_at": datetime.now(timezone.utc).isoformat(),
         }
     except Exception:
         contexto = {
             "run_id": None,
             "n_customers": info.get("clientes"),
+            "centroids_sha256": centroids_fingerprint(model),
             "exported_at": datetime.now(timezone.utc).isoformat(),
         }
     (MODELS_DIR / "kmeans_local.json").write_text(json.dumps(contexto, indent=2), encoding="utf-8")

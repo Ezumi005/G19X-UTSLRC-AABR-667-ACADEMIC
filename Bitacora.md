@@ -2146,6 +2146,31 @@ Commit + push + CI; punto 4 del plan cuando el usuario lo comparta.
 
 ---
 
+## 03/11/2026 — 18:29
+**Tipo:** Técnico / Calidad (plan del profesor, punto 4 de 13: que el exporte del modelo escriba su propia huella)
+
+**Actividad realizada:**  
+Cerré el punto 4 del plan, que eliminaba una inconsistencia entre el código y los metadatos de realineación:
+
+1. **`save_artifact()` ahora escribe su propia huella:** los dos diccionarios `contexto` (el del `try` y el del `except`) incluyen `"centroids_sha256": centroids_fingerprint(model)`, así `models/kmeans_local.json` lleva run_id, n_customers, huella y fecha de exporte. La próxima realineación copia los tres valores de ese archivo sin buscarlos en la base.
+2. **Código muerto fuera:** eliminé `export_metadata()` de `src/services/scoring.py` (parecía el escritor de metadatos y nadie lo llamaba); `git grep -n export_metadata` no encuentra ninguna referencia, y el import de `datetime/timezone` que solo usaba esa función también salió.
+3. **`how_to_realign` corregido** en `models/artefacto_desplegado.json`: ahora dice simplemente que run_id, n_customers y centroids_sha256 se copian de `models/kmeans_local.json`.
+4. **Prueba nueva** en `test_clustering` (`prueba_save_artifact_escribe_su_huella`): exporta un modelo diminuto con `MODELS_DIR` apuntando a una carpeta temporal y afirma que el JSON resultante trae la huella igual a `centroids_fingerprint(modelo)` y que el `.pkl` existe; restaura `MODELS_DIR` al final para no tocar los artefactos reales.
+
+**Resultado:**  
+- Los tres criterios del plan verificados: el JSON del exporte lleva la huella (prueba en verde), `git grep export_metadata` vacío, y el texto de realineación apunta a `kmeans_local.json`. 10/10 suites en verde contra base temporal sembrada (la base del usuario vive con el CRM B que él cargó, y las suites asumen clientes CLI-*), ruff limpio.
+
+**Archivos o componentes afectados:**  
+- `src/ml/clustering.py` (huella en el contexto del exporte), `src/services/scoring.py` (fuera código muerto), `models/artefacto_desplegado.json` (how_to_realign), `tests/test_clustering.py` (prueba nueva), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno.
+
+**Siguiente paso:**  
+Commit + push + CI; punto 5 del plan cuando el usuario lo comparta.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

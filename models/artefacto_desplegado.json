@@ -6,5 +6,5 @@
   "centroids_sha256": "0a26857952307c32",
   "trained_with": "Linea vigente al 01/11/2026: 498 clientes y 6,515 transacciones (linea base del CRM simulado mas las 6 ventas del CSV de demostracion sincronizado el 20/10); realineado tras la advertencia de huella contra el exporte original del 23/09 (run #4)",
   "exported_at": "2026-11-01T20:04:54-07:00",
-  "how_to_realign": "Tras cambiar datos y recalcular segmentos: re-exportar el artefacto (python -m src.ml.clustering), copiar models/kmeans_local.pkl a azure/scoring_app/, actualizar este archivo con run_id, n_customers y centroids_sha256 de models/kmeans_local.json mas la huella nueva, redesplegar el App Service y confirmar /health (README seccion 7)."
+  "how_to_realign": "Tras cambiar datos y recalcular segmentos: re-exportar el artefacto (python -m src.ml.clustering), copiar models/kmeans_local.pkl a azure/scoring_app/, y actualizar este archivo copiando run_id, n_customers y centroids_sha256 directamente de models/kmeans_local.json (el exporte escribe ahi su propia huella); redesplegar el App Service y confirmar /health (README seccion 7)."
 }
