@@ -8,7 +8,10 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      # PostgreSQL 18 movio el VOLUME de la imagen a /var/lib/postgresql
+      # (PGDATA=/var/lib/postgresql/18/docker); montar la ruta vieja
+      # /var/lib/postgresql/data dejaria el volumen nombrado sin uso.
+      - pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s

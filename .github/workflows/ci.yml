@@ -78,3 +78,36 @@ jobs:
       - name: Compilar (tsc + vite)
         run: npm run build
         working-directory: frontend
+
+  docker:
+    name: Stack completo con docker compose
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Levantar stack
+        run: docker compose up -d --build
+
+      - name: Esperar backend y frontend
+        run: |
+          echo "Esperando /health del backend (el arranque incluye ingesta y segmentacion)..."
+          ok=0
+          for i in $(seq 1 90); do
+            if curl -fs http://localhost:8000/health; then ok=1; break; fi
+            sleep 5
+          done
+          if [ "$ok" != "1" ]; then echo "El backend no respondio a tiempo"; exit 1; fi
+          curl -fs http://localhost:8000/health
+          curl -fs http://localhost:5173 > /dev/null
+          echo "Backend (8000) y frontend (5173) responden"
+
+      - name: Comprobar datos y segmentos del stack
+        run: |
+          curl -fs "http://localhost:8000/customers?limit=1" | grep -q '"total":498'
+          curl -fs http://localhost:8000/segments | grep -q '"count":6'
+          echo "Datos y segmentos vigentes dentro del stack docker"
+
+      - name: Registros si algo falla
+        if: failure()
+        run: docker compose logs
