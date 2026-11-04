@@ -2171,6 +2171,30 @@ Commit + push + CI; punto 5 del plan cuando el usuario lo comparta.
 
 ---
 
+## 03/11/2026 — 22:24
+**Tipo:** Documentación (plan del profesor, punto 5 de 13: variables de Azure coherentes en la guía)
+
+**Actividad realizada:**  
+Corregí las variables de Azure que la guía de instalación mostraba mal y que habrían hecho tropezar a quien instala por primera vez:
+
+1. `manuales/Guia_de_Instalacion.md` decía `AZURE_SCORING_URL=…/score` y `AZURE_SCORING_API_KEY`: el código (`src/services/scoring.py`) lee `AZURE_SCORING_KEY` y **él mismo agrega `/score`** a la URL, así que seguir la guía al pie de la letra dejaba una variable que nadie lee (predicción en 501) o una URL doble (`/score/score`). Quedó como dos líneas correctas: `AZURE_SCORING_URL=https://motor-seg-scoring.azurewebsites.net` y `AZURE_SCORING_KEY=tu-clave`, igual que `.env.example`.
+2. **Nombre del despliegue de OpenAI unificado:** `.env.example` decía `gpt-5-4-mini` mientras el compose y el `.env` real que funciona usan `gpt-5-4-mini-dz` (el deployment DataZoneStandard creado el 23/09). Verifiqué el nombre contra el `.env` local vigente (sin copiar ninguna llave) y dejé `gpt-5-4-mini-dz` en `.env.example`, idéntico al default de `docker-compose.yml`.
+3. Barrido con `git grep -n AZURE_SCORING_API_KEY`: sin referencias en ningún documento del repositorio.
+
+**Resultado:**  
+- Los tres criterios del plan verificados: grep limpio; la URL de scoring en la guía no termina en `/score`; el nombre del despliegue es el mismo en `.env.example` y `docker-compose.yml`.
+
+**Archivos o componentes afectados:**  
+- `manuales/Guia_de_Instalacion.md` (bloque de variables), `.env.example` (nombre del deployment), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno.
+
+**Siguiente paso:**  
+Commit + push + CI; punto 6 del plan cuando el usuario lo comparta.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

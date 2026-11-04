@@ -44,7 +44,8 @@ Editar `.env` (todas las claves con su explicación aparecen comentadas el el pr
 DATABASE_URL=postgresql://postgres:TU_PASSWORD@localhost:5432/motor_segmentacion
 # Opcionales (IA):
 SIMULATOR_URL=http://127.0.0.1:8001
-AZURE_SCORING_URL=https://motor-seg-scoring.../score     + AZURE_SCORING_API_KEY
+AZURE_SCORING_URL=https://motor-seg-scoring.azurewebsites.net
+AZURE_SCORING_KEY=tu-clave
 AZURE_OPENAI_ENDPOINT=https://openai-motor-seg.../openai + AZURE_OPENAI_API_KEY + AZURE_OPENAI_DEPLOYMENT
 ```
 ⚠️ Nunca subir el `.env` al repositorio (el `.gitignore` ya lo excluye).
