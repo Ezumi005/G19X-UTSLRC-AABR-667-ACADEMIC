@@ -128,7 +128,32 @@ def prueba_scoring_app_rechaza_dato_no_numerico():
 
     from fastapi.testclient import TestClient as _TC
 
+    from azure.scoring_app import main as scoring_main
     from azure.scoring_app.main import app as scoring_app
+
+    # En CI el artefacto no esta versionado: si no existe, se fabrica uno minimo
+    # para poder ejercitar el servicio; nunca se pisa un artefacto real.
+    if not scoring_main.ARTIFACT_PATH.exists():
+        import joblib
+        import numpy as np
+        from sklearn.cluster import KMeans
+        from sklearn.preprocessing import StandardScaler
+
+        rng = np.random.default_rng(0)
+        x = rng.normal(size=(40, 7))
+        modelo = KMeans(n_clusters=2, random_state=0, n_init=10).fit(x)
+        prep = {
+            "recency_imputados": 0,
+            "recency_cap_dias": 300.0,
+            "feature_columns": list(scoring_main.FEATURES),
+            "log_columns": ["frequency", "monetary", "web_visits", "abandoned_carts"],
+            "clientes": 40,
+        }
+        joblib.dump(
+            {"model": modelo, "scaler": StandardScaler().fit(x), "k": 2,
+             "metrics": {}, "stability_ari": 1.0, "preparation": prep},
+            scoring_main.ARTIFACT_PATH,
+        )
 
     previa = _os.environ.get("SCORING_API_KEY")
     _os.environ["SCORING_API_KEY"] = "prueba"

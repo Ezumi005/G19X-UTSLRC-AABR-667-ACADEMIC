@@ -41,8 +41,14 @@ def huella_centroides(centros) -> str:
 @app.on_event("startup")
 def cargar_artefacto() -> None:
     global ARTIFACT, HUELLA
-    ARTIFACT = joblib.load(ARTIFACT_PATH)
-    HUELLA = huella_centroides(ARTIFACT["model"].cluster_centers_)
+    try:
+        ARTIFACT = joblib.load(ARTIFACT_PATH)
+        HUELLA = huella_centroides(ARTIFACT["model"].cluster_centers_)
+    except FileNotFoundError:
+        # Sin artefacto junto al servicio (p. ej. CI o despliegue incompleto):
+        # el servicio arranca y lo declara en /health y /score, en vez de caer.
+        ARTIFACT = None
+        HUELLA = None
 
 
 def _verificar_llave(x_api_key: str | None) -> None:
@@ -61,6 +67,11 @@ def health() -> dict:
 @app.post("/score")
 def score(payload: dict, x_api_key: str | None = Header(default=None)) -> dict:
     _verificar_llave(x_api_key)
+    if ARTIFACT is None:
+        raise HTTPException(
+            status_code=503,
+            detail="El servicio de scoring arranco sin artefacto: despliega kmeans_local.pkl junto a este servicio.",
+        )
     rows = payload.get("customers") or []
     if not rows:
         raise HTTPException(status_code=400, detail="'customers' vacio")

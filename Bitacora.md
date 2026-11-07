@@ -2246,6 +2246,29 @@ Commit + push + CI; siguiente punto de la retroalimentación cuando el usuario l
 
 ---
 
+## 06/11/2026 — 20:45
+**Tipo:** Pruebas / Técnico (la CI cazó un supuesto de mi prueba nueva)
+
+**Actividad realizada:**  
+El push de la ronda 4 puso la CI en rojo por primera vez en este corte, y la causa fue instructiva: mi prueba nueva del servicio de scoring importa `azure.scoring_app.main`, cuyo `startup` carga `azure/scoring_app/kmeans_local.pkl`; ese artefacto **no se versiona** (existe en mi máquina y en el App Service, pero no en el runner), así que en CI el arranque tronaba con `FileNotFoundError`. Lo cerré en dos frentes:
+
+1. **Arranque tolerante del servicio de scoring:** si el `.pkl` no está junto al servicio, `cargar_artefacto()` ya no truena: deja `ARTIFACT=None`, `/health` lo declara (`artefacto: false`) y `/score` responde **503 con mensaje claro** ("despliega kmeans_local.pkl junto a este servicio") en lugar de un 500 crudo o un crash de startup. Comportamiento más sano también en producción ante un despliegue incompleto.
+2. **La prueba se autoabastece en CI:** si el artefacto no existe, `prueba_scoring_app_rechaza_dato_no_numerico` fabrica uno mínimo (KMeans diminuto con la misma estructura y `preparation`) para ejercitar el servicio; **nunca pisa un artefacto real** (solo lo crea si falta).
+
+**Resultado:**  
+- 10/10 suites en verde contra base temporal sembrada (creada y eliminada en la sesión), ruff limpio; el fallo local previo de `test_scoring` era el estado de la base del usuario (CRM B sin clientes CLI-*), no el código.
+
+**Archivos o componentes afectados:**  
+- `azure/scoring_app/main.py` (startup tolerante + 503 sin artefacto), `tests/test_scoring.py` (artefacto mínimo solo si falta), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno.
+
+**Siguiente paso:**  
+Commit + push + CI en verde.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
