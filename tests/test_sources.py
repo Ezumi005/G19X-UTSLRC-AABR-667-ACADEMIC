@@ -244,6 +244,24 @@ def prueba_extension_rechazada():
     assert ".csv o .xlsx" in r.json()["detail"]
 
 
+def prueba_incidencias_legibles():
+    """Las incidencias del CSV mencionan el campo y el motivo completo, sin volcado Pydantic truncado."""
+    csv_malo = io.BytesIO("ident,edad,ciudad,alta\nC-LEG-1,30,Guadalajara,ayer\n".encode("utf-8"))
+    subida = client.post("/sources/csv/upload", files={"archivo": ("legible.csv", csv_malo, "text/csv")})
+    token = subida.json()["upload_token"]
+    r = client.post(
+        "/sources/csv/validate",
+        json={"name": "x", "entity": "customers", "upload_token": token, "mapping": MAPEO},
+    )
+    assert r.status_code == 200, r.text
+    incidencias = r.json()["incidents"]
+    assert len(incidencias) == 1
+    texto = incidencias[0]
+    assert "Campo 'registered_at'" in texto, texto
+    assert "validation error for" not in texto
+    assert len(texto) < 300
+
+
 if __name__ == "__main__":
     prueba_mapeo_incompleto_rechazado()
     prueba_token_invalido_controlado()
@@ -256,4 +274,5 @@ if __name__ == "__main__":
     prueba_impacto_y_fuente_inexistente()
     prueba_excel_subida_y_flujo()
     prueba_extension_rechazada()
-    print("OK: fuentes CSV verificadas (manual + token seguro + 422 controlado + IA con mock + degradacion 503 + ciclo de vida completo con borrado total + Excel xlsx)")
+    prueba_incidencias_legibles()
+    print("OK: fuentes CSV verificadas (manual + token seguro + 422 controlado + IA con mock + degradacion 503 + ciclo de vida completo con borrado total + Excel xlsx + incidencias legibles)")

@@ -43,7 +43,7 @@ def suggest_mapping(columns: list[str], sample_rows: list[dict]) -> dict:
         api_version="2024-10-21",
     )
     respuesta = cliente.chat.completions.create(
-        model=os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-5-4-mini"),
+        model=os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-5-4-mini-dz"),
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {

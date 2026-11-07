@@ -104,7 +104,7 @@ def generate_recommendation(
         api_version="2024-10-21",
     )
     response = client.chat.completions.create(
-        model=os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-5-4-mini"),
+        model=os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-5-4-mini-dz"),
         messages=build_messages(label, description, n_customers, profile),
         temperature=0.4,
         max_completion_tokens=700,

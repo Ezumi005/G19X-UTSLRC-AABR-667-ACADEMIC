@@ -122,9 +122,47 @@ def prueba_coherencia_artefacto(tmp_path=None):
         _configurar_entorno(False)
 
 
+def prueba_scoring_app_rechaza_dato_no_numerico():
+    """El servicio de scoring responde 400 (no 500) ante features no numericas o nulas."""
+    import os as _os
+
+    from fastapi.testclient import TestClient as _TC
+
+    from azure.scoring_app.main import app as scoring_app
+
+    previa = _os.environ.get("SCORING_API_KEY")
+    _os.environ["SCORING_API_KEY"] = "prueba"
+    try:
+        with _TC(scoring_app) as cliente:
+            base = {
+                "recency_days": 10,
+                "frequency": 3,
+                "monetary": 1500,
+                "web_visits": 4,
+                "abandoned_carts": 1,
+                "campaign_click_rate": 0.2,
+                "tenure_days": 400,
+            }
+            r = cliente.post("/score", json={"customers": [base]}, headers={"X-API-Key": "prueba"})
+            assert r.status_code == 200, r.text
+            malo = dict(base, monetary="abc")
+            r = cliente.post("/score", json={"customers": [malo]}, headers={"X-API-Key": "prueba"})
+            assert r.status_code == 400, r.text
+            assert "no numericas" in r.json()["detail"]
+            nulo = dict(base, frequency=None)
+            r = cliente.post("/score", json={"customers": [nulo]}, headers={"X-API-Key": "prueba"})
+            assert r.status_code == 400, r.text
+    finally:
+        if previa is None:
+            _os.environ.pop("SCORING_API_KEY", None)
+        else:
+            _os.environ["SCORING_API_KEY"] = previa
+
+
 if __name__ == "__main__":
     prueba_prediccion_con_mock()
     prueba_errores_controlados()
     prueba_cliente_sin_compras()
     prueba_coherencia_artefacto()
-    print("OK: prediccion verificada (mock 200, 404, 501, features completas y coherencia del artefacto)")
+    prueba_scoring_app_rechaza_dato_no_numerico()
+    print("OK: prediccion verificada (mock 200, 404, 501, features completas, coherencia del artefacto y 400 ante datos no numericos)")

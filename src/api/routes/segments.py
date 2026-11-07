@@ -89,7 +89,7 @@ def create_recommendation(segment_id: int) -> dict:
             status_code=501,
             detail="Azure OpenAI no configurado: faltan AZURE_OPENAI_* en el .env del backend.",
         )
-    model = os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-5-4-mini")
+    model = os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-5-4-mini-dz")
     try:
         resultado = reco_service.generate_recommendation(
             label=segment["label"],

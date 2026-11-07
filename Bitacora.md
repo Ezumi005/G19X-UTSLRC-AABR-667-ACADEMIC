@@ -2221,6 +2221,31 @@ Commit + push + CI de esta entrada; punto 6 del plan cuando el usuario lo compar
 
 ---
 
+## 06/11/2026 — 20:38
+**Tipo:** Técnico / Documentación (cuarta ronda del tutor: "lo que sigue", cuatro cierres)
+
+**Actividad realizada:**  
+El tutor confirmó las cinco tareas anteriores con evidencia y dejó cuatro cierres; los atendí todos:
+
+1. **Plantilla `.env.example` usable tal cual sin Azure:** `AZURE_OPENAI_ENDPOINT` y `AZURE_OPENAI_API_KEY` quedan **comentadas** (como ya estaban las de scoring), con nota de por qué: con la plantilla sin tocar, el proyecto corre completo y degrada con 501 informativo, en lugar de fingir "configurado" y caer en 502. De paso, el valor por omisión del despliegue de OpenAI pasó de `gpt-5-4-mini` a **`gpt-5-4-mini-dz`** (el nombre real del deployment DataZoneStandard) en `segments.py`, `recommendations.py` y `mapping_suggest.py`.
+2. **Inicio rápido del README con requisitos reales:** ahora dice "Python 3.13 o superior, Node 22 o superior" (los que usa la CI y con los que se probó), y avisa que la web debe servirse en el **puerto 5173** porque el CORS del backend solo acepta 5173 y 3000 en desarrollo.
+3. **Scoring sin 500 ante datos no numéricos:** en `azure/scoring_app/main.py` el armado de la matriz (`float(row[c])`) quedó envuelto en `try/except (TypeError, ValueError)` y responde **400 con mensaje claro** indicando la posición del cliente y que las 7 features deben ser numéricas (recency puede ser null). Prueba nueva en `test_scoring` que ejercita el servicio real de scoring (TestClient con startup): válido 200, `"abc"` 400, `null` en frequency 400.
+4. **Incidencias del CSV legibles:** `csv_adapter.py` ya no guarda `str(exc)` truncado a 200 (volcado Pydantic en inglés y cortado); arma el texto con el campo calculado y `errores[0]["msg"]`: `Campo 'registered_at': Input should be...`. Prueba nueva en `test_sources` que afirma que la incidencia menciona el campo y no contiene el encabezado raw de Pydantic.
+
+**Resultado:**  
+- 10/10 suites en verde contra base temporal sembrada (creada y eliminada en la sesión), ruff limpio. Los cuatro criterios del tutor quedan verificables por grep/lectura: plantilla comentada, defaults `-dz`, README con requisitos reales, 400 en scoring y mensaje de incidencia legible.
+
+**Archivos o componentes afectados:**  
+- `.env.example`, `src/api/routes/segments.py`, `src/services/recommendations.py`, `src/services/mapping_suggest.py` (default `-dz`), `README.md` (inicio rápido), `azure/scoring_app/main.py` (400 ante no numéricos), `src/adapters/csv_adapter.py` (incidencias legibles), `tests/test_scoring.py` y `tests/test_sources.py` (pruebas nuevas), `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno. Hallazgo menor durante las pruebas: `TestClient` de FastAPI solo dispara `startup` usándolo como context manager; la prueba del scoring quedó ajustada a eso.
+
+**Siguiente paso:**  
+Commit + push + CI; siguiente punto de la retroalimentación cuando el usuario lo comparta.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM

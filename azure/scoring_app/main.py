@@ -74,11 +74,20 @@ def score(payload: dict, x_api_key: str | None = Header(default=None)) -> dict:
     prep = ARTIFACT["preparation"]
     cap = float(prep.get("recency_cap_dias") or 0.0)
     matrix = []
-    for row in rows:
-        recency = row.get("recency_days")
-        if recency is None:
-            recency = cap
-        matrix.append([float(recency)] + [float(row[c]) for c in FEATURES[1:]])
+    for posicion, row in enumerate(rows):
+        try:
+            recency = row.get("recency_days")
+            if recency is None:
+                recency = cap
+            matrix.append([float(recency)] + [float(row[c]) for c in FEATURES[1:]])
+        except (TypeError, ValueError) as exc:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"El cliente en la posicion {posicion} trae features no numericas o nulas: "
+                    "las 7 features del contrato de scoring deben ser numeros (recency_days puede ser null)."
+                ),
+            ) from exc
 
     x = np.array(matrix, dtype=float)
     for column in prep["log_columns"]:

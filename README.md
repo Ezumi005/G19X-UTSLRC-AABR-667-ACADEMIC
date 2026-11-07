@@ -10,7 +10,7 @@ El proyecto se desarrolla para **PluriOne S.A. de C.V. (Develop Talent & Technol
 
 ### Inicio rápido (para revisar el proyecto sin leer todo el documento)
 
-1. **Requisitos:** Windows, Python 3.14, Node 24 y PostgreSQL 18 corriendo; copia `.env.example` a `.env` y pon tu `DATABASE_URL` (las claves de Azure son opcionales, ver §25).
+1. **Requisitos:** Windows, **Python 3.13 o superior** y **Node 22 o superior** (los mismos que usa la CI; el desarrollo local corrió con 3.14/24), y PostgreSQL 18 corriendo; copia `.env.example` a `.env` y pon tu `DATABASE_URL` (las claves de Azure son opcionales: la plantilla funciona tal cual sin Azure, ver §25). La web debe servirse en el **puerto 5173**: el CORS del backend (`src/api/app.py`) solo acepta 5173 y 3000 en desarrollo.
 2. **Instalar (solo la primera vez):** doble clic en `instalar_proyecto.bat` (crea el entorno, instala dependencias, genera el dataset del simulador y aplica el esquema; se detiene con mensaje claro si algo falla).
 3. **Levantar y cargar:** doble clic en `levantar_proyecto.bat` y después en `cargar_datos.bat` (ingesta + segmentación).
 4. **Entrar:** se abre `http://localhost:5173` (web); la API documentada (Swagger) vive en `http://127.0.0.1:8000/docs`.

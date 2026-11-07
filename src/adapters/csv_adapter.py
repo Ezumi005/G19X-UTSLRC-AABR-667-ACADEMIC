@@ -106,7 +106,9 @@ class DynamicCSVAdapter(BaseAdapter):
             except ValidationError as exc:
                 errores = exc.errors()
                 campo = ".".join(str(parte) for parte in errores[0]["loc"]) if errores and errores[0].get("loc") else None
-                incidentes.append(Incident(self.entity, str(identificador), str(exc).replace("\n", " ")[:200], campo))
+                detalle = errores[0].get("msg", "valor invalido") if errores else "valor invalido"
+                texto = f"Campo '{campo}': {detalle}" if campo else detalle
+                incidentes.append(Incident(self.entity, str(identificador), texto, campo))
         reporte.add(self.entity, len(aceptados) + len(incidentes), len(aceptados), incidentes)
 
         dataset = NormalizedDataset()
