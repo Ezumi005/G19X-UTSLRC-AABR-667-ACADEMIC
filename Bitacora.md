@@ -2269,6 +2269,30 @@ Commit + push + CI en verde.
 
 ---
 
+## 07/11/2026 — 19:17
+**Tipo:** Gestión / Evidencias (video de 12 segundos pedido por el tutor)
+
+**Actividad realizada:**  
+El tutor pidió un video de ~12 segundos que muestre las pruebas del ciclo de Fuentes; el usuario eligió el guion de **ciclo completo con borrado**. Lo generé con grabación real de navegador (Playwright, contexto con `record_video`) ejecutando el flujo de verdad sobre el sistema vivo: título → subir el CSV de demostración → badge "Sugerido por IA (98%)" con el mapeo → validación en seco (9 leídas / 6 válidas / 3 incidencias) → guardar y sincronizar (con re-segmentación automática) → eliminar la fuente mostrando el impacto y retirando sus datos → carta de cierre. Cada beat lleva un **rótulo de contexto** inyectado en la página (n/5 + frase), así el video se entiende solo.
+
+**Post-proceso sin herramientas externas:** el ffmpeg incluido con Playwright es un build mínimo (solo vp9 y `scale`): sin `setpts` ni pipe de frames. La aceleración a exactamente **12.00 s** se logró reescribiendo el `TimestampScale` del segmento EBML del webm (1,000,000 → 635,593, factor 0.6356): cambio de velocidad **lossless**, sin recodificar ni tirar frames. Se entregan dos archivos en `C:\Users\Lenovo\Downloads\video_demo_12s\`: `demo_fuentes_12s.webm` (12 s) y `version_cruda_sin_editar.webm` (18.9 s, sin tocar).
+
+**Resultado:**  
+- Video de 12.00 s verificado con el propio ffmpeg (`Duration: 00:00:12.00`).
+- La base quedó **exactamente como estaba** antes de grabar (fuentes 31/32 del CRM B, 239 clientes, 1,179 transacciones): el ciclo creó y eliminó su propia fuente sin huérfanos; el CSV temporal del upload lo borró el propio borrado de la fuente.
+- Servidores apagados al terminar, como se encontraron.
+
+**Archivos o componentes afectados:**  
+- Solo archivos externos en Descargas (video) y temporales de grabación. Repositorio: `Bitacora.md` (esta entrada).
+
+**Problemas o bloqueos:**  
+- Ninguno. Nota técnica: el build mínimo de ffmpeg obligó al truco de TimestampScale; quedó documentado aquí para repetirlo si hace falta otro video.
+
+**Siguiente paso:**  
+Commit + push + CI; siguiente pedido del tutor o del usuario.
+
+---
+
 # Plantilla para nuevas entradas
 
 ## DD/MM/AAAA — HH:MM
